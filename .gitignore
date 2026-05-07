@@ -1,0 +1,24 @@
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+**/.vscode/
+
+# Angular / Node
+node_modules/
+dist/
+.angular/
+
+# Java / Maven / Gradle
+target/
+build/
+.gradle/
+
+# Archivos de entorno
+.env
+application-local.properties
+
+# Logs
+*.log
