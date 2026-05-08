@@ -8,13 +8,14 @@ import java.util.List;
 @RestController
 public class SocioController {
 
+    private final SocioService socioService;
+
+    public SocioController(SocioService socioService) {
+        this.socioService = socioService;
+    }
+
     @GetMapping("/api/socios")
     public List<Socio> listarSocios() {
-        return List.of(
-                new Socio(1L, "Ana María", "Ruiz", "12345678", "ACTIVO"),
-                new Socio(2L, "Carlos", "González", "14567890", "ACTIVO"),
-                new Socio(3L, "Elena", "Fernández", "16789012", "ACTIVO"),
-                new Socio(4L, "Ricardo", "Gómez", "23456789", "MOROSO")
-        );
+        return socioService.listarSocios();
     }
 }
