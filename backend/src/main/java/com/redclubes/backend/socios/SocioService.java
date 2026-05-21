@@ -7,12 +7,21 @@ import java.util.List;
 @Service
 public class SocioService {
 
+    private final SocioRepository socioRepository;
+
+    public SocioService(SocioRepository socioRepository) {
+        this.socioRepository = socioRepository;
+    }
+
     public List<Socio> listarSocios() {
-        return List.of(
-                new Socio(1L, "Ana María", "Ruiz", "12345678", "ACTIVO"),
-                new Socio(2L, "Carlos", "González", "14567890", "ACTIVO"),
-                new Socio(3L, "Elena", "Fernández", "16789012", "ACTIVO"),
-                new Socio(4L, "Ricardo", "Gómez", "23456789", "MOROSO")
-        );
+        return socioRepository.findAll();
+    }
+
+    public Socio crearSocio(Socio socio) {
+        return socioRepository.save(socio);
+    }
+
+    public Socio obtenerSocioPorId(Long id) {
+        return socioRepository.findById(id).orElse(null);
     }
 }

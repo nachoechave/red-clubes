@@ -1,7 +1,6 @@
 package com.redclubes.backend.socios;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -17,5 +16,15 @@ public class SocioController {
     @GetMapping("/api/socios")
     public List<Socio> listarSocios() {
         return socioService.listarSocios();
+    }
+
+    @PostMapping("/api/socios")
+    public Socio crearSocio(@RequestBody Socio socio) {
+        return socioService.crearSocio(socio);
+    }
+
+    @GetMapping("/api/socios/{id}")
+    public Socio obtenerSocioPorId(@PathVariable Long id) {
+        return socioService.obtenerSocioPorId(id);
     }
 }
