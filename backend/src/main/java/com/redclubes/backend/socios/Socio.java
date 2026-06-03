@@ -1,9 +1,11 @@
 package com.redclubes.backend.socios;
 
+import com.redclubes.backend.clubes.Club;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -28,6 +30,19 @@ public class Socio {
 
     @NotBlank(message = "El estado es obligatorio")
     private String estado;
+
+    private String telefono;
+
+    private String direccion;
+
+    private String emergenciaNombre;
+
+    private String emergenciaTelefono;
+
+    private String emergenciaRelacion;
+
+    @ManyToOne
+    private Club club;
 
     public Socio() {
     }
@@ -60,6 +75,30 @@ public class Socio {
         return estado;
     }
 
+    public Club getClub() {
+        return club;
+    }
+
+    public String getTelefono() {
+        return telefono;
+    }
+
+    public String getDireccion() {
+        return direccion;
+    }
+
+    public String getEmergenciaNombre() {
+        return emergenciaNombre;
+    }
+
+    public String getEmergenciaTelefono() {
+        return emergenciaTelefono;
+    }
+
+    public String getEmergenciaRelacion() {
+        return emergenciaRelacion;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -78,5 +117,29 @@ public class Socio {
 
     public void setEstado(String estado) {
         this.estado = estado;
+    }
+
+    public void setClub(Club club) {
+        this.club = club;
+    }
+
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
+    }
+
+    public void setDireccion(String direccion) {
+        this.direccion = direccion;
+    }
+
+    public void setEmergenciaNombre(String emergenciaNombre) {
+        this.emergenciaNombre = emergenciaNombre;
+    }
+
+    public void setEmergenciaTelefono(String emergenciaTelefono) {
+        this.emergenciaTelefono = emergenciaTelefono;
+    }
+
+    public void setEmergenciaRelacion(String emergenciaRelacion) {
+        this.emergenciaRelacion = emergenciaRelacion;
     }
 }

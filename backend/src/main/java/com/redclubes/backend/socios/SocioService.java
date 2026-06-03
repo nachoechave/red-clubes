@@ -1,5 +1,8 @@
 package com.redclubes.backend.socios;
 
+import com.redclubes.backend.clubes.Club;
+import com.redclubes.backend.clubes.ClubNoEncontradoException;
+import com.redclubes.backend.clubes.ClubRepository;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
@@ -7,16 +10,29 @@ import java.util.List;
 public class SocioService {
 
     private final SocioRepository socioRepository;
+    private final ClubRepository clubRepository;
 
-    public SocioService(SocioRepository socioRepository) {
+    public SocioService(SocioRepository socioRepository, ClubRepository clubRepository) {
         this.socioRepository = socioRepository;
+        this.clubRepository = clubRepository;
     }
 
     public List<Socio> listarSocios() {
         return socioRepository.findAll();
     }
 
+    public List<Socio> listarSociosPorClub(Long clubId) {
+        return socioRepository.findByClubId(clubId);
+    }
+
     public Socio crearSocio(Socio socio) {
+        return socioRepository.save(socio);
+    }
+
+    public Socio crearSocioEnClub(Long clubId, Socio socio) {
+        Club club = clubRepository.findById(clubId)
+                .orElseThrow(() -> new ClubNoEncontradoException(clubId));
+        socio.setClub(club);
         return socioRepository.save(socio);
     }
 
@@ -33,6 +49,11 @@ public class SocioService {
         socioExistente.setApellido(socioActualizado.getApellido());
         socioExistente.setDni(socioActualizado.getDni());
         socioExistente.setEstado(socioActualizado.getEstado());
+        socioExistente.setTelefono(socioActualizado.getTelefono());
+        socioExistente.setDireccion(socioActualizado.getDireccion());
+        socioExistente.setEmergenciaNombre(socioActualizado.getEmergenciaNombre());
+        socioExistente.setEmergenciaTelefono(socioActualizado.getEmergenciaTelefono());
+        socioExistente.setEmergenciaRelacion(socioActualizado.getEmergenciaRelacion());
 
         return socioRepository.save(socioExistente);
     }
