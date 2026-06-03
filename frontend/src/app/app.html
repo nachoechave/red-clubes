@@ -1,344 +1,765 @@
-<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
-<!-- * * * * * * * * * * * The content below * * * * * * * * * * * -->
-<!-- * * * * * * * * * * is only a placeholder * * * * * * * * * * -->
-<!-- * * * * * * * * * * and can be replaced.  * * * * * * * * * * -->
-<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
-<!-- * * * * * * * * * Delete the template below * * * * * * * * * -->
-<!-- * * * * * * * to get started with your project! * * * * * * * -->
-<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+@if (!loggedIn()) {
+  <main class="login-shell">
+    <div class="login-card">
+      <div class="brand-mark large">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <h1>Red Clubes</h1>
+      <p>Gestion de clubes y centros de jubilados</p>
 
-<style>
-  :host {
-    --bright-blue: oklch(51.01% 0.274 263.83);
-    --electric-violet: oklch(53.18% 0.28 296.97);
-    --french-violet: oklch(47.66% 0.246 305.88);
-    --vivid-pink: oklch(69.02% 0.277 332.77);
-    --hot-red: oklch(61.42% 0.238 15.34);
-    --orange-red: oklch(63.32% 0.24 31.68);
-
-    --gray-900: oklch(19.37% 0.006 300.98);
-    --gray-700: oklch(36.98% 0.014 302.71);
-    --gray-400: oklch(70.9% 0.015 304.04);
-
-    --red-to-pink-to-purple-vertical-gradient: linear-gradient(
-      180deg,
-      var(--orange-red) 0%,
-      var(--vivid-pink) 50%,
-      var(--electric-violet) 100%
-    );
-
-    --red-to-pink-to-purple-horizontal-gradient: linear-gradient(
-      90deg,
-      var(--orange-red) 0%,
-      var(--vivid-pink) 50%,
-      var(--electric-violet) 100%
-    );
-
-    --pill-accent: var(--bright-blue);
-
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-      Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
-      "Segoe UI Symbol";
-    box-sizing: border-box;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    display: block;
-    height: 100dvh;
-  }
-
-  h1 {
-    font-size: 3.125rem;
-    color: var(--gray-900);
-    font-weight: 500;
-    line-height: 100%;
-    letter-spacing: -0.125rem;
-    margin: 0;
-    font-family: "Inter Tight", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-      Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
-      "Segoe UI Symbol";
-  }
-
-  p {
-    margin: 0;
-    color: var(--gray-700);
-  }
-
-  main {
-    width: 100%;
-    min-height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 1rem;
-    box-sizing: inherit;
-    position: relative;
-  }
-
-  .angular-logo {
-    max-width: 9.2rem;
-  }
-
-  .content {
-    display: flex;
-    justify-content: space-around;
-    width: 100%;
-    max-width: 700px;
-    margin-bottom: 3rem;
-  }
-
-  .content h1 {
-    margin-top: 1.75rem;
-  }
-
-  .content p {
-    margin-top: 1.5rem;
-  }
-
-  .divider {
-    width: 1px;
-    background: var(--red-to-pink-to-purple-vertical-gradient);
-    margin-inline: 0.5rem;
-  }
-
-  .pill-group {
-    display: flex;
-    flex-direction: column;
-    align-items: start;
-    flex-wrap: wrap;
-    gap: 1.25rem;
-  }
-
-  .pill {
-    display: flex;
-    align-items: center;
-    --pill-accent: var(--bright-blue);
-    background: color-mix(in srgb, var(--pill-accent) 5%, transparent);
-    color: var(--pill-accent);
-    padding-inline: 0.75rem;
-    padding-block: 0.375rem;
-    border-radius: 2.75rem;
-    border: 0;
-    transition: background 0.3s ease;
-    font-family: var(--inter-font);
-    font-size: 0.875rem;
-    font-style: normal;
-    font-weight: 500;
-    line-height: 1.4rem;
-    letter-spacing: -0.00875rem;
-    text-decoration: none;
-    white-space: nowrap;
-  }
-
-  .pill:hover {
-    background: color-mix(in srgb, var(--pill-accent) 15%, transparent);
-  }
-
-  .pill-group .pill:nth-child(6n + 1) {
-    --pill-accent: var(--bright-blue);
-  }
-  .pill-group .pill:nth-child(6n + 2) {
-    --pill-accent: var(--electric-violet);
-  }
-  .pill-group .pill:nth-child(6n + 3) {
-    --pill-accent: var(--french-violet);
-  }
-
-  .pill-group .pill:nth-child(6n + 4),
-  .pill-group .pill:nth-child(6n + 5),
-  .pill-group .pill:nth-child(6n + 6) {
-    --pill-accent: var(--hot-red);
-  }
-
-  .pill-group svg {
-    margin-inline-start: 0.25rem;
-  }
-
-  .social-links {
-    display: flex;
-    align-items: center;
-    gap: 0.73rem;
-    margin-top: 1.5rem;
-  }
-
-  .social-links path {
-    transition: fill 0.3s ease;
-    fill: var(--gray-400);
-  }
-
-  .social-links a:hover svg path {
-    fill: var(--gray-900);
-  }
-
-  @media screen and (max-width: 650px) {
-    .content {
-      flex-direction: column;
-      width: max-content;
-    }
-
-    .divider {
-      height: 1px;
-      width: 100%;
-      background: var(--red-to-pink-to-purple-horizontal-gradient);
-      margin-block: 1.5rem;
-    }
-  }
-</style>
-
-<main class="main">
-  <div class="content">
-    <div class="left-side">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 982 239"
-        fill="none"
-        class="angular-logo"
-      >
-        <g clip-path="url(#a)">
-          <path
-            fill="url(#b)"
-            d="M388.676 191.625h30.849L363.31 31.828h-35.758l-56.215 159.797h30.848l13.174-39.356h60.061l13.256 39.356Zm-65.461-62.675 21.602-64.311h1.227l21.602 64.311h-44.431Zm126.831-7.527v70.202h-28.23V71.839h27.002v20.374h1.392c2.782-6.71 7.2-12.028 13.255-15.956 6.056-3.927 13.584-5.89 22.503-5.89 8.264 0 15.465 1.8 21.684 5.318 6.137 3.518 10.964 8.673 14.319 15.382 3.437 6.71 5.074 14.81 4.992 24.383v76.175h-28.23v-71.92c0-8.019-2.046-14.237-6.219-18.819-4.173-4.5-9.819-6.791-17.102-6.791-4.91 0-9.328 1.063-13.174 3.272-3.846 2.128-6.792 5.237-9.001 9.328-2.046 4.009-3.191 8.918-3.191 14.728ZM589.233 239c-10.147 0-18.82-1.391-26.103-4.091-7.282-2.7-13.092-6.382-17.511-10.964-4.418-4.582-7.528-9.655-9.164-15.219l25.448-6.136c1.145 2.372 2.782 4.663 4.991 6.954 2.209 2.291 5.155 4.255 8.837 5.81 3.683 1.554 8.428 2.291 14.074 2.291 8.019 0 14.647-1.964 19.884-5.81 5.237-3.845 7.856-10.227 7.856-19.064v-22.665h-1.391c-1.473 2.946-3.601 5.892-6.383 9.001-2.782 3.109-6.464 5.645-10.965 7.691-4.582 2.046-10.228 3.109-17.101 3.109-9.165 0-17.511-2.209-25.039-6.545-7.446-4.337-13.42-10.883-17.757-19.474-4.418-8.673-6.628-19.473-6.628-32.565 0-13.091 2.21-24.301 6.628-33.383 4.419-9.082 10.311-15.955 17.839-20.7 7.528-4.746 15.874-7.037 25.039-7.037 7.037 0 12.846 1.145 17.347 3.518 4.582 2.373 8.182 5.236 10.883 8.51 2.7 3.272 4.746 6.382 6.137 9.327h1.554v-19.8h27.821v121.749c0 10.228-2.454 18.737-7.364 25.447-4.91 6.709-11.538 11.7-20.048 15.055-8.509 3.355-18.165 4.991-28.884 4.991Zm.245-71.266c5.974 0 11.047-1.473 15.302-4.337 4.173-2.945 7.446-7.118 9.573-12.519 2.21-5.482 3.274-12.027 3.274-19.637 0-7.609-1.064-14.155-3.274-19.8-2.127-5.646-5.318-10.064-9.491-13.255-4.174-3.11-9.329-4.746-15.384-4.746s-11.537 1.636-15.792 4.91c-4.173 3.272-7.365 7.772-9.492 13.418-2.128 5.727-3.191 12.191-3.191 19.392 0 7.2 1.063 13.745 3.273 19.228 2.127 5.482 5.318 9.736 9.573 12.764 4.174 3.027 9.41 4.582 15.629 4.582Zm141.56-26.51V71.839h28.23v119.786h-27.412v-21.273h-1.227c-2.7 6.709-7.119 12.191-13.338 16.446-6.137 4.255-13.747 6.382-22.748 6.382-7.855 0-14.81-1.718-20.783-5.237-5.974-3.518-10.72-8.591-14.075-15.382-3.355-6.709-5.073-14.891-5.073-24.464V71.839h28.312v71.921c0 7.609 2.046 13.664 6.219 18.083 4.173 4.5 9.655 6.709 16.365 6.709 4.173 0 8.183-.982 12.111-3.028 3.927-2.045 7.118-5.072 9.655-9.082 2.537-4.091 3.764-9.164 3.764-15.218Zm65.707-109.395v159.796h-28.23V31.828h28.23Zm44.841 162.169c-7.61 0-14.402-1.391-20.457-4.091-6.055-2.7-10.883-6.791-14.32-12.109-3.518-5.319-5.237-11.946-5.237-19.801 0-6.791 1.228-12.355 3.765-16.773 2.536-4.419 5.891-7.937 10.228-10.637 4.337-2.618 9.164-4.664 14.647-6.055 5.4-1.391 11.046-2.373 16.856-3.027 7.037-.737 12.683-1.391 17.102-1.964 4.337-.573 7.528-1.555 9.574-2.782 1.963-1.309 3.027-3.273 3.027-5.973v-.491c0-5.891-1.718-10.391-5.237-13.664-3.518-3.191-8.51-4.828-15.056-4.828-6.955 0-12.356 1.473-16.447 4.5-4.009 3.028-6.71 6.546-8.183 10.719l-26.348-3.764c2.046-7.282 5.483-13.336 10.31-18.328 4.746-4.909 10.638-8.59 17.511-11.045 6.955-2.455 14.565-3.682 22.912-3.682 5.809 0 11.537.654 17.265 2.045s10.965 3.6 15.711 6.71c4.746 3.109 8.51 7.282 11.455 12.6 2.864 5.318 4.337 11.946 4.337 19.883v80.184h-27.166v-16.446h-.9c-1.719 3.355-4.092 6.464-7.201 9.328-3.109 2.864-6.955 5.237-11.619 6.955-4.828 1.718-10.229 2.536-16.529 2.536Zm7.364-20.701c5.646 0 10.556-1.145 14.729-3.354 4.173-2.291 7.364-5.237 9.655-9.001 2.292-3.763 3.355-7.854 3.355-12.273v-14.155c-.9.737-2.373 1.391-4.5 2.046-2.128.654-4.419 1.145-7.037 1.636-2.619.491-5.155.9-7.692 1.227-2.537.328-4.746.655-6.628.901-4.173.572-8.019 1.472-11.292 2.781-3.355 1.31-5.973 3.11-7.855 5.401-1.964 2.291-2.864 5.318-2.864 8.918 0 5.237 1.882 9.164 5.728 11.782 3.682 2.782 8.51 4.091 14.401 4.091Zm64.643 18.328V71.839h27.412v19.965h1.227c2.21-6.955 5.974-12.274 11.292-16.038 5.319-3.763 11.456-5.645 18.329-5.645 1.555 0 3.355.082 5.237.163 1.964.164 3.601.328 4.91.573v25.938c-1.227-.41-3.109-.819-5.646-1.146a58.814 58.814 0 0 0-7.446-.49c-5.155 0-9.738 1.145-13.829 3.354-4.091 2.209-7.282 5.236-9.655 9.164-2.373 3.927-3.519 8.427-3.519 13.5v70.448h-28.312ZM222.077 39.192l-8.019 125.923L137.387 0l84.69 39.192Zm-53.105 162.825-57.933 33.056-57.934-33.056 11.783-28.556h92.301l11.783 28.556ZM111.039 62.675l30.357 73.803H80.681l30.358-73.803ZM7.937 165.115 0 39.192 84.69 0 7.937 165.115Z"
-          />
-          <path
-            fill="url(#c)"
-            d="M388.676 191.625h30.849L363.31 31.828h-35.758l-56.215 159.797h30.848l13.174-39.356h60.061l13.256 39.356Zm-65.461-62.675 21.602-64.311h1.227l21.602 64.311h-44.431Zm126.831-7.527v70.202h-28.23V71.839h27.002v20.374h1.392c2.782-6.71 7.2-12.028 13.255-15.956 6.056-3.927 13.584-5.89 22.503-5.89 8.264 0 15.465 1.8 21.684 5.318 6.137 3.518 10.964 8.673 14.319 15.382 3.437 6.71 5.074 14.81 4.992 24.383v76.175h-28.23v-71.92c0-8.019-2.046-14.237-6.219-18.819-4.173-4.5-9.819-6.791-17.102-6.791-4.91 0-9.328 1.063-13.174 3.272-3.846 2.128-6.792 5.237-9.001 9.328-2.046 4.009-3.191 8.918-3.191 14.728ZM589.233 239c-10.147 0-18.82-1.391-26.103-4.091-7.282-2.7-13.092-6.382-17.511-10.964-4.418-4.582-7.528-9.655-9.164-15.219l25.448-6.136c1.145 2.372 2.782 4.663 4.991 6.954 2.209 2.291 5.155 4.255 8.837 5.81 3.683 1.554 8.428 2.291 14.074 2.291 8.019 0 14.647-1.964 19.884-5.81 5.237-3.845 7.856-10.227 7.856-19.064v-22.665h-1.391c-1.473 2.946-3.601 5.892-6.383 9.001-2.782 3.109-6.464 5.645-10.965 7.691-4.582 2.046-10.228 3.109-17.101 3.109-9.165 0-17.511-2.209-25.039-6.545-7.446-4.337-13.42-10.883-17.757-19.474-4.418-8.673-6.628-19.473-6.628-32.565 0-13.091 2.21-24.301 6.628-33.383 4.419-9.082 10.311-15.955 17.839-20.7 7.528-4.746 15.874-7.037 25.039-7.037 7.037 0 12.846 1.145 17.347 3.518 4.582 2.373 8.182 5.236 10.883 8.51 2.7 3.272 4.746 6.382 6.137 9.327h1.554v-19.8h27.821v121.749c0 10.228-2.454 18.737-7.364 25.447-4.91 6.709-11.538 11.7-20.048 15.055-8.509 3.355-18.165 4.991-28.884 4.991Zm.245-71.266c5.974 0 11.047-1.473 15.302-4.337 4.173-2.945 7.446-7.118 9.573-12.519 2.21-5.482 3.274-12.027 3.274-19.637 0-7.609-1.064-14.155-3.274-19.8-2.127-5.646-5.318-10.064-9.491-13.255-4.174-3.11-9.329-4.746-15.384-4.746s-11.537 1.636-15.792 4.91c-4.173 3.272-7.365 7.772-9.492 13.418-2.128 5.727-3.191 12.191-3.191 19.392 0 7.2 1.063 13.745 3.273 19.228 2.127 5.482 5.318 9.736 9.573 12.764 4.174 3.027 9.41 4.582 15.629 4.582Zm141.56-26.51V71.839h28.23v119.786h-27.412v-21.273h-1.227c-2.7 6.709-7.119 12.191-13.338 16.446-6.137 4.255-13.747 6.382-22.748 6.382-7.855 0-14.81-1.718-20.783-5.237-5.974-3.518-10.72-8.591-14.075-15.382-3.355-6.709-5.073-14.891-5.073-24.464V71.839h28.312v71.921c0 7.609 2.046 13.664 6.219 18.083 4.173 4.5 9.655 6.709 16.365 6.709 4.173 0 8.183-.982 12.111-3.028 3.927-2.045 7.118-5.072 9.655-9.082 2.537-4.091 3.764-9.164 3.764-15.218Zm65.707-109.395v159.796h-28.23V31.828h28.23Zm44.841 162.169c-7.61 0-14.402-1.391-20.457-4.091-6.055-2.7-10.883-6.791-14.32-12.109-3.518-5.319-5.237-11.946-5.237-19.801 0-6.791 1.228-12.355 3.765-16.773 2.536-4.419 5.891-7.937 10.228-10.637 4.337-2.618 9.164-4.664 14.647-6.055 5.4-1.391 11.046-2.373 16.856-3.027 7.037-.737 12.683-1.391 17.102-1.964 4.337-.573 7.528-1.555 9.574-2.782 1.963-1.309 3.027-3.273 3.027-5.973v-.491c0-5.891-1.718-10.391-5.237-13.664-3.518-3.191-8.51-4.828-15.056-4.828-6.955 0-12.356 1.473-16.447 4.5-4.009 3.028-6.71 6.546-8.183 10.719l-26.348-3.764c2.046-7.282 5.483-13.336 10.31-18.328 4.746-4.909 10.638-8.59 17.511-11.045 6.955-2.455 14.565-3.682 22.912-3.682 5.809 0 11.537.654 17.265 2.045s10.965 3.6 15.711 6.71c4.746 3.109 8.51 7.282 11.455 12.6 2.864 5.318 4.337 11.946 4.337 19.883v80.184h-27.166v-16.446h-.9c-1.719 3.355-4.092 6.464-7.201 9.328-3.109 2.864-6.955 5.237-11.619 6.955-4.828 1.718-10.229 2.536-16.529 2.536Zm7.364-20.701c5.646 0 10.556-1.145 14.729-3.354 4.173-2.291 7.364-5.237 9.655-9.001 2.292-3.763 3.355-7.854 3.355-12.273v-14.155c-.9.737-2.373 1.391-4.5 2.046-2.128.654-4.419 1.145-7.037 1.636-2.619.491-5.155.9-7.692 1.227-2.537.328-4.746.655-6.628.901-4.173.572-8.019 1.472-11.292 2.781-3.355 1.31-5.973 3.11-7.855 5.401-1.964 2.291-2.864 5.318-2.864 8.918 0 5.237 1.882 9.164 5.728 11.782 3.682 2.782 8.51 4.091 14.401 4.091Zm64.643 18.328V71.839h27.412v19.965h1.227c2.21-6.955 5.974-12.274 11.292-16.038 5.319-3.763 11.456-5.645 18.329-5.645 1.555 0 3.355.082 5.237.163 1.964.164 3.601.328 4.91.573v25.938c-1.227-.41-3.109-.819-5.646-1.146a58.814 58.814 0 0 0-7.446-.49c-5.155 0-9.738 1.145-13.829 3.354-4.091 2.209-7.282 5.236-9.655 9.164-2.373 3.927-3.519 8.427-3.519 13.5v70.448h-28.312ZM222.077 39.192l-8.019 125.923L137.387 0l84.69 39.192Zm-53.105 162.825-57.933 33.056-57.934-33.056 11.783-28.556h92.301l11.783 28.556ZM111.039 62.675l30.357 73.803H80.681l30.358-73.803ZM7.937 165.115 0 39.192 84.69 0 7.937 165.115Z"
-          />
-        </g>
-        <defs>
-          <radialGradient
-            id="c"
-            cx="0"
-            cy="0"
-            r="1"
-            gradientTransform="rotate(118.122 171.182 60.81) scale(205.794)"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop stop-color="#FF41F8" />
-            <stop offset=".707" stop-color="#FF41F8" stop-opacity=".5" />
-            <stop offset="1" stop-color="#FF41F8" stop-opacity="0" />
-          </radialGradient>
-          <linearGradient
-            id="b"
-            x1="0"
-            x2="982"
-            y1="192"
-            y2="192"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop stop-color="#F0060B" />
-            <stop offset="0" stop-color="#F0070C" />
-            <stop offset=".526" stop-color="#CC26D5" />
-            <stop offset="1" stop-color="#7702FF" />
-          </linearGradient>
-          <clipPath id="a"><path fill="#fff" d="M0 0h982v239H0z" /></clipPath>
-        </defs>
-      </svg>
-      <h1>Hello, {{ title() }}</h1>
-      <p>Congratulations! Your app is running. 🎉</p>
+      <form class="login-form" (ngSubmit)="login()">
+        <label>
+          <span>DNI o usuario</span>
+          <input type="text" name="user" placeholder="Ingresa tu DNI o usuario" [(ngModel)]="loginDni" />
+        </label>
+        <label>
+          <span>Contrasena</span>
+          <input type="password" name="password" placeholder="Ingresa tu contrasena" [(ngModel)]="loginPassword" />
+        </label>
+        @if (loginError()) {
+          <p class="form-error">{{ loginError() }}</p>
+        }
+        <button class="primary-action" type="submit">Ingresar</button>
+      </form>
     </div>
-    <div class="divider" role="separator" aria-label="Divider"></div>
-    <div class="right-side">
-      <div class="pill-group">
-        @for (item of [
-          { title: 'Explore the Docs', link: 'https://angular.dev' },
-          { title: 'Learn with Tutorials', link: 'https://angular.dev/tutorials' },
-          { title: 'Prompt and best practices for AI', link: 'https://angular.dev/ai/develop-with-ai'},
-          { title: 'CLI Docs', link: 'https://angular.dev/tools/cli' },
-          { title: 'Angular Language Service', link: 'https://angular.dev/tools/language-service' },
-          { title: 'Angular DevTools', link: 'https://angular.dev/tools/devtools' },
-        ]; track item.title) {
-          <a
-            class="pill"
-            [href]="item.link"
-            target="_blank"
-            rel="noopener"
-          >
-            <span>{{ item.title }}</span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              height="14"
-              viewBox="0 -960 960 960"
-              width="14"
-              fill="currentColor"
-            >
-              <path
-                d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"
-              />
-            </svg>
-          </a>
+  </main>
+} @else {
+  @if (debeCambiarPassword()) {
+    <main class="login-shell">
+      <div class="login-card">
+        <div class="brand-mark large">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <h1>Actualizar contrasena</h1>
+        <p>Por seguridad, cambia la contrasena inicial antes de continuar</p>
+
+        <form class="login-form" (ngSubmit)="cambiarPassword()">
+          <label>
+            <span>Contrasena actual</span>
+            <input type="password" name="passwordActual" placeholder="Ingresa tu contrasena actual" [(ngModel)]="passwordActual" />
+          </label>
+          <label>
+            <span>Nueva contrasena</span>
+            <input type="password" name="nuevaPassword" placeholder="Minimo 8 caracteres" [(ngModel)]="nuevaPassword" />
+          </label>
+          <label>
+            <span>Confirmar nueva contrasena</span>
+            <input type="password" name="confirmarNuevaPassword" placeholder="Repeti la nueva contrasena" [(ngModel)]="confirmarNuevaPassword" />
+          </label>
+          @if (passwordError()) {
+            <p class="form-error">{{ passwordError() }}</p>
+          }
+          <button class="primary-action" type="submit">Guardar contrasena</button>
+          <button class="link-action" type="button" (click)="logout()">Cerrar sesion</button>
+        </form>
+      </div>
+    </main>
+  } @else {
+  <main class="app-shell" [class.sidebar-collapsed]="!sidebarOpen()">
+    <header class="topbar">
+      <button class="icon-button" type="button" [attr.aria-label]="sidebarOpen() ? 'Cerrar menu' : 'Abrir menu'" (click)="toggleSidebar()">
+        <span class="hamburger"></span>
+      </button>
+      <div class="brand">
+        <div class="brand-mark">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <strong>Red Clubes</strong>
+      </div>
+      <label class="club-switcher">
+        <span>Club</span>
+        <select [ngModel]="clubActivoId()" (ngModelChange)="cambiarClub($event)">
+          @for (club of clubesDisponibles(); track club.clubId) {
+            <option [ngValue]="club.clubId">{{ club.clubNombre }}</option>
+          }
+        </select>
+      </label>
+      <div class="user-menu">
+        <button class="user-button" type="button" aria-label="Abrir menu de usuario" (click)="toggleUserMenu()">
+        <div class="avatar">A</div>
+          <span>{{ nombreUsuarioActual() }}</span>
+          <span class="chevron"></span>
+        </button>
+        @if (userMenuOpen()) {
+          <div class="user-dropdown">
+            <div class="user-summary">
+              <strong>{{ nombreUsuarioActual() }}</strong>
+              <span>{{ rolVisible(currentUser()!.rol) }}</span>
+            </div>
+            @if (puedeAdministrarUsuarios()) {
+              <button type="button" (click)="goTo('usuarios')">Usuarios</button>
+            }
+            <button type="button" (click)="goTo('configuracion')">Configuracion</button>
+            <button type="button" (click)="logout()">Cerrar sesion</button>
+          </div>
         }
       </div>
-      <div class="social-links">
-        <a
-          href="https://github.com/angular/angular"
-          aria-label="Github"
-          target="_blank"
-          rel="noopener"
-        >
-          <svg
-            width="25"
-            height="24"
-            viewBox="0 0 25 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            alt="Github"
+    </header>
+
+    <div class="workspace">
+      <aside class="sidebar">
+        @for (item of navItems(); track item.id) {
+          <button
+            type="button"
+            class="nav-item"
+            [class.active]="activeSection() === item.id"
+            (click)="goTo(item.id)"
           >
-            <path
-              d="M12.3047 0C5.50634 0 0 5.50942 0 12.3047C0 17.7423 3.52529 22.3535 8.41332 23.9787C9.02856 24.0946 9.25414 23.7142 9.25414 23.3871C9.25414 23.0949 9.24389 22.3207 9.23876 21.2953C5.81601 22.0377 5.09414 19.6444 5.09414 19.6444C4.53427 18.2243 3.72524 17.8449 3.72524 17.8449C2.61064 17.082 3.81137 17.0973 3.81137 17.0973C5.04697 17.1835 5.69604 18.3647 5.69604 18.3647C6.79321 20.2463 8.57636 19.7029 9.27978 19.3881C9.39052 18.5924 9.70736 18.0499 10.0591 17.7423C7.32641 17.4347 4.45429 16.3765 4.45429 11.6618C4.45429 10.3185 4.9311 9.22133 5.72065 8.36C5.58222 8.04931 5.16694 6.79833 5.82831 5.10337C5.82831 5.10337 6.85883 4.77319 9.2121 6.36459C10.1965 6.09082 11.2424 5.95546 12.2883 5.94931C13.3342 5.95546 14.3801 6.09082 15.3644 6.36459C17.7023 4.77319 18.7328 5.10337 18.7328 5.10337C19.3942 6.79833 18.9789 8.04931 18.8559 8.36C19.6403 9.22133 20.1171 10.3185 20.1171 11.6618C20.1171 16.3888 17.2409 17.4296 14.5031 17.7321C14.9338 18.1012 15.3337 18.8559 15.3337 20.0084C15.3337 21.6552 15.3183 22.978 15.3183 23.3779C15.3183 23.7009 15.5336 24.0854 16.1642 23.9623C21.0871 22.3484 24.6094 17.7341 24.6094 12.3047C24.6094 5.50942 19.0999 0 12.3047 0Z"
-            />
-          </svg>
-        </a>
-        <a
-          href="https://x.com/angular"
-          aria-label="X"
-          target="_blank"
-          rel="noopener"
-        >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            alt="X"
-          >
-            <path
-              d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
-            />
-          </svg>
-        </a>
-        <a
-          href="https://www.youtube.com/channel/UCbn1OgGei-DV7aSRo_HaAiw"
-          aria-label="Youtube"
-          target="_blank"
-          rel="noopener"
-        >
-          <svg
-            width="29"
-            height="20"
-            viewBox="0 0 29 20"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            alt="Youtube"
-          >
-            <path
-              fill-rule="evenodd"
-              clip-rule="evenodd"
-              d="M27.4896 1.52422C27.9301 1.96749 28.2463 2.51866 28.4068 3.12258C29.0004 5.35161 29.0004 10 29.0004 10C29.0004 10 29.0004 14.6484 28.4068 16.8774C28.2463 17.4813 27.9301 18.0325 27.4896 18.4758C27.0492 18.9191 26.5 19.2389 25.8972 19.4032C23.6778 20 14.8068 20 14.8068 20C14.8068 20 5.93586 20 3.71651 19.4032C3.11363 19.2389 2.56449 18.9191 2.12405 18.4758C1.68361 18.0325 1.36732 17.4813 1.20683 16.8774C0.613281 14.6484 0.613281 10 0.613281 10C0.613281 10 0.613281 5.35161 1.20683 3.12258C1.36732 2.51866 1.68361 1.96749 2.12405 1.52422C2.56449 1.08095 3.11363 0.76113 3.71651 0.596774C5.93586 0 14.8068 0 14.8068 0C14.8068 0 23.6778 0 25.8972 0.596774C26.5 0.76113 27.0492 1.08095 27.4896 1.52422ZM19.3229 10L11.9036 5.77905V14.221L19.3229 10Z"
-            />
-          </svg>
-        </a>
-      </div>
+            <span class="nav-icon" [attr.data-icon]="item.icon" aria-hidden="true"></span>
+            <span>{{ item.label }}</span>
+          </button>
+        }
+      </aside>
+
+      <section class="content-panel">
+        @switch (activeSection()) {
+          @case ('dashboard') {
+            <div class="page-head row">
+              <div>
+                <h2>Red Clubes</h2>
+                <p>Resumen general de {{ nombreClubActivo() }}</p>
+              </div>
+              <span class="data-pill real">Datos del backend</span>
+            </div>
+
+            <div class="metric-grid hero-metrics">
+              @for (metric of metrics(); track metric.label) {
+                <article class="metric-card">
+                  <span class="metric-icon" [class.warn]="metric.danger"></span>
+                  <span>{{ metric.label }}</span>
+                  <strong>{{ metric.value }}</strong>
+                  <small [class.danger]="metric.danger">{{ metric.change }}</small>
+                </article>
+              }
+            </div>
+
+            <div class="admin-dashboard-grid">
+              <article class="panel attendance-panel">
+                <div class="panel-title">
+                  <h3>Asistencia mensual</h3>
+                  <span class="data-pill real">Datos del backend</span>
+                </div>
+                <div class="backend-bar-chart">
+                  @for (bar of asistenciaBars(); track $index) {
+                    <span [style.height.%]="bar"></span>
+                  }
+                </div>
+                <div class="chart-labels"><span>Ene</span><span>Feb</span><span>Mar</span><span>Abr</span><span>May</span><span>Jun</span><span>Jul</span></div>
+                <div class="insight-strip">Total asistencias este mes: {{ dashboard()?.asistenciaMes ?? 0 }}</div>
+              </article>
+
+              <article class="panel payments-panel">
+                <div class="panel-title">
+                  <h3>Cuotas cobradas</h3>
+                  <span class="data-pill real">Datos del backend</span>
+                </div>
+                <div class="payment-summary">
+                  <div class="donut strong"></div>
+                  <div>
+                    <strong>{{ formatearImporte(dashboard()?.totalCobrado ?? 0) }}</strong>
+                    <span>Total cobrado</span>
+                  </div>
+                </div>
+                <div class="insight-strip success">{{ dashboard()?.cuotasAlDia ?? 0 }} cuotas al dia</div>
+              </article>
+
+              <article class="panel next-panel">
+                <div class="panel-title row-title">
+                  <h3>Proximas actividades</h3>
+                  <span class="data-pill real">Datos del backend</span>
+                </div>
+                <div class="mini-list">
+                  @for (actividad of actividadesProximasDelClub(); track actividad.nombre) {
+                    <div class="mini-row">
+                      <span class="mini-thumb activity"></span>
+                      <div><strong>{{ actividad.nombre }}</strong><small>{{ actividad.dias }} · {{ actividad.profesor }}</small></div>
+                    </div>
+                  }
+                </div>
+              </article>
+            </div>
+
+            <div class="dashboard-bottom-grid">
+              <article class="panel">
+                <div class="panel-title row-title">
+                  <h3>Ultimos movimientos</h3>
+                  <span class="data-pill real">Por club</span>
+                </div>
+                <div class="movement-list">
+                  @for (movement of movements(); track movement.descripcion) {
+                    <div class="movement">
+                      <span class="status-dot" [class.bad]="movement.tono === 'bad'"></span>
+                      <strong>{{ movement.descripcion }}</strong>
+                      <time>{{ movement.momento }}</time>
+                    </div>
+                  } @empty {
+                    <p class="empty-inline">No hay movimientos recientes para este club.</p>
+                  }
+                </div>
+              </article>
+
+              <article class="panel">
+                <div class="panel-title row-title">
+                  <h3>Socios recientes</h3>
+                  <span class="data-pill real">Por club</span>
+                </div>
+                <div class="mini-list">
+                  @for (socio of sociosRecientesDelClub(); track socio.id) {
+                    <div class="mini-row">
+                      <span class="avatar soft">{{ socio.nombre.charAt(0) }}</span>
+                      <div><strong>{{ socio.nombre }}</strong><small>{{ socio.telefono }}</small></div>
+                    </div>
+                  }
+                </div>
+              </article>
+
+              <article class="panel">
+                <div class="panel-title row-title">
+                  <h3>Cuotas pendientes</h3>
+                  <span class="data-pill real">Datos del backend</span>
+                </div>
+                <div class="mini-list">
+                  @for (cuota of cuotasPendientesDelClub(); track cuota.id) {
+                    <div class="mini-row">
+                      <span class="mini-thumb warning"></span>
+                      <div><strong>{{ cuota.socioNombre }}</strong><small>{{ cuota.estado }} · {{ formatearImporte(cuota.importe) }}</small></div>
+                    </div>
+                  }
+                </div>
+              </article>
+            </div>
+
+            <div class="quick-actions">
+              <h3>Accesos rapidos</h3>
+              <div class="quick-grid">
+                <button type="button" (click)="goTo('nuevo-socio')"><span data-icon="plus" aria-hidden="true"></span><strong>Nuevo socio</strong><small>Agregar un nuevo socio</small></button>
+                <button type="button" (click)="goTo('socios')"><span data-icon="users" aria-hidden="true"></span><strong>Ver socios</strong><small>Listado filtrado por club</small></button>
+                <button type="button" (click)="goTo('actividades')"><span data-icon="music" aria-hidden="true"></span><strong>Actividades</strong><small>Gestion desde backend</small></button>
+                <button type="button" (click)="goTo('reportes')"><span data-icon="chart" aria-hidden="true"></span><strong>Reportes</strong><small>Datos calculados</small></button>
+              </div>
+            </div>
+          }
+
+          @case ('socios') {
+            <div class="page-head row">
+              <div>
+                <h2>Socios</h2>
+                <p>Gestiona los socios de {{ nombreClubActivo() }}</p>
+              </div>
+              <button class="primary-action compact" type="button" (click)="goTo('nuevo-socio')">+ Nuevo socio</button>
+            </div>
+            <div class="filters">
+              <label class="search-field">
+                <input type="search" placeholder="Buscar por nombre, apellido, DNI o telefono..." [(ngModel)]="socioBusqueda" />
+              </label>
+              <select [(ngModel)]="socioEstadoFiltro">
+                <option value="TODOS">Estado: Todos</option>
+                <option value="ACTIVO">Activos</option>
+                <option value="INACTIVO">Inactivos</option>
+              </select>
+            </div>
+            <div class="table-card">
+              <table>
+                <thead>
+                  <tr><th>Nombre</th><th>DNI</th><th>Telefono</th><th>Estado</th><th>Acciones</th></tr>
+                </thead>
+                <tbody>
+                  @for (socio of sociosFiltrados(); track socio.dni) {
+                    <tr>
+                      <td>{{ socio.nombre }} {{ socio.apellido }}</td>
+                      <td>{{ socio.dni }}</td>
+                      <td>{{ socio.telefono }}</td>
+                      <td><span class="badge" [class.inactive]="socio.estado === 'INACTIVO'">{{ socio.estado }}</span></td>
+                      <td class="actions">
+                        <button type="button" (click)="verSocio(socio)">Ver</button>
+                        <button type="button" (click)="editarSocio(socio)">Editar</button>
+                        <button class="danger" type="button" (click)="alternarEstadoSocio(socio)">
+                          {{ socio.estado === 'ACTIVO' ? 'Baja' : 'Activar' }}
+                        </button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="5" class="empty-cell">No hay socios para los filtros seleccionados.</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+              <div class="pagination"><span>Mostrando {{ sociosFiltrados().length }} de {{ socios().length }} socios</span></div>
+            </div>
+
+            @if (socioSeleccionado()) {
+              <div class="modal-backdrop">
+                <article class="modal-panel">
+                  <div class="modal-head">
+                    <div>
+                      <h3>{{ socioSeleccionado()!.nombre }} {{ socioSeleccionado()!.apellido }}</h3>
+                      <p>Detalle del socio</p>
+                    </div>
+                    <button class="icon-button" type="button" aria-label="Cerrar" (click)="cerrarPanelSocio()">X</button>
+                  </div>
+                  <dl class="profile-list">
+                    <div><dt>DNI</dt><dd>{{ socioSeleccionado()!.dni }}</dd></div>
+                    <div><dt>Telefono</dt><dd>{{ socioSeleccionado()!.telefono }}</dd></div>
+                    <div><dt>Direccion</dt><dd>{{ socioSeleccionado()!.direccion }}</dd></div>
+                    <div><dt>Estado</dt><dd><span class="badge" [class.inactive]="socioSeleccionado()!.estado === 'INACTIVO'">{{ socioSeleccionado()!.estado }}</span></dd></div>
+                  </dl>
+                  <div class="panel-title modal-section-title">
+                    <h3>Contacto de emergencia</h3>
+                  </div>
+                  <dl class="profile-list">
+                    <div><dt>Nombre</dt><dd>{{ socioSeleccionado()!.emergenciaNombre }}</dd></div>
+                    <div><dt>Telefono</dt><dd>{{ socioSeleccionado()!.emergenciaTelefono }}</dd></div>
+                    <div><dt>Relacion</dt><dd>{{ socioSeleccionado()!.emergenciaRelacion }}</dd></div>
+                  </dl>
+                  <div class="form-actions compact-actions">
+                    <button class="secondary-action" type="button" (click)="cerrarPanelSocio()">Cerrar</button>
+                    <button class="primary-action compact" type="button" (click)="editarSocio(socioSeleccionado()!)">Editar socio</button>
+                  </div>
+                </article>
+              </div>
+            }
+
+            @if (socioEditando()) {
+              <div class="modal-backdrop">
+                <article class="modal-panel wide-modal">
+                  <div class="modal-head">
+                    <div>
+                      <h3>Editar socio</h3>
+                      <p>Actualiza los datos principales</p>
+                    </div>
+                    <button class="icon-button" type="button" aria-label="Cerrar" (click)="cerrarPanelSocio()">X</button>
+                  </div>
+                  <form class="settings-form" (ngSubmit)="guardarSocioEditado()">
+                    <div class="form-grid">
+                      <label><span>Nombre</span><input name="socioNombre" [(ngModel)]="socioForm.nombre" /></label>
+                      <label><span>Apellido</span><input name="socioApellido" [(ngModel)]="socioForm.apellido" /></label>
+                      <label><span>DNI</span><input name="socioDni" [(ngModel)]="socioForm.dni" /></label>
+                      <label><span>Telefono</span><input name="socioTelefono" [(ngModel)]="socioForm.telefono" /></label>
+                      <label class="wide"><span>Direccion</span><textarea name="socioDireccion" [(ngModel)]="socioForm.direccion"></textarea></label>
+                      <label><span>Estado</span><select name="socioEstado" [(ngModel)]="socioForm.estado"><option value="ACTIVO">ACTIVO</option><option value="INACTIVO">INACTIVO</option></select></label>
+                      <label><span>Contacto de emergencia</span><input name="socioEmergenciaNombre" [(ngModel)]="socioForm.emergenciaNombre" /></label>
+                      <label><span>Telefono de emergencia</span><input name="socioEmergenciaTelefono" [(ngModel)]="socioForm.emergenciaTelefono" /></label>
+                      <label><span>Relacion</span><input name="socioEmergenciaRelacion" [(ngModel)]="socioForm.emergenciaRelacion" /></label>
+                    </div>
+                    <div class="form-actions compact-actions">
+                      <button class="secondary-action" type="button" (click)="cerrarPanelSocio()">Cancelar</button>
+                      <button class="primary-action compact" type="submit">Guardar cambios</button>
+                    </div>
+                  </form>
+                </article>
+              </div>
+            }
+          }
+
+          @case ('nuevo-socio') {
+            <div class="page-head row">
+              <div>
+                <h2>Nuevo socio</h2>
+                <p>Completa los datos del nuevo socio para {{ nombreClubActivo() }}</p>
+              </div>
+              <div class="breadcrumbs">Dashboard / Socios / Nuevo</div>
+            </div>
+            <form class="member-form" (ngSubmit)="guardarNuevoSocio()">
+              <div class="form-grid">
+                <label><span>Nombre</span><input name="nuevoSocioNombre" placeholder="Ingresa el nombre" [(ngModel)]="nuevoSocioForm.nombre" required /></label>
+                <label><span>Apellido</span><input name="nuevoSocioApellido" placeholder="Ingresa el apellido" [(ngModel)]="nuevoSocioForm.apellido" required /></label>
+                <label><span>DNI</span><input name="nuevoSocioDni" placeholder="Ingresa el DNI" [(ngModel)]="nuevoSocioForm.dni" required /></label>
+                <label><span>Telefono</span><input name="nuevoSocioTelefono" placeholder="Ingresa el telefono" [(ngModel)]="nuevoSocioForm.telefono" /></label>
+                <label class="wide"><span>Direccion</span><textarea name="nuevoSocioDireccion" placeholder="Ingresa la direccion" [(ngModel)]="nuevoSocioForm.direccion"></textarea></label>
+                <label><span>Contacto de emergencia</span><input name="nuevoSocioEmergenciaNombre" [(ngModel)]="nuevoSocioForm.emergenciaNombre" /></label>
+                <label><span>Telefono de emergencia</span><input name="nuevoSocioEmergenciaTelefono" [(ngModel)]="nuevoSocioForm.emergenciaTelefono" /></label>
+                <label><span>Relacion</span><input name="nuevoSocioEmergenciaRelacion" [(ngModel)]="nuevoSocioForm.emergenciaRelacion" /></label>
+                <label><span>Estado</span><select name="nuevoSocioEstado" [(ngModel)]="nuevoSocioForm.estado"><option value="ACTIVO">ACTIVO</option><option value="INACTIVO">INACTIVO</option></select></label>
+              </div>
+              <div class="form-actions">
+                <button class="secondary-action" type="button" (click)="goTo('socios')">Cancelar</button>
+                <button class="primary-action compact" type="submit">Guardar socio</button>
+              </div>
+            </form>
+          }
+
+          @case ('clubes') {
+            <div class="page-head row">
+              <div>
+                <h2>Clubes</h2>
+                <p>Gestiona los clubes y centros</p>
+              </div>
+              <span class="data-pill real">Datos del backend</span>
+            </div>
+            <div class="club-grid">
+              @for (club of clubes(); track club.id) {
+                <article class="club-card">
+                  <div class="club-icon"></div>
+                  <h3>{{ club.nombre }}</h3>
+                  <dl>
+                    <div><dt>Direccion:</dt><dd>{{ club.direccion }}</dd></div>
+                    <div><dt>Estado:</dt><dd>{{ club.estado }}</dd></div>
+                  </dl>
+                  <div class="card-actions"><button type="button" (click)="cambiarClub(club.id); goTo('dashboard')">Ver dashboard</button></div>
+                </article>
+              }
+            </div>
+          }
+
+          @case ('actividades') {
+            <div class="page-head row">
+              <div>
+                <h2>Actividades / Talleres</h2>
+                <p>Gestiona las actividades y talleres</p>
+              </div>
+              <span class="data-pill real">Datos del backend</span>
+            </div>
+            <form class="member-form activity-create-form" (ngSubmit)="crearActividad()">
+              <div class="form-grid">
+                <label><span>Actividad o taller</span><input name="actividadNombre" placeholder="Ej: Taller de memoria" [(ngModel)]="nuevaActividad.nombre" required /></label>
+                <label><span>Profesor/a</span><input name="actividadProfesor" placeholder="Nombre del responsable" [(ngModel)]="nuevaActividad.profesor" required /></label>
+                <label><span>Dia y horario</span><input name="actividadDias" placeholder="Ej: Martes 10:00 hs" [(ngModel)]="nuevaActividad.dias" required /></label>
+                <label>
+                  <span>Categoria</span>
+                  <select name="actividadCategoria" [(ngModel)]="nuevaActividad.categoria">
+                    <option>Bienestar</option>
+                    <option>Cultura</option>
+                    <option>Manualidades</option>
+                    <option>Actividad fisica</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Icono</span>
+                  <select name="actividadIcono" [(ngModel)]="nuevaActividad.icono">
+                    <option value="check">General</option>
+                    <option value="person">Bienestar</option>
+                    <option value="note">Musica</option>
+                    <option value="palette">Arte</option>
+                    <option value="mask">Teatro</option>
+                  </select>
+                </label>
+                <label><span>Cupo</span><input type="number" min="1" name="actividadCupo" [(ngModel)]="nuevaActividad.cupo" /></label>
+              </div>
+              <div class="form-actions">
+                <span class="help-text">La actividad queda asociada a {{ nombreClubActivo() }}.</span>
+                <button class="primary-action compact" type="submit">Crear actividad</button>
+              </div>
+            </form>
+            <div class="activity-list">
+              @for (actividad of actividades(); track actividad.id) {
+                <article class="activity-card">
+                  <div class="activity-icon" [attr.data-icon]="actividad.icono" aria-hidden="true"></div>
+                  <div class="activity-info">
+                    <h3>{{ actividad.nombre }}</h3>
+                    <p><strong>Club:</strong> {{ actividad.clubNombre }}</p>
+                    <p><strong>Profesor:</strong> {{ actividad.profesor }}</p>
+                    <p><strong>Dias:</strong> {{ actividad.dias }}</p>
+                  </div>
+                  <div class="activity-capacity">
+                    <span>Cupo: {{ actividad.cupo }}</span>
+                    <span>Inscriptos: {{ actividad.inscriptos }}</span>
+                  </div>
+                  <div class="card-actions inline">
+                    <button type="button" (click)="goTo('socios')">Ver socios</button>
+                    <button class="primary-action compact" type="button" (click)="seleccionarActividadAsistencia(actividad)">Tomar asistencia</button>
+                  </div>
+                </article>
+              }
+            </div>
+          }
+
+          @case ('cuotas') {
+            <div class="page-head row">
+              <div>
+                <h2>Cuotas</h2>
+                <p>Gestiona las cuotas de los socios</p>
+              </div>
+              <span class="data-pill real">Datos del backend</span>
+            </div>
+            <div class="filters">
+              <label class="search-field"><input type="search" placeholder="Buscar socio..." [(ngModel)]="socioBusqueda" /></label>
+              <label class="select-label">Socio:
+                <select [(ngModel)]="selectedMember">
+                  <option value="TODOS">Todos</option>
+                  @for (socio of socios(); track socio.id) {
+                    <option [value]="socio.id">{{ socio.nombre }} {{ socio.apellido }} ({{ socio.dni }})</option>
+                  }
+                </select>
+              </label>
+            </div>
+            <div class="table-card compact-table">
+              <table>
+                <thead><tr><th>Socio</th><th>Mes</th><th>Importe</th><th>Estado</th><th>Vencimiento</th><th>Acciones</th></tr></thead>
+                <tbody>
+                  @for (cuota of cuotasFiltradas(); track cuota.id) {
+                    <tr>
+                      <td><strong>{{ cuota.socioNombre }}</strong><small class="muted-cell">{{ cuota.socioDni }}</small></td>
+                      <td>{{ cuota.mes }}</td>
+                      <td>{{ formatearImporte(cuota.importe) }}</td>
+                      <td><span class="badge" [class.pending]="cuota.estado !== 'PAGADO'">{{ estadoCuotaVisible(cuota) }}</span></td>
+                      <td>{{ cuota.vencimiento }}</td>
+                      <td><button type="button" [disabled]="cuota.estado === 'PAGADO'" [class.primary-action]="cuota.estado !== 'PAGADO'" class="mini-action" (click)="registrarPago(cuota)">{{ cuota.estado === 'PAGADO' ? 'Pagado' : 'Registrar pago' }}</button></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          @case ('asistencias') {
+            <div class="page-head row">
+              <div>
+                <h2>Tomar asistencia</h2>
+                <p>Selecciona los presentes</p>
+              </div>
+              <div class="attendance-controls">
+                <label>Actividad:
+                  <select [ngModel]="selectedActivityId()" (ngModelChange)="selectedActivityId.set($event); cargarAsistencia()">
+                    @for (actividad of actividades(); track actividad.id) {
+                      <option [ngValue]="actividad.id">{{ actividad.nombre }}</option>
+                    }
+                  </select>
+                </label>
+                <label>Fecha: <input type="date" [(ngModel)]="selectedAttendanceDate" (change)="cargarAsistencia()" /></label>
+              </div>
+            </div>
+            <div class="attendance-card">
+              @for (item of asistencia(); track item.socioId) {
+                <label class="check-row">
+                  <input type="checkbox" [checked]="item.presente" (change)="alternarPresente(item, $any($event.target).checked)" />
+                  <span>{{ item.socioNombre }}</span>
+                </label>
+              }
+            </div>
+            <div class="center-actions">
+              <button class="primary-action compact" type="button" (click)="guardarAsistencia()">Guardar asistencia</button>
+            </div>
+          }
+
+          @case ('reportes') {
+            <div class="page-head row">
+              <div>
+                <h2>Reportes</h2>
+                <p>Reportes de {{ nombreClubActivo() }}</p>
+              </div>
+              <span class="data-pill real">Datos del backend</span>
+            </div>
+            <div class="reports-grid">
+              <article class="panel">
+                <h3>Resumen del club</h3>
+                <div class="report-list">
+                  @for (club of reportes()?.sociosPorClub ?? []; track club.club) {
+                    <div class="report-row">
+                      <strong>{{ club.club }}</strong>
+                      <span>{{ club.socios }} socios · {{ club.actividades }} actividades</span>
+                    </div>
+                  }
+                </div>
+              </article>
+              <article class="panel">
+                <h3>Pagos por mes</h3>
+                <div class="bar-chart">
+                  @for (mes of reportes()?.pagosPorMes ?? []; track mes.mes) {
+                    <span [style.height.%]="alturaPagos(mes.valor)" [title]="formatearImporte(mes.valor)"></span>
+                  }
+                </div>
+                <div class="chart-labels">
+                  @for (mes of reportes()?.pagosPorMes ?? []; track mes.mes) {
+                    <span>{{ mes.mes }}<small>{{ formatearImporte(mes.valor) }}</small></span>
+                  }
+                </div>
+              </article>
+              <article class="panel">
+                <h3>Asistencia mensual</h3>
+                <div class="bar-chart attendance-bars">
+                  @for (mes of reportes()?.asistenciaMensual ?? []; track mes.mes) {
+                    <span [style.height.%]="alturaAsistencia(mes.valor)" [title]="mes.valor + ' presentes'"></span>
+                  }
+                </div>
+                <div class="chart-labels">
+                  @for (mes of reportes()?.asistenciaMensual ?? []; track mes.mes) {
+                    <span>{{ mes.mes }}<small>{{ mes.valor }}</small></span>
+                  }
+                </div>
+              </article>
+            </div>
+          }
+
+          @case ('usuarios') {
+            <div class="page-head row">
+              <div>
+                <h2>Usuarios</h2>
+                <p>Administra quienes pueden acceder a la app</p>
+              </div>
+              <button class="secondary-action" type="button" (click)="cargarUsuarios()">Actualizar</button>
+            </div>
+
+            @if (usuarioError()) {
+              <p class="form-error panel-error">{{ usuarioError() }}</p>
+            }
+
+            <form class="member-form user-create-form" (ngSubmit)="crearUsuario()">
+              <div class="form-grid users-form-grid">
+                <label><span>DNI</span><input name="dniUsuario" placeholder="DNI del usuario" [(ngModel)]="nuevoUsuario.dni" /></label>
+                <label><span>Nombre</span><input name="nombreUsuario" placeholder="Nombre" [(ngModel)]="nuevoUsuario.nombre" /></label>
+                <label><span>Apellido</span><input name="apellidoUsuario" placeholder="Apellido" [(ngModel)]="nuevoUsuario.apellido" /></label>
+                <label>
+                  <span>Rol</span>
+                  <select name="rolUsuario" [(ngModel)]="nuevoUsuario.rol">
+                    <option value="PROFESOR">Profesor</option>
+                    <option value="ADMINISTRADOR">Administrador</option>
+                    @if (esSuperusuario()) {
+                      <option value="SUPERUSUARIO">Superusuario</option>
+                    }
+                  </select>
+                </label>
+                @if (nuevoUsuario.rol !== 'SUPERUSUARIO') {
+                  <label>
+                    <span>Club</span>
+                    <select name="clubUsuario" [(ngModel)]="nuevoUsuario.clubId">
+                      @for (club of clubesDisponibles(); track club.clubId) {
+                        <option [ngValue]="club.clubId">{{ club.clubNombre }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label>
+                    <span>Rol en club</span>
+                    <select name="rolClubUsuario" [(ngModel)]="nuevoUsuario.rolClub">
+                      <option value="PROFESOR">Profesor</option>
+                      <option value="ADMINISTRADOR">Administrador</option>
+                    </select>
+                  </label>
+                }
+                <label><span>Contrasena inicial</span><input name="passwordInicial" type="password" placeholder="Minimo 6 caracteres" [(ngModel)]="nuevoUsuario.passwordInicial" /></label>
+              </div>
+              <div class="form-actions">
+                <span class="help-text">El usuario deberia cambiar esta contrasena en su primer ingreso.</span>
+                <button class="primary-action compact" type="submit">Crear usuario</button>
+              </div>
+            </form>
+
+            <div class="table-card users-table">
+              <table>
+                <thead>
+                  <tr><th>DNI</th><th>Nombre</th><th>Rol global</th><th>Clubes</th><th>Estado</th><th>Seguridad</th><th>Acciones</th></tr>
+                </thead>
+                <tbody>
+                  @for (usuario of usuarios(); track usuario.id) {
+                    <tr>
+                      <td>{{ usuario.dni }}</td>
+                      <td>{{ usuario.nombre }} {{ usuario.apellido }}</td>
+                      <td>{{ rolVisible(usuario.rol) }}</td>
+                      <td>
+                        @if (usuario.rol === 'SUPERUSUARIO') {
+                          Todos los clubes
+                        } @else {
+                          @for (club of usuario.clubes; track club.clubId) {
+                            <span class="club-chip">{{ club.clubNombre }} · {{ club.rol }}</span>
+                          }
+                        }
+                      </td>
+                      <td><span class="badge" [class.inactive]="usuario.estado === 'INACTIVO'">{{ usuario.estado }}</span></td>
+                      <td>{{ usuario.debeCambiarPassword ? 'Debe cambiar contrasena' : 'Actualizada' }}</td>
+                      <td class="actions">
+                        @if (usuario.rol !== 'SUPERUSUARIO' && usuario.estado === 'ACTIVO') {
+                          <button class="danger" type="button" (click)="desactivarUsuario(usuario.id)">Desactivar</button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          @case ('configuracion') {
+            <div class="page-head">
+              <div>
+                <h2>Configuracion</h2>
+                <p>Administra tu cuenta y preferencias del sistema</p>
+              </div>
+            </div>
+
+            <div class="settings-grid">
+              <article class="panel settings-profile">
+                <div class="panel-title">
+                  <h3>Datos personales</h3>
+                  <span>Actualiza como figura tu usuario en el sistema</span>
+                </div>
+                <form class="settings-form" (ngSubmit)="guardarPerfil()">
+                  <label>
+                    <span>Nombre</span>
+                    <input name="perfilNombre" [(ngModel)]="perfilNombre" />
+                  </label>
+                  <label>
+                    <span>Apellido</span>
+                    <input name="perfilApellido" [(ngModel)]="perfilApellido" />
+                  </label>
+                  <dl class="profile-list compact-profile">
+                    <div><dt>DNI</dt><dd>{{ currentUser()!.dni }}</dd></div>
+                    <div><dt>Rol</dt><dd>{{ rolVisible(currentUser()!.rol) }}</dd></div>
+                    <div><dt>Estado</dt><dd><span class="badge">{{ currentUser()!.estado }}</span></dd></div>
+                  </dl>
+                  @if (perfilError()) {
+                    <p class="form-error">{{ perfilError() }}</p>
+                  }
+                  @if (perfilMensaje()) {
+                    <p class="form-success">{{ perfilMensaje() }}</p>
+                  }
+                  <div class="form-actions compact-actions">
+                    <span class="help-text">El DNI y el rol se administran desde Usuarios.</span>
+                    <button class="primary-action compact" type="submit">Guardar cambios</button>
+                  </div>
+                </form>
+              </article>
+
+              <article class="panel">
+                <div class="panel-title">
+                  <h3>Seguridad</h3>
+                  <span>Cambia tu contrasena de acceso</span>
+                </div>
+                <form class="settings-form" (ngSubmit)="cambiarPasswordDesdeConfiguracion()">
+                  <label>
+                    <span>Contrasena actual</span>
+                    <input type="password" name="configPasswordActual" [(ngModel)]="configPasswordActual" />
+                  </label>
+                  <label>
+                    <span>Nueva contrasena</span>
+                    <input type="password" name="configNuevaPassword" placeholder="Minimo 8 caracteres" [(ngModel)]="configNuevaPassword" />
+                  </label>
+                  <label>
+                    <span>Confirmar nueva contrasena</span>
+                    <input type="password" name="configConfirmarNuevaPassword" [(ngModel)]="configConfirmarNuevaPassword" />
+                  </label>
+                  @if (configError()) {
+                    <p class="form-error">{{ configError() }}</p>
+                  }
+                  @if (configMensaje()) {
+                    <p class="form-success">{{ configMensaje() }}</p>
+                  }
+                  <div class="form-actions compact-actions">
+                    <span class="help-text">Usa una contrasena que no compartas con otros sistemas.</span>
+                    <button class="primary-action compact" type="submit">Actualizar contrasena</button>
+                  </div>
+                </form>
+              </article>
+            </div>
+          }
+
+          @default {
+            <div class="page-head">
+              <div>
+                <h2>{{ sectionTitle() }}</h2>
+                <p>Selecciona una opcion del menu para continuar.</p>
+              </div>
+            </div>
+          }
+        }
+      </section>
     </div>
-  </div>
-</main>
+  </main>
+  }
+}
 
-<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
-<!-- * * * * * * * * * * * The content above * * * * * * * * * * * * -->
-<!-- * * * * * * * * * * is only a placeholder * * * * * * * * * * * -->
-<!-- * * * * * * * * * * and can be replaced.  * * * * * * * * * * * -->
-<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
-<!-- * * * * * * * * * * End of Placeholder  * * * * * * * * * * * * -->
-<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
-
-
-<router-outlet />
