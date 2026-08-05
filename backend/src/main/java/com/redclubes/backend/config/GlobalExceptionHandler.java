@@ -3,12 +3,15 @@ package com.redclubes.backend.config;
 import com.redclubes.backend.clubes.ClubNoEncontradoException;
 import com.redclubes.backend.socios.SocioNoEncontradoException;
 import com.redclubes.backend.usuarios.AccesoDenegadoException;
+import com.redclubes.backend.usuarios.AutenticacionRequeridaException;
 import com.redclubes.backend.usuarios.CredencialesInvalidasException;
 import com.redclubes.backend.usuarios.UsuarioNoEncontradoException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -18,123 +21,107 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(SocioNoEncontradoException.class)
-    public ResponseEntity<ErrorResponse> manejarSocioNoEncontrado(
-            SocioNoEncontradoException exception,
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<ApiErrorResponse> manejarHeaderFaltante(
+            MissingRequestHeaderException exception,
             HttpServletRequest request
     ) {
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                exception.getMessage(),
-                request.getRequestURI()
-        );
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        if ("Authorization".equalsIgnoreCase(exception.getHeaderName())) {
+            return response(HttpStatus.UNAUTHORIZED, "AUTHENTICATION_REQUIRED",
+                    "Se requiere una sesion valida", request);
+        }
+        return response(HttpStatus.BAD_REQUEST, "MISSING_HEADER",
+                "Falta un encabezado obligatorio", request);
     }
 
-    @ExceptionHandler(UsuarioNoEncontradoException.class)
-    public ResponseEntity<ErrorResponse> manejarUsuarioNoEncontrado(
-            UsuarioNoEncontradoException exception,
+    @ExceptionHandler(AutenticacionRequeridaException.class)
+    public ResponseEntity<ApiErrorResponse> manejarAutenticacionRequerida(
+            AutenticacionRequeridaException exception,
             HttpServletRequest request
     ) {
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                exception.getMessage(),
-                request.getRequestURI()
-        );
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        return response(HttpStatus.UNAUTHORIZED, "AUTHENTICATION_REQUIRED", exception.getMessage(), request);
     }
 
-    @ExceptionHandler(ClubNoEncontradoException.class)
-    public ResponseEntity<ErrorResponse> manejarClubNoEncontrado(
-            ClubNoEncontradoException exception,
+    @ExceptionHandler({
+            SocioNoEncontradoException.class,
+            UsuarioNoEncontradoException.class,
+            ClubNoEncontradoException.class
+    })
+    public ResponseEntity<ApiErrorResponse> manejarRecursoNoEncontrado(
+            RuntimeException exception,
             HttpServletRequest request
     ) {
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                exception.getMessage(),
-                request.getRequestURI()
-        );
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        return response(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", exception.getMessage(), request);
     }
 
     @ExceptionHandler(CredencialesInvalidasException.class)
-    public ResponseEntity<ErrorResponse> manejarCredencialesInvalidas(
+    public ResponseEntity<ApiErrorResponse> manejarCredencialesInvalidas(
             CredencialesInvalidasException exception,
             HttpServletRequest request
     ) {
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.UNAUTHORIZED.value(),
-                exception.getMessage(),
-                request.getRequestURI()
-        );
-
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        return response(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", exception.getMessage(), request);
     }
 
     @ExceptionHandler(AccesoDenegadoException.class)
-    public ResponseEntity<ErrorResponse> manejarAccesoDenegado(
+    public ResponseEntity<ApiErrorResponse> manejarAccesoDenegado(
             AccesoDenegadoException exception,
             HttpServletRequest request
     ) {
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.FORBIDDEN.value(),
-                exception.getMessage(),
-                request.getRequestURI()
-        );
-
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+        return response(HttpStatus.FORBIDDEN, "ACCESS_DENIED", exception.getMessage(), request);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> manejarArgumentoInvalido(
+    public ResponseEntity<ApiErrorResponse> manejarArgumentoInvalido(
             IllegalArgumentException exception,
             HttpServletRequest request
     ) {
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                exception.getMessage(),
-                request.getRequestURI()
-        );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        return response(HttpStatus.BAD_REQUEST, "BUSINESS_RULE_VIOLATION", exception.getMessage(), request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ValidationErrorResponse> manejarErroresDeValidacion(
+    public ResponseEntity<ApiErrorResponse> manejarErroresDeValidacion(
             MethodArgumentNotValidException exception,
             HttpServletRequest request
     ) {
         Map<String, String> errores = new LinkedHashMap<>();
-
         exception.getBindingResult().getFieldErrors().forEach(error ->
-                errores.put(error.getField(), error.getDefaultMessage())
+                errores.putIfAbsent(error.getField(), error.getDefaultMessage())
         );
-
-        ValidationErrorResponse error = new ValidationErrorResponse(
+        ApiErrorResponse body = ApiErrorResponse.validation(
                 HttpStatus.BAD_REQUEST.value(),
-                "Hay errores de validacion",
+                "Los datos enviados no son validos",
                 errores,
                 request.getRequestURI()
         );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        return ResponseEntity.badRequest().body(body);
     }
 
-    public record ErrorResponse(
-            int codigo,
-            String mensaje,
-            String ruta
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiErrorResponse> manejarConflictoDeIntegridad(
+            DataIntegrityViolationException exception,
+            HttpServletRequest request
     ) {
+        return response(HttpStatus.CONFLICT, "DATA_INTEGRITY_VIOLATION",
+                "La operacion entra en conflicto con datos existentes", request);
     }
 
-    public record ValidationErrorResponse(
-            int codigo,
-            String mensaje,
-            Map<String, String> errores,
-            String ruta
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiErrorResponse> manejarErrorInesperado(
+            Exception exception,
+            HttpServletRequest request
     ) {
+        return response(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR",
+                "Ocurrio un error interno", request);
+    }
+
+    private ResponseEntity<ApiErrorResponse> response(
+            HttpStatus status,
+            String error,
+            String message,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(status).body(ApiErrorResponse.of(
+                status.value(), error, message, request.getRequestURI()
+        ));
     }
 }

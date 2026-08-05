@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
+
 public record CrearUsuarioRequest(
         @NotBlank(message = "El DNI es obligatorio")
         @Size(min = 7, max = 10, message = "El DNI debe tener entre 7 y 10 caracteres")
@@ -26,6 +28,8 @@ public record CrearUsuarioRequest(
 
         @NotBlank(message = "La contrasena inicial es obligatoria")
         @Size(min = 6, max = 80, message = "La contrasena debe tener entre 6 y 80 caracteres")
-        String passwordInicial
+        String passwordInicial,
+
+        List<AsignacionUsuarioRequest> asignaciones
 ) {
 }

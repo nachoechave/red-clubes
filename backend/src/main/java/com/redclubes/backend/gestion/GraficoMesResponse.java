@@ -1,4 +1,6 @@
 package com.redclubes.backend.gestion;
 
-public record GraficoMesResponse(String mes, int valor) {
+import java.math.BigDecimal;
+
+public record GraficoMesResponse(String mes, BigDecimal valor) {
 }

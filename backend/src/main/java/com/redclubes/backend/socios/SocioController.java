@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.List;
 import com.redclubes.backend.usuarios.AuthService;
+import com.redclubes.backend.usuarios.Usuario;
 
 @RestController
 public class SocioController {
@@ -16,71 +17,46 @@ public class SocioController {
         this.authService = authService;
     }
 
-    @GetMapping("/api/socios")
-    public List<Socio> listarSocios() {
-        return socioService.listarSocios();
-    }
-
     @GetMapping("/api/clubes/{clubId}/socios")
-    public List<Socio> listarSociosPorClub(
-            @RequestHeader("Authorization") String authorizationHeader,
+    public List<SocioResponse> listarSociosPorClub(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @PathVariable Long clubId
     ) {
         authService.exigirAccesoAClub(authorizationHeader, clubId);
         return socioService.listarSociosPorClub(clubId);
     }
 
-    @PostMapping("/api/socios")
-    public Socio crearSocio(@Valid @RequestBody Socio socio) {
-        return socioService.crearSocio(socio);
-    }
-
     @PostMapping("/api/clubes/{clubId}/socios")
-    public Socio crearSocioEnClub(
-            @RequestHeader("Authorization") String authorizationHeader,
+    public SocioResponse crearSocioEnClub(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @PathVariable Long clubId,
-            @Valid @RequestBody Socio socio
+            @Valid @RequestBody CrearSocioRequest request
     ) {
+        Usuario actor = authService.obtenerUsuarioAutenticado(authorizationHeader);
         authService.exigirAdministradorDeClub(authorizationHeader, clubId);
-        return socioService.crearSocioEnClub(clubId, socio);
+        return socioService.crearSocioEnClub(clubId, request, actor);
     }
-
-    @GetMapping("/api/socios/{id}")
-    public Socio obtenerSocioPorId(@PathVariable Long id) {
-        return socioService.obtenerSocioPorId(id);
-    }
-
-    @PutMapping("/api/socios/{id}")
-    public Socio actualizarSocio(
-        @PathVariable Long id,
-        @Valid @RequestBody Socio socioActualizado
-    ) {
-        return socioService.actualizarSocio(id, socioActualizado);
-    }   
 
     @PutMapping("/api/clubes/{clubId}/socios/{id}")
-    public Socio actualizarSocioEnClub(
-            @RequestHeader("Authorization") String authorizationHeader,
+    public SocioResponse actualizarSocioEnClub(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @PathVariable Long clubId,
             @PathVariable Long id,
-            @Valid @RequestBody Socio socioActualizado
+            @Valid @RequestBody ActualizarSocioRequest request
     ) {
+        Usuario actor = authService.obtenerUsuarioAutenticado(authorizationHeader);
         authService.exigirAdministradorDeClub(authorizationHeader, clubId);
-        return socioService.actualizarSocio(id, socioActualizado);
-    }
-
-    @DeleteMapping("/api/socios/{id}")
-    public Socio eliminarSocio(@PathVariable Long id) {
-        return socioService.eliminarSocio(id);
+        return socioService.actualizarSocioEnClub(clubId, id, request, actor);
     }
 
     @DeleteMapping("/api/clubes/{clubId}/socios/{id}")
-    public Socio eliminarSocioEnClub(
-            @RequestHeader("Authorization") String authorizationHeader,
+    public SocioResponse eliminarSocioEnClub(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @PathVariable Long clubId,
             @PathVariable Long id
     ) {
+        Usuario actor = authService.obtenerUsuarioAutenticado(authorizationHeader);
         authService.exigirAdministradorDeClub(authorizationHeader, clubId);
-        return socioService.eliminarSocio(id);
+        return socioService.eliminarSocioEnClub(clubId, id, actor);
     }
 }

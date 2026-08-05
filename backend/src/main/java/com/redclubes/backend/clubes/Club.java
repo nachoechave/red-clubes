@@ -6,6 +6,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -24,6 +25,9 @@ public class Club {
     @NotBlank(message = "La direccion es obligatoria")
     @Size(min = 2, max = 120, message = "La direccion debe tener entre 2 y 120 caracteres")
     private String direccion;
+
+    @Lob
+    private String logoUrl;
 
     @NotNull(message = "El estado es obligatorio")
     @Enumerated(EnumType.STRING)
@@ -54,6 +58,10 @@ public class Club {
         return estado;
     }
 
+    public String getLogoUrl() {
+        return logoUrl;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -64,6 +72,10 @@ public class Club {
 
     public void setDireccion(String direccion) {
         this.direccion = direccion;
+    }
+
+    public void setLogoUrl(String logoUrl) {
+        this.logoUrl = logoUrl;
     }
 
     public void setEstado(EstadoClub estado) {

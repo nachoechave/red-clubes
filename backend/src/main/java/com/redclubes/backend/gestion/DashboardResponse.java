@@ -1,5 +1,6 @@
 package com.redclubes.backend.gestion;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public record DashboardResponse(
@@ -9,7 +10,7 @@ public record DashboardResponse(
         int morosos,
         int actividadesActivas,
         int asistenciaMes,
-        int totalCobrado,
+        BigDecimal totalCobrado,
         List<MovimientoResponse> movimientos,
         List<ActividadResponse> proximasActividades,
         List<CuotaResponse> cuotasPendientes,

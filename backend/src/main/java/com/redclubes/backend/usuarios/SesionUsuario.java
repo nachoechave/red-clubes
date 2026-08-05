@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Column;
 
 import java.time.LocalDateTime;
 
@@ -15,7 +16,8 @@ public class SesionUsuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String token;
+    @Column(name = "token", nullable = false, unique = true)
+    private String tokenHash;
 
     private LocalDateTime fechaExpiracion;
 
@@ -25,8 +27,8 @@ public class SesionUsuario {
     public SesionUsuario() {
     }
 
-    public SesionUsuario(String token, LocalDateTime fechaExpiracion, Usuario usuario) {
-        this.token = token;
+    public SesionUsuario(String tokenHash, LocalDateTime fechaExpiracion, Usuario usuario) {
+        this.tokenHash = tokenHash;
         this.fechaExpiracion = fechaExpiracion;
         this.usuario = usuario;
     }
@@ -35,8 +37,8 @@ public class SesionUsuario {
         return id;
     }
 
-    public String getToken() {
-        return token;
+    public String getTokenHash() {
+        return tokenHash;
     }
 
     public LocalDateTime getFechaExpiracion() {

@@ -1,6 +1,7 @@
 package com.redclubes.backend.gestion;
 
 import com.redclubes.backend.clubes.Club;
+import com.redclubes.backend.usuarios.Usuario;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -24,6 +25,9 @@ public class Actividad {
 
     @NotBlank
     private String profesor;
+
+    @ManyToOne
+    private Usuario profesorUsuario;
 
     @NotBlank
     private String dias;
@@ -56,7 +60,13 @@ public class Actividad {
     }
 
     public String getProfesor() {
-        return profesor;
+        return profesorUsuario == null
+                ? profesor
+                : (profesorUsuario.getNombre() + " " + profesorUsuario.getApellido()).trim();
+    }
+
+    public Usuario getProfesorUsuario() {
+        return profesorUsuario;
     }
 
     public String getDias() {
@@ -97,6 +107,13 @@ public class Actividad {
 
     public void setProfesor(String profesor) {
         this.profesor = profesor;
+    }
+
+    public void setProfesorUsuario(Usuario profesorUsuario) {
+        this.profesorUsuario = profesorUsuario;
+        if (profesorUsuario != null) {
+            this.profesor = (profesorUsuario.getNombre() + " " + profesorUsuario.getApellido()).trim();
+        }
     }
 
     public void setDias(String dias) {

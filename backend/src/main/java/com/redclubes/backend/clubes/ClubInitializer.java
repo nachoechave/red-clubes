@@ -1,10 +1,12 @@
 package com.redclubes.backend.clubes;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnProperty(name = "redclubes.demo.enabled", havingValue = "true")
 @Order(1)
 public class ClubInitializer implements CommandLineRunner {
 

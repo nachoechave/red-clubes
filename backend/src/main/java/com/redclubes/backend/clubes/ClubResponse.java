@@ -4,6 +4,7 @@ public record ClubResponse(
         Long id,
         String nombre,
         String direccion,
+        String logoUrl,
         EstadoClub estado
 ) {
     public static ClubResponse desde(Club club) {
@@ -11,6 +12,7 @@ public record ClubResponse(
                 club.getId(),
                 club.getNombre(),
                 club.getDireccion(),
+                club.getLogoUrl(),
                 club.getEstado()
         );
     }

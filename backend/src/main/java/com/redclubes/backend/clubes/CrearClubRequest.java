@@ -10,6 +10,9 @@ public record CrearClubRequest(
 
         @NotBlank(message = "La direccion es obligatoria")
         @Size(min = 2, max = 120, message = "La direccion debe tener entre 2 y 120 caracteres")
-        String direccion
+        String direccion,
+
+        @Size(max = 1_500_000, message = "El logo es demasiado grande")
+        String logoUrl
 ) {
 }

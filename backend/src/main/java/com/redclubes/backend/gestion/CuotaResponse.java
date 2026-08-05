@@ -1,5 +1,6 @@
 package com.redclubes.backend.gestion;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record CuotaResponse(
@@ -9,8 +10,10 @@ public record CuotaResponse(
         String socioNombre,
         String socioDni,
         String mes,
-        int importe,
+        String periodo,
+        BigDecimal importe,
         EstadoCuota estado,
+        LocalDate fechaEmision,
         LocalDate vencimiento
 ) {
     public static CuotaResponse desde(Cuota cuota) {
@@ -20,9 +23,11 @@ public record CuotaResponse(
                 cuota.getSocio().getId(),
                 cuota.getSocio().getNombre() + " " + cuota.getSocio().getApellido(),
                 cuota.getSocio().getDni(),
-                cuota.getMes(),
+                cuota.getPeriodo(),
+                cuota.getPeriodo(),
                 cuota.getImporte(),
                 cuota.getEstado(),
+                cuota.getFechaEmision(),
                 cuota.getVencimiento()
         );
     }

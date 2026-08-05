@@ -9,6 +9,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDate;
+
 @Entity
 public class Socio {
 
@@ -32,6 +34,14 @@ public class Socio {
     private String estado;
 
     private String telefono;
+
+    private String email;
+
+    private LocalDate fechaNacimiento;
+
+    private LocalDate fechaAlta;
+
+    private Integer numeroSocio;
 
     private String direccion;
 
@@ -83,6 +93,22 @@ public class Socio {
         return telefono;
     }
 
+    public String getEmail() {
+        return email;
+    }
+
+    public LocalDate getFechaNacimiento() {
+        return fechaNacimiento;
+    }
+
+    public LocalDate getFechaAlta() {
+        return fechaAlta;
+    }
+
+    public Integer getNumeroSocio() {
+        return numeroSocio;
+    }
+
     public String getDireccion() {
         return direccion;
     }
@@ -125,6 +151,22 @@ public class Socio {
 
     public void setTelefono(String telefono) {
         this.telefono = telefono;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setFechaNacimiento(LocalDate fechaNacimiento) {
+        this.fechaNacimiento = fechaNacimiento;
+    }
+
+    public void setFechaAlta(LocalDate fechaAlta) {
+        this.fechaAlta = fechaAlta;
+    }
+
+    public void setNumeroSocio(Integer numeroSocio) {
+        this.numeroSocio = numeroSocio;
     }
 
     public void setDireccion(String direccion) {

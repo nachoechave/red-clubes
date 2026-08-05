@@ -1,6 +1,7 @@
 package com.redclubes.backend.clubes;
 
 import com.redclubes.backend.usuarios.AuthService;
+import com.redclubes.backend.usuarios.AccesoDenegadoException;
 import com.redclubes.backend.usuarios.RolUsuario;
 import com.redclubes.backend.usuarios.Usuario;
 import com.redclubes.backend.usuarios.UsuarioClubRepository;
@@ -41,7 +42,7 @@ public class ClubService {
     public ClubResponse crearClub(String authorizationHeader, CrearClubRequest request) {
         Usuario usuario = authService.obtenerUsuarioAutenticado(authorizationHeader);
         if (usuario.getRol() != RolUsuario.SUPERUSUARIO) {
-            throw new IllegalArgumentException("Solo el superusuario puede crear clubes");
+            throw new AccesoDenegadoException();
         }
 
         if (clubRepository.existsByNombre(request.nombre())) {
@@ -49,6 +50,38 @@ public class ClubService {
         }
 
         Club club = new Club(request.nombre(), request.direccion(), EstadoClub.ACTIVO);
+        club.setLogoUrl(normalizarLogo(request.logoUrl()));
         return ClubResponse.desde(clubRepository.save(club));
+    }
+
+    public ClubResponse actualizarClub(String authorizationHeader, Long clubId, ActualizarClubRequest request) {
+        Usuario usuario = authService.obtenerUsuarioAutenticado(authorizationHeader);
+        if (usuario.getRol() != RolUsuario.SUPERUSUARIO) {
+            throw new AccesoDenegadoException();
+        }
+
+        Club club = clubRepository.findById(clubId).orElseThrow(() -> new ClubNoEncontradoException(clubId));
+        clubRepository.findByNombre(request.nombre())
+                .filter(clubExistente -> !clubExistente.getId().equals(clubId))
+                .ifPresent(clubExistente -> {
+                    throw new IllegalArgumentException("Ya existe un club con ese nombre");
+                });
+
+        club.setNombre(request.nombre());
+        club.setDireccion(request.direccion());
+        club.setLogoUrl(normalizarLogo(request.logoUrl()));
+        club.setEstado(request.estado());
+
+        return ClubResponse.desde(clubRepository.save(club));
+    }
+
+    private String normalizarLogo(String logoUrl) {
+        if (logoUrl == null || logoUrl.isBlank()) {
+            return null;
+        }
+        if (!logoUrl.startsWith("data:image/")) {
+            throw new IllegalArgumentException("El logo debe ser una imagen valida");
+        }
+        return logoUrl;
     }
 }

@@ -1,0 +1,77 @@
+name: red-clubes
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-red_clubes}
+      MYSQL_USER: ${MYSQL_USER:-red_clubes_app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Defini MYSQL_PASSWORD en .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Defini MYSQL_ROOT_PASSWORD en .env}
+      TZ: America/Argentina/Buenos_Aires
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping --host=127.0.0.1 --user=$$MYSQL_USER --password=$$MYSQL_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks: [private]
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-red_clubes}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Argentina/Buenos_Aires
+      DB_USERNAME: ${MYSQL_USER:-red_clubes_app}
+      DB_PASSWORD: ${MYSQL_PASSWORD:?Defini MYSQL_PASSWORD en .env}
+      FLYWAY_ENABLED: "true"
+      FLYWAY_BASELINE_ON_MIGRATE: "false"
+      CORS_ALLOWED_ORIGINS: ${PUBLIC_ORIGIN:-http://localhost:8080}
+      AUTH_SESSION_HOURS: ${AUTH_SESSION_HOURS:-8}
+      AUTH_LOGIN_MAX_ATTEMPTS: ${AUTH_LOGIN_MAX_ATTEMPTS:-5}
+      AUTH_LOGIN_WINDOW_MINUTES: ${AUTH_LOGIN_WINDOW_MINUTES:-15}
+      AUTH_LOGIN_BLOCK_MINUTES: ${AUTH_LOGIN_BLOCK_MINUTES:-15}
+      DEMO_DATA_ENABLED: ${DEMO_DATA_ENABLED:-false}
+      BOOTSTRAP_SUPERUSER_ENABLED: ${BOOTSTRAP_SUPERUSER_ENABLED:-false}
+      BOOTSTRAP_SUPERUSER_DNI: ${BOOTSTRAP_SUPERUSER_DNI:-}
+      BOOTSTRAP_SUPERUSER_PASSWORD: ${BOOTSTRAP_SUPERUSER_PASSWORD:-}
+      BOOTSTRAP_SUPERUSER_NAME: ${BOOTSTRAP_SUPERUSER_NAME:-Administrador}
+      BOOTSTRAP_SUPERUSER_LASTNAME: ${BOOTSTRAP_SUPERUSER_LASTNAME:-Inicial}
+      TZ: America/Argentina/Buenos_Aires
+    depends_on:
+      mysql:
+        condition: service_healthy
+    expose: ["8080"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/api/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks: [private]
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks: [private]
+
+volumes:
+  mysql_data:
+
+networks:
+  private:
+    driver: bridge

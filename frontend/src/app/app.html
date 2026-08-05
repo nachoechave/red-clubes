@@ -2,26 +2,30 @@
   <main class="login-shell">
     <div class="login-card">
       <div class="brand-mark large">
-        <span></span>
-        <span></span>
-        <span></span>
+        <img class="brand-logo" src="/brand/red-clubes-logo.png" alt="Red Clubes" />
       </div>
-      <h1>Red Clubes</h1>
+      <h1 class="sr-only">Red Clubes</h1>
       <p>Gestion de clubes y centros de jubilados</p>
 
-      <form class="login-form" (ngSubmit)="login()">
+      <form class="login-form" [formGroup]="loginForm" (ngSubmit)="login()" novalidate>
         <label>
           <span>DNI o usuario</span>
-          <input type="text" name="user" placeholder="Ingresa tu DNI o usuario" [(ngModel)]="loginDni" />
+          <input type="text" inputmode="numeric" autocomplete="username" formControlName="dni" placeholder="Ingresa tu DNI" [attr.aria-invalid]="loginForm.controls.dni.invalid && loginForm.controls.dni.touched" />
         </label>
+        @if (loginForm.controls.dni.invalid && loginForm.controls.dni.touched) {
+          <p class="form-error">Ingresa un DNI de 7 a 11 digitos.</p>
+        }
         <label>
           <span>Contrasena</span>
-          <input type="password" name="password" placeholder="Ingresa tu contrasena" [(ngModel)]="loginPassword" />
+          <input type="password" autocomplete="current-password" formControlName="password" placeholder="Ingresa tu contrasena" [attr.aria-invalid]="loginForm.controls.password.invalid && loginForm.controls.password.touched" />
         </label>
+        @if (loginForm.controls.password.invalid && loginForm.controls.password.touched) {
+          <p class="form-error">La contrasena debe tener al menos 8 caracteres.</p>
+        }
         @if (loginError()) {
           <p class="form-error">{{ loginError() }}</p>
         }
-        <button class="primary-action" type="submit">Ingresar</button>
+        <button class="primary-action" type="submit" [disabled]="loginLoading()">{{ loginLoading() ? 'Ingresando...' : 'Ingresar' }}</button>
       </form>
     </div>
   </main>
@@ -30,9 +34,7 @@
     <main class="login-shell">
       <div class="login-card">
         <div class="brand-mark large">
-          <span></span>
-          <span></span>
-          <span></span>
+          <img class="brand-logo" src="/brand/red-clubes-logo.png" alt="Red Clubes" />
         </div>
         <h1>Actualizar contrasena</h1>
         <p>Por seguridad, cambia la contrasena inicial antes de continuar</p>
@@ -66,14 +68,14 @@
       </button>
       <div class="brand">
         <div class="brand-mark">
-          <span></span>
-          <span></span>
-          <span></span>
+          <img src="/brand/red-clubes-mark.png" alt="" aria-hidden="true" />
         </div>
         <strong>Red Clubes</strong>
       </div>
       <label class="club-switcher">
-        <span>Club</span>
+        @if (logoClubActivo()) {
+          <img class="club-switcher-logo" [src]="logoClubActivo()!" alt="" aria-hidden="true" />
+        }
         <select [ngModel]="clubActivoId()" (ngModelChange)="cambiarClub($event)">
           @for (club of clubesDisponibles(); track club.clubId) {
             <option [ngValue]="club.clubId">{{ club.clubNombre }}</option>
@@ -111,18 +113,60 @@
             [class.active]="activeSection() === item.id"
             (click)="goTo(item.id)"
           >
-            <span class="nav-icon" [attr.data-icon]="item.icon" aria-hidden="true"></span>
+            <span class="nav-icon" aria-hidden="true">
+              @switch (item.id) {
+                @case ('dashboard') {
+                  <svg lucideHouse></svg>
+                }
+                @case ('socios') {
+                  <svg lucideUsers></svg>
+                }
+                @case ('nuevo-socio') {
+                  <svg lucideUserPlus></svg>
+                }
+                @case ('clubes') {
+                  <svg lucideHeartHandshake></svg>
+                }
+                @case ('actividades') {
+                  <svg lucideCalendarDays></svg>
+                }
+                @case ('cuotas') {
+                  <svg lucideWalletCards></svg>
+                }
+                @case ('asistencias') {
+                  <svg lucideClipboardCheck></svg>
+                }
+                @case ('reportes') {
+                  <svg lucideChartNoAxesColumnIncreasing></svg>
+                }
+                @case ('usuarios') {
+                  <svg lucideKey></svg>
+                }
+                @case ('configuracion') {
+                  <svg lucideSettings></svg>
+                }
+                @case ('eventos') {
+                  <svg lucideCalendarDays></svg>
+                }
+              }
+            </span>
             <span>{{ item.label }}</span>
           </button>
         }
       </aside>
 
       <section class="content-panel">
+        @if (apiError()) {
+          <div class="form-error panel-error" role="alert">
+            {{ apiError() }}
+            <button type="button" class="mini-action" (click)="cerrarErrorGlobal()">Cerrar</button>
+          </div>
+        }
         @switch (activeSection()) {
           @case ('dashboard') {
             <div class="page-head row">
               <div>
-                <h2>Red Clubes</h2>
+                <h2>Inicio</h2>
                 <p>Resumen general de {{ nombreClubActivo() }}</p>
               </div>
               <span class="data-pill real">Datos del backend</span>
@@ -131,7 +175,22 @@
             <div class="metric-grid hero-metrics">
               @for (metric of metrics(); track metric.label) {
                 <article class="metric-card">
-                  <span class="metric-icon" [class.warn]="metric.danger"></span>
+                  <span class="metric-icon" [class.warn]="metric.danger" [class.money]="metric.label === 'Cuotas al dia'" [class.activity]="metric.label === 'Actividades'">
+                    @switch (metric.label) {
+                      @case ('Socios activos') {
+                        <svg lucideUsers aria-hidden="true"></svg>
+                      }
+                      @case ('Cuotas al dia') {
+                        <svg lucideWalletCards aria-hidden="true"></svg>
+                      }
+                      @case ('Morosos') {
+                        <svg lucideWalletCards aria-hidden="true"></svg>
+                      }
+                      @case ('Actividades') {
+                        <svg lucideCalendarDays aria-hidden="true"></svg>
+                      }
+                    }
+                  </span>
                   <span>{{ metric.label }}</span>
                   <strong>{{ metric.value }}</strong>
                   <small [class.danger]="metric.danger">{{ metric.change }}</small>
@@ -166,7 +225,7 @@
                     <span>Total cobrado</span>
                   </div>
                 </div>
-                <div class="insight-strip success">{{ dashboard()?.cuotasAlDia ?? 0 }} cuotas al dia</div>
+                <div class="insight-strip success">{{ cuotasCargadas() ? sociosAlDia() : dashboard()?.cuotasAlDia ?? 0 }} socios al dia</div>
               </article>
 
               <article class="panel next-panel">
@@ -188,18 +247,19 @@
             <div class="dashboard-bottom-grid">
               <article class="panel">
                 <div class="panel-title row-title">
-                  <h3>Ultimos movimientos</h3>
-                  <span class="data-pill real">Por club</span>
+                  <h3>Cumpleaños del mes</h3>
+                  <button class="link-action inline-link" type="button" (click)="goTo('socios')">Ver todos</button>
                 </div>
-                <div class="movement-list">
-                  @for (movement of movements(); track movement.descripcion) {
-                    <div class="movement">
-                      <span class="status-dot" [class.bad]="movement.tono === 'bad'"></span>
-                      <strong>{{ movement.descripcion }}</strong>
-                      <time>{{ movement.momento }}</time>
+                <div class="birthday-grid month-birthdays">
+                  @for (cumple of cumpleaniosDelMes(); track cumple.socio.id) {
+                    <div class="birthday-card">
+                      <span class="member-photo">{{ socioAvatarIniciales(cumple.socio) }}</span>
+                      <strong>{{ cumple.socio.nombre }} {{ cumple.socio.apellido }}</strong>
+                      <small>{{ fechaCumpleTexto(cumple.nacimiento) }}</small>
+                      <em>Cumple {{ cumple.edad }}</em>
                     </div>
                   } @empty {
-                    <p class="empty-inline">No hay movimientos recientes para este club.</p>
+                    <p class="empty-inline">No hay cumpleaños cargados para este club.</p>
                   }
                 </div>
               </article>
@@ -207,7 +267,7 @@
               <article class="panel">
                 <div class="panel-title row-title">
                   <h3>Socios recientes</h3>
-                  <span class="data-pill real">Por club</span>
+                  <button class="link-action inline-link" type="button" (click)="goTo('socios')">Ver todos</button>
                 </div>
                 <div class="mini-list">
                   @for (socio of sociosRecientesDelClub(); track socio.id) {
@@ -238,10 +298,10 @@
             <div class="quick-actions">
               <h3>Accesos rapidos</h3>
               <div class="quick-grid">
-                <button type="button" (click)="goTo('nuevo-socio')"><span data-icon="plus" aria-hidden="true"></span><strong>Nuevo socio</strong><small>Agregar un nuevo socio</small></button>
-                <button type="button" (click)="goTo('socios')"><span data-icon="users" aria-hidden="true"></span><strong>Ver socios</strong><small>Listado filtrado por club</small></button>
-                <button type="button" (click)="goTo('actividades')"><span data-icon="music" aria-hidden="true"></span><strong>Actividades</strong><small>Gestion desde backend</small></button>
-                <button type="button" (click)="goTo('reportes')"><span data-icon="chart" aria-hidden="true"></span><strong>Reportes</strong><small>Datos calculados</small></button>
+                <button type="button" (click)="goTo('nuevo-socio')"><span class="quick-icon add" aria-hidden="true"><svg lucideUserPlus></svg></span><strong>Nuevo socio</strong><small>Agregar un nuevo socio</small></button>
+                <button type="button" (click)="goTo('socios')"><span class="quick-icon members" aria-hidden="true"><svg lucideUsers></svg></span><strong>Ver socios</strong><small>Listado filtrado por club</small></button>
+                <button type="button" (click)="goTo('actividades')"><span class="quick-icon activity" aria-hidden="true"><svg lucideCalendarDays></svg></span><strong>Actividades</strong><small>Gestion desde backend</small></button>
+                <button type="button" (click)="goTo('reportes')"><span class="quick-icon reports" aria-hidden="true"><svg lucideChartNoAxesColumnIncreasing></svg></span><strong>Reportes</strong><small>Datos calculados</small></button>
               </div>
             </div>
           }
@@ -254,77 +314,180 @@
               </div>
               <button class="primary-action compact" type="button" (click)="goTo('nuevo-socio')">+ Nuevo socio</button>
             </div>
-            <div class="filters">
-              <label class="search-field">
-                <input type="search" placeholder="Buscar por nombre, apellido, DNI o telefono..." [(ngModel)]="socioBusqueda" />
-              </label>
-              <select [(ngModel)]="socioEstadoFiltro">
-                <option value="TODOS">Estado: Todos</option>
-                <option value="ACTIVO">Activos</option>
-                <option value="INACTIVO">Inactivos</option>
-              </select>
-            </div>
-            <div class="table-card">
-              <table>
-                <thead>
-                  <tr><th>Nombre</th><th>DNI</th><th>Telefono</th><th>Estado</th><th>Acciones</th></tr>
-                </thead>
-                <tbody>
-                  @for (socio of sociosFiltrados(); track socio.dni) {
-                    <tr>
-                      <td>{{ socio.nombre }} {{ socio.apellido }}</td>
-                      <td>{{ socio.dni }}</td>
-                      <td>{{ socio.telefono }}</td>
-                      <td><span class="badge" [class.inactive]="socio.estado === 'INACTIVO'">{{ socio.estado }}</span></td>
-                      <td class="actions">
-                        <button type="button" (click)="verSocio(socio)">Ver</button>
-                        <button type="button" (click)="editarSocio(socio)">Editar</button>
-                        <button class="danger" type="button" (click)="alternarEstadoSocio(socio)">
-                          {{ socio.estado === 'ACTIVO' ? 'Baja' : 'Activar' }}
-                        </button>
-                      </td>
-                    </tr>
-                  } @empty {
-                    <tr>
-                      <td colspan="5" class="empty-cell">No hay socios para los filtros seleccionados.</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-              <div class="pagination"><span>Mostrando {{ sociosFiltrados().length }} de {{ socios().length }} socios</span></div>
-            </div>
+            <div class="socios-layout">
+              <div class="socios-main">
+                <div class="metric-grid socios-metrics">
+                  <article class="metric-card">
+                    <span class="metric-icon members"><svg lucideUserRoundCheck aria-hidden="true"></svg></span>
+                    <span>Socios activos</span>
+                    <strong>{{ dashboard()?.sociosActivos ?? socios().length }}</strong>
+                    <small>{{ socios().length }} socios totales</small>
+                  </article>
+                  <article class="metric-card">
+                    <span class="metric-icon warn"><svg lucideWalletCards aria-hidden="true"></svg></span>
+                    <span>Morosos</span>
+                    <strong>{{ sociosMorosos() }}</strong>
+                    <small class="danger">{{ sociosMorosos() }} requieren revision</small>
+                  </article>
+                  <article class="metric-card">
+                    <span class="metric-icon add"><svg lucideUserPlus aria-hidden="true"></svg></span>
+                    <span>Nuevos este mes</span>
+                    <strong>{{ sociosRecientesDelClub().length }}</strong>
+                    <small>En {{ nombreClubActivo() }}</small>
+                  </article>
+                </div>
 
-            @if (socioSeleccionado()) {
-              <div class="modal-backdrop">
-                <article class="modal-panel">
-                  <div class="modal-head">
-                    <div>
-                      <h3>{{ socioSeleccionado()!.nombre }} {{ socioSeleccionado()!.apellido }}</h3>
-                      <p>Detalle del socio</p>
+                <div class="socios-filter-panel">
+                  <label>
+                    <span>Buscar por apellido</span>
+                    <input type="search" placeholder="Ej. Gonzalez" [(ngModel)]="socioApellidoFiltro" />
+                  </label>
+                  <label>
+                    <span>Estado</span>
+                    <select [(ngModel)]="socioEstadoFiltro">
+                      <option value="TODOS">Todos</option>
+                      <option value="ACTIVO">Activos</option>
+                      <option value="INACTIVO">Inactivos</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Actividad</span>
+                    <select [(ngModel)]="socioActividadFiltro">
+                      <option value="TODAS">Todas</option>
+                      @for (actividad of actividadesFiltro(); track actividad) {
+                        <option [value]="actividad">{{ actividad }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label>
+                    <span>Edad</span>
+                    <select [(ngModel)]="socioEdadFiltro">
+                      <option value="TODOS">Todos</option>
+                      <option value="60_69">60 a 69</option>
+                      <option value="70_79">70 a 79</option>
+                      <option value="80_MAS">80 o mas</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="table-card socios-table">
+                  <div class="table-toolbar">
+                    <strong>{{ sociosFiltrados().length }} socios encontrados</strong>
+                    <div class="actions">
+                      <button type="button">Exportar</button>
+                      <button class="primary-action compact" type="button" (click)="goTo('nuevo-socio')">+ Nuevo socio</button>
                     </div>
-                    <button class="icon-button" type="button" aria-label="Cerrar" (click)="cerrarPanelSocio()">X</button>
                   </div>
-                  <dl class="profile-list">
-                    <div><dt>DNI</dt><dd>{{ socioSeleccionado()!.dni }}</dd></div>
-                    <div><dt>Telefono</dt><dd>{{ socioSeleccionado()!.telefono }}</dd></div>
-                    <div><dt>Direccion</dt><dd>{{ socioSeleccionado()!.direccion }}</dd></div>
-                    <div><dt>Estado</dt><dd><span class="badge" [class.inactive]="socioSeleccionado()!.estado === 'INACTIVO'">{{ socioSeleccionado()!.estado }}</span></dd></div>
-                  </dl>
-                  <div class="panel-title modal-section-title">
-                    <h3>Contacto de emergencia</h3>
-                  </div>
-                  <dl class="profile-list">
-                    <div><dt>Nombre</dt><dd>{{ socioSeleccionado()!.emergenciaNombre }}</dd></div>
-                    <div><dt>Telefono</dt><dd>{{ socioSeleccionado()!.emergenciaTelefono }}</dd></div>
-                    <div><dt>Relacion</dt><dd>{{ socioSeleccionado()!.emergenciaRelacion }}</dd></div>
-                  </dl>
-                  <div class="form-actions compact-actions">
-                    <button class="secondary-action" type="button" (click)="cerrarPanelSocio()">Cerrar</button>
-                    <button class="primary-action compact" type="button" (click)="editarSocio(socioSeleccionado()!)">Editar socio</button>
-                  </div>
-                </article>
+                  <table>
+                    <thead>
+                      <tr><th>Nombre</th><th>DNI</th><th>Edad</th><th>Telefono</th><th>Estado</th><th>Cuota</th><th>Actividades</th><th>Acciones</th></tr>
+                    </thead>
+                    <tbody>
+                      @for (socio of sociosFiltrados(); track socio.dni) {
+                        <tr class="selectable-row" [class.selected]="socioPreview()!.id === socio.id" (click)="prepararInscripcionesSocio(socio)">
+                          <td><span class="table-person"><span class="member-photo small">{{ socioAvatarIniciales(socio) }}</span>{{ socio.nombre }} {{ socio.apellido }}</span></td>
+                          <td>{{ socio.dni }}</td>
+                          <td>{{ socioEdadTexto(socio) }}</td>
+                          <td>{{ socio.telefono }}</td>
+                          <td><span class="badge" [class.inactive]="socio.estado === 'INACTIVO'">{{ socio.estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}</span></td>
+                          <td>
+                            <span class="badge" [class.pending]="socioCuotaResumen(socio).estado === 'Moroso'">
+                              {{ socioCuotaResumen(socio).estado === 'Moroso' ? formatearImporte(socioCuotaResumen(socio).importe) : socioCuotaResumen(socio).estado }}
+                            </span>
+                          </td>
+                          <td>{{ socioActividadesCount(socio) }}</td>
+                          <td class="actions">
+                            <button type="button" (click)="prepararInscripcionesSocio(socio); $event.stopPropagation()">Ver</button>
+                            <button type="button" (click)="editarSocio(socio); $event.stopPropagation()">Editar</button>
+                            <button class="danger" type="button" (click)="alternarEstadoSocio(socio); $event.stopPropagation()">
+                              {{ socio.estado === 'ACTIVO' ? 'Baja' : 'Activar' }}
+                            </button>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="8" class="empty-cell">No hay socios para los filtros seleccionados.</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                  <div class="pagination"><span>Mostrando {{ sociosFiltrados().length }} de {{ socios().length }} socios</span></div>
+                </div>
               </div>
-            }
+
+              <aside class="member-preview">
+                @if (socioPreview()) {
+                  <div class="preview-head">
+                    <span class="member-photo large">{{ socioAvatarIniciales(socioPreview()!) }}</span>
+                    <h3>{{ socioPreview()!.nombre }} {{ socioPreview()!.apellido }}</h3>
+                    <span class="badge" [class.inactive]="socioPreview()!.estado === 'INACTIVO'">{{ socioPreview()!.estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}</span>
+                    <small>Socio desde {{ socioAltaTexto(socioPreview()!) }}</small>
+                    <small>N de socio: {{ socioNumero(socioPreview()!) }}</small>
+                  </div>
+
+                  <div class="preview-section">
+                    <h3>Informacion personal</h3>
+                    <dl class="preview-list">
+                      <div><dt>DNI</dt><dd>{{ socioPreview()!.dni }}</dd></div>
+                      <div><dt>Fecha de nacimiento</dt><dd>{{ socioNacimientoTexto(socioPreview()!) }}</dd></div>
+                      <div><dt>Telefono</dt><dd>{{ socioPreview()!.telefono || 'Sin telefono' }}</dd></div>
+                      <div><dt>Email</dt><dd>{{ socioPreview()!.email || 'Sin email' }}</dd></div>
+                      <div><dt>Direccion</dt><dd>{{ socioPreview()!.direccion || 'Sin direccion' }}</dd></div>
+                    </dl>
+                  </div>
+
+                  <div class="preview-section">
+                    <h3>Contacto de emergencia</h3>
+                    <dl class="preview-list">
+                      <div><dt>Nombre</dt><dd>{{ socioPreview()!.emergenciaNombre || '-' }}</dd></div>
+                      <div><dt>Telefono</dt><dd>{{ socioPreview()!.emergenciaTelefono || '-' }}</dd></div>
+                      <div><dt>Vinculo</dt><dd>{{ socioPreview()!.emergenciaRelacion || '-' }}</dd></div>
+                    </dl>
+                  </div>
+
+                  <div class="preview-section">
+                    <h3>Actividades inscriptas</h3>
+                    <div class="preview-activities">
+                      @for (actividad of socioActividadesPreview(socioPreview()!); track actividad.nombre) {
+                        <div>
+                          <span class="mini-thumb activity"></span>
+                          <p><strong>{{ actividad.nombre }}</strong><small>{{ actividad.dias }}</small></p>
+                        </div>
+                      }
+                      @empty {
+                        <p class="empty-inline">Sin actividades inscriptas.</p>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="preview-section">
+                    <h3>Matricular en actividades</h3>
+                    <div class="enrollment-list">
+                      @for (actividad of actividades(); track actividad.id) {
+                        <label class="enrollment-option">
+                          <input
+                            type="checkbox"
+                            [checked]="socioActividadSeleccionada(actividad.id)"
+                            (change)="alternarActividadSocio(actividad.id, $any($event.target).checked)"
+                          />
+                          <span>
+                            <strong>{{ actividad.nombre }}</strong>
+                            <small>{{ actividad.dias }}</small>
+                          </span>
+                        </label>
+                      } @empty {
+                        <p class="empty-inline">Primero crea una actividad o taller.</p>
+                      }
+                    </div>
+                    <button class="primary-action compact preview-edit" type="button" (click)="guardarInscripcionesSocio(socioPreview()!)">Guardar actividades</button>
+                  </div>
+
+                  <button class="secondary-action preview-edit" type="button" (click)="editarSocio(socioPreview()!)">Editar socio</button>
+                } @else {
+                  <p class="empty-inline">Selecciona un socio para ver el detalle.</p>
+                }
+              </aside>
+            </div>
 
             @if (socioEditando()) {
               <div class="modal-backdrop">
@@ -337,10 +500,15 @@
                     <button class="icon-button" type="button" aria-label="Cerrar" (click)="cerrarPanelSocio()">X</button>
                   </div>
                   <form class="settings-form" (ngSubmit)="guardarSocioEditado()">
+                    @if (dataError()) {
+                      <p class="form-error panel-error">{{ dataError() }}</p>
+                    }
                     <div class="form-grid">
                       <label><span>Nombre</span><input name="socioNombre" [(ngModel)]="socioForm.nombre" /></label>
                       <label><span>Apellido</span><input name="socioApellido" [(ngModel)]="socioForm.apellido" /></label>
                       <label><span>DNI</span><input name="socioDni" [(ngModel)]="socioForm.dni" /></label>
+                      <label><span>Email</span><input type="email" name="socioEmail" [(ngModel)]="socioForm.email" /></label>
+                      <label><span>Fecha de nacimiento</span><input type="date" name="socioFechaNacimiento" [(ngModel)]="socioForm.fechaNacimiento" /></label>
                       <label><span>Telefono</span><input name="socioTelefono" [(ngModel)]="socioForm.telefono" /></label>
                       <label class="wide"><span>Direccion</span><textarea name="socioDireccion" [(ngModel)]="socioForm.direccion"></textarea></label>
                       <label><span>Estado</span><select name="socioEstado" [(ngModel)]="socioForm.estado"><option value="ACTIVO">ACTIVO</option><option value="INACTIVO">INACTIVO</option></select></label>
@@ -350,7 +518,7 @@
                     </div>
                     <div class="form-actions compact-actions">
                       <button class="secondary-action" type="button" (click)="cerrarPanelSocio()">Cancelar</button>
-                      <button class="primary-action compact" type="submit">Guardar cambios</button>
+                      <button class="primary-action compact" type="button" (click)="guardarSocioEditado()">Guardar cambios</button>
                     </div>
                   </form>
                 </article>
@@ -364,13 +532,18 @@
                 <h2>Nuevo socio</h2>
                 <p>Completa los datos del nuevo socio para {{ nombreClubActivo() }}</p>
               </div>
-              <div class="breadcrumbs">Dashboard / Socios / Nuevo</div>
+              <div class="breadcrumbs">Inicio / Socios / Nuevo</div>
             </div>
             <form class="member-form" (ngSubmit)="guardarNuevoSocio()">
+              @if (dataError()) {
+                <p class="form-error panel-error">{{ dataError() }}</p>
+              }
               <div class="form-grid">
                 <label><span>Nombre</span><input name="nuevoSocioNombre" placeholder="Ingresa el nombre" [(ngModel)]="nuevoSocioForm.nombre" required /></label>
                 <label><span>Apellido</span><input name="nuevoSocioApellido" placeholder="Ingresa el apellido" [(ngModel)]="nuevoSocioForm.apellido" required /></label>
                 <label><span>DNI</span><input name="nuevoSocioDni" placeholder="Ingresa el DNI" [(ngModel)]="nuevoSocioForm.dni" required /></label>
+                <label><span>Email</span><input type="email" name="nuevoSocioEmail" placeholder="Ingresa el email" [(ngModel)]="nuevoSocioForm.email" /></label>
+                <label><span>Fecha de nacimiento</span><input type="date" name="nuevoSocioFechaNacimiento" [(ngModel)]="nuevoSocioForm.fechaNacimiento" /></label>
                 <label><span>Telefono</span><input name="nuevoSocioTelefono" placeholder="Ingresa el telefono" [(ngModel)]="nuevoSocioForm.telefono" /></label>
                 <label class="wide"><span>Direccion</span><textarea name="nuevoSocioDireccion" placeholder="Ingresa la direccion" [(ngModel)]="nuevoSocioForm.direccion"></textarea></label>
                 <label><span>Contacto de emergencia</span><input name="nuevoSocioEmergenciaNombre" [(ngModel)]="nuevoSocioForm.emergenciaNombre" /></label>
@@ -391,21 +564,89 @@
                 <h2>Clubes</h2>
                 <p>Gestiona los clubes y centros</p>
               </div>
-              <span class="data-pill real">Datos del backend</span>
+              @if (esSuperusuario()) {
+                <button class="primary-action compact" type="button" (click)="nuevoClub()">+ Nuevo club</button>
+              } @else {
+                <span class="data-pill real">Datos del backend</span>
+              }
             </div>
+            @if (clubError()) {
+              <p class="form-error panel-error">{{ clubError() }}</p>
+            }
+            @if (clubMensaje()) {
+              <p class="form-success panel-error">{{ clubMensaje() }}</p>
+            }
             <div class="club-grid">
               @for (club of clubes(); track club.id) {
                 <article class="club-card">
-                  <div class="club-icon"></div>
+                  @if (club.logoUrl) {
+                    <img class="club-logo" [src]="club.logoUrl" [alt]="club.nombre" />
+                  } @else {
+                    <div class="club-logo placeholder"><svg lucideHeartHandshake aria-hidden="true"></svg></div>
+                  }
                   <h3>{{ club.nombre }}</h3>
                   <dl>
                     <div><dt>Direccion:</dt><dd>{{ club.direccion }}</dd></div>
                     <div><dt>Estado:</dt><dd>{{ club.estado }}</dd></div>
                   </dl>
-                  <div class="card-actions"><button type="button" (click)="cambiarClub(club.id); goTo('dashboard')">Ver dashboard</button></div>
+                  <div class="card-actions">
+                    <button type="button" (click)="cambiarClub(club.id); goTo('dashboard')">Ver inicio</button>
+                    @if (esSuperusuario()) {
+                      <button class="primary-action compact" type="button" (click)="editarClub(club)">Editar</button>
+                    }
+                  </div>
                 </article>
+              } @empty {
+                <div class="empty-state wide">
+                  <strong>No hay clubes cargados</strong>
+                  <span>Comenza creando el primer club para cargar socios, actividades y usuarios.</span>
+                  @if (esSuperusuario()) {
+                    <button class="primary-action compact" type="button" (click)="nuevoClub()">+ Nuevo club</button>
+                  }
+                </div>
               }
             </div>
+
+            @if (clubPanelAbierto()) {
+              <div class="modal-backdrop">
+                <article class="modal-panel">
+                  <div class="modal-head">
+                    <div>
+                      <h3>{{ clubEditando() ? 'Editar club' : 'Nuevo club' }}</h3>
+                      <p>Solo disponible para superusuario</p>
+                    </div>
+                    <button class="icon-button" type="button" aria-label="Cerrar" (click)="cerrarPanelClub()">X</button>
+                  </div>
+                  <form class="settings-form" (ngSubmit)="guardarClub()">
+                    <label><span>Nombre</span><input name="clubNombre" [(ngModel)]="clubForm.nombre" required /></label>
+                    <label><span>Direccion</span><input name="clubDireccion" [(ngModel)]="clubForm.direccion" required /></label>
+                    <label>
+                      <span>Logo</span>
+                      <input name="clubLogo" type="file" accept="image/*" (change)="cargarLogoClub($event)" />
+                    </label>
+                    <div class="logo-preview-row">
+                      @if (clubForm.logoUrl) {
+                        <img class="club-logo large" [src]="clubForm.logoUrl" alt="" aria-hidden="true" />
+                        <button class="secondary-action compact" type="button" (click)="quitarLogoClub()">Quitar logo</button>
+                      } @else {
+                        <div class="club-logo large placeholder"><svg lucideHeartHandshake aria-hidden="true"></svg></div>
+                      }
+                    </div>
+                    <label>
+                      <span>Estado</span>
+                      <select name="clubEstado" [(ngModel)]="clubForm.estado">
+                        <option value="ACTIVO">ACTIVO</option>
+                        <option value="INACTIVO">INACTIVO</option>
+                      </select>
+                    </label>
+                    <div class="form-actions compact-actions">
+                      <button class="secondary-action" type="button" (click)="cerrarPanelClub()">Cancelar</button>
+                      <button class="primary-action compact" type="submit">{{ clubEditando() ? 'Guardar cambios' : 'Crear club' }}</button>
+                    </div>
+                  </form>
+                </article>
+              </div>
+            }
           }
 
           @case ('actividades') {
@@ -416,41 +657,149 @@
               </div>
               <span class="data-pill real">Datos del backend</span>
             </div>
-            <form class="member-form activity-create-form" (ngSubmit)="crearActividad()">
-              <div class="form-grid">
-                <label><span>Actividad o taller</span><input name="actividadNombre" placeholder="Ej: Taller de memoria" [(ngModel)]="nuevaActividad.nombre" required /></label>
-                <label><span>Profesor/a</span><input name="actividadProfesor" placeholder="Nombre del responsable" [(ngModel)]="nuevaActividad.profesor" required /></label>
-                <label><span>Dia y horario</span><input name="actividadDias" placeholder="Ej: Martes 10:00 hs" [(ngModel)]="nuevaActividad.dias" required /></label>
-                <label>
-                  <span>Categoria</span>
-                  <select name="actividadCategoria" [(ngModel)]="nuevaActividad.categoria">
-                    <option>Bienestar</option>
-                    <option>Cultura</option>
-                    <option>Manualidades</option>
-                    <option>Actividad fisica</option>
-                  </select>
-                </label>
-                <label>
-                  <span>Icono</span>
-                  <select name="actividadIcono" [(ngModel)]="nuevaActividad.icono">
-                    <option value="check">General</option>
-                    <option value="person">Bienestar</option>
-                    <option value="note">Musica</option>
-                    <option value="palette">Arte</option>
-                    <option value="mask">Teatro</option>
-                  </select>
-                </label>
-                <label><span>Cupo</span><input type="number" min="1" name="actividadCupo" [(ngModel)]="nuevaActividad.cupo" /></label>
-              </div>
-              <div class="form-actions">
-                <span class="help-text">La actividad queda asociada a {{ nombreClubActivo() }}.</span>
-                <button class="primary-action compact" type="submit">Crear actividad</button>
-              </div>
-            </form>
+            @if (dataError()) {
+              <p class="form-error panel-error">{{ dataError() }}</p>
+            }
+            @if (esAdministradorClubActual() && !actividadEditando()) {
+                <form class="member-form activity-create-form" (ngSubmit)="crearActividad()">
+                <div class="form-grid">
+                  <label><span>Actividad o taller</span><input name="actividadNombre" placeholder="Ej: Taller de memoria" [(ngModel)]="nuevaActividad.nombre" required /></label>
+                  <label>
+                    <span>Profesor/a</span>
+                    <select name="actividadProfesor" [(ngModel)]="nuevaActividad.profesorUsuarioId" required>
+                      <option [ngValue]="null" disabled>Selecciona un profesor</option>
+                      @for (profesor of profesoresDelClubActual(); track profesor.id) {
+                        <option [ngValue]="profesor.id">{{ profesor.nombre }} {{ profesor.apellido }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label>
+                    <span>Dia</span>
+                    <select name="actividadDia" [(ngModel)]="nuevaActividadDia">
+                      @for (dia of diasSemana; track dia) {
+                        <option [value]="dia">{{ dia }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label><span>Horario</span><input type="time" name="actividadHora" [(ngModel)]="nuevaActividadHora" required /></label>
+                  <label>
+                    <span>Categoria</span>
+                    <select name="actividadCategoria" [(ngModel)]="nuevaActividad.categoria">
+                      <option>Bienestar</option>
+                      <option>Cultura</option>
+                      <option>Manualidades</option>
+                      <option>Actividad fisica</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Icono</span>
+                    <select name="actividadIcono" [(ngModel)]="nuevaActividad.icono">
+                      <option value="check">General</option>
+                      <option value="person">Bienestar</option>
+                      <option value="note">Musica</option>
+                      <option value="palette">Arte</option>
+                      <option value="mask">Teatro</option>
+                    </select>
+                  </label>
+                  <label><span>Cupo</span><input type="number" min="1" name="actividadCupo" [(ngModel)]="nuevaActividad.cupo" /></label>
+                </div>
+                <div class="form-actions">
+                  <span class="help-text">
+                    @if (profesoresDelClubActual().length === 0) {
+                      No hay profesores activos asignados a {{ nombreClubActivo() }}.
+                    } @else {
+                      La actividad queda asociada a {{ nombreClubActivo() }}.
+                    }
+                  </span>
+                  <button class="primary-action compact" type="submit">Crear actividad</button>
+                </div>
+              </form>
+            }
+            @if (actividadEditando()) {
+              <form class="member-form activity-create-form" (ngSubmit)="guardarActividadEditada()">
+                <div class="form-grid">
+                  <label><span>Actividad o taller</span><input name="editarActividadNombre" [(ngModel)]="actividadForm.nombre" required /></label>
+                  <label>
+                    <span>Profesor/a</span>
+                    <select name="editarActividadProfesor" [(ngModel)]="actividadForm.profesorUsuarioId" required>
+                      <option [ngValue]="null" disabled>Selecciona un profesor</option>
+                      @for (profesor of profesoresDelClubActual(); track profesor.id) {
+                        <option [ngValue]="profesor.id">{{ profesor.nombre }} {{ profesor.apellido }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label>
+                    <span>Dia</span>
+                    <select name="editarActividadDia" [(ngModel)]="actividadFormDia">
+                      @for (dia of diasSemana; track dia) {
+                        <option [value]="dia">{{ dia }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label><span>Horario</span><input type="time" name="editarActividadHora" [(ngModel)]="actividadFormHora" required /></label>
+                  <label>
+                    <span>Categoria</span>
+                    <select name="editarActividadCategoria" [(ngModel)]="actividadForm.categoria">
+                      <option>Bienestar</option>
+                      <option>Cultura</option>
+                      <option>Manualidades</option>
+                      <option>Actividad fisica</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Icono</span>
+                    <select name="editarActividadIcono" [(ngModel)]="actividadForm.icono">
+                      <option value="check">General</option>
+                      <option value="person">Bienestar</option>
+                      <option value="note">Musica</option>
+                      <option value="palette">Arte</option>
+                      <option value="mask">Teatro</option>
+                    </select>
+                  </label>
+                  <label><span>Cupo</span><input type="number" min="1" name="editarActividadCupo" [(ngModel)]="actividadForm.cupo" /></label>
+                  <label>
+                    <span>Estado</span>
+                    <select name="editarActividadEstado" [(ngModel)]="actividadForm.estado">
+                      <option value="ACTIVA">Activa</option>
+                      <option value="INACTIVA">Inactiva</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="form-actions">
+                  <span class="help-text">Editando {{ actividadEditando()!.nombre }}.</span>
+
+                  <button class="secondary-action" type="button" (click)="cancelarEdicionActividad()">
+                  Cancelar
+                  </button>
+
+                  <button class="primary-action compact" type="submit">
+                  Guardar cambios
+                  </button>
+                </div>
+              </form>
+            }
             <div class="activity-list">
               @for (actividad of actividades(); track actividad.id) {
                 <article class="activity-card">
-                  <div class="activity-icon" [attr.data-icon]="actividad.icono" aria-hidden="true"></div>
+                  <div class="activity-icon" [attr.data-icon]="actividad.icono" aria-hidden="true">
+                    @switch (actividad.icono) {
+                      @case ('person') {
+                        <svg lucideHeartPulse></svg>
+                      }
+                      @case ('note') {
+                        <svg lucideMusic></svg>
+                      }
+                      @case ('palette') {
+                        <svg lucidePalette></svg>
+                      }
+                      @case ('mask') {
+                        <svg lucideTheater></svg>
+                      }
+                      @default {
+                        <svg lucideDumbbell></svg>
+                      }
+                    }
+                  </div>
                   <div class="activity-info">
                     <h3>{{ actividad.nombre }}</h3>
                     <p><strong>Club:</strong> {{ actividad.clubNombre }}</p>
@@ -463,6 +812,9 @@
                   </div>
                   <div class="card-actions inline">
                     <button type="button" (click)="goTo('socios')">Ver socios</button>
+                    @if (esAdministradorClubActual()) {
+                      <button type="button" (click)="editarActividad(actividad)">Editar</button>
+                    }
                     <button class="primary-action compact" type="button" (click)="seleccionarActividadAsistencia(actividad)">Tomar asistencia</button>
                   </div>
                 </article>
@@ -488,53 +840,256 @@
                   }
                 </select>
               </label>
+              <label class="select-label">Periodo:<input type="month" [(ngModel)]="cuotaPeriodo" (ngModelChange)="actualizarVencimientoCuota($event)" /></label>
+              <label class="select-label">Importe:<input type="number" min="0.01" step="0.01" [(ngModel)]="cuotaImporte" /></label>
+              <label class="select-label">Vencimiento:<input type="date" [(ngModel)]="cuotaVencimiento" /></label>
+              <label class="select-label">Medio de pago:
+                <select [(ngModel)]="medioPago">
+                  <option value="EFECTIVO">Efectivo</option>
+                  <option value="TRANSFERENCIA">Transferencia</option>
+                  <option value="TARJETA">Tarjeta</option>
+                  <option value="OTRO">Otro</option>
+                </select>
+              </label>
+              <label class="select-label">Filtrar periodo:
+                <select [(ngModel)]="cuotaPeriodoFiltro">
+                  <option value="TODOS">Todos</option>
+                  @for (periodo of periodosCuotas(); track periodo) { <option [value]="periodo">{{ periodo }}</option> }
+                </select>
+              </label>
+              <label class="select-label">Filtrar estado:
+                <select [(ngModel)]="cuotaEstadoFiltro">
+                  <option value="TODOS">Todos</option>
+                  <option value="PENDIENTE">Pendiente</option>
+                  <option value="PAGADA">Pagada</option>
+                  <option value="VENCIDA">Vencida</option>
+                  <option value="ANULADA">Anulada</option>
+                </select>
+              </label>
+              @if (esAdministradorClubActual()) {
+                <button class="secondary-action" type="button" (click)="generarCuotasMensuales()">Generar mes</button>
+                <button class="secondary-action" type="button" [disabled]="selectedMember() === 'TODOS'" (click)="crearCuotaIndividual()">Crear individual</button>
+              }
             </div>
+            @if (cuotaMensaje()) { <p class="success-message" role="status">{{ cuotaMensaje() }}</p> }
             <div class="table-card compact-table">
-              <table>
-                <thead><tr><th>Socio</th><th>Mes</th><th>Importe</th><th>Estado</th><th>Vencimiento</th><th>Acciones</th></tr></thead>
-                <tbody>
-                  @for (cuota of cuotasFiltradas(); track cuota.id) {
-                    <tr>
-                      <td><strong>{{ cuota.socioNombre }}</strong><small class="muted-cell">{{ cuota.socioDni }}</small></td>
-                      <td>{{ cuota.mes }}</td>
-                      <td>{{ formatearImporte(cuota.importe) }}</td>
-                      <td><span class="badge" [class.pending]="cuota.estado !== 'PAGADO'">{{ estadoCuotaVisible(cuota) }}</span></td>
-                      <td>{{ cuota.vencimiento }}</td>
-                      <td><button type="button" [disabled]="cuota.estado === 'PAGADO'" [class.primary-action]="cuota.estado !== 'PAGADO'" class="mini-action" (click)="registrarPago(cuota)">{{ cuota.estado === 'PAGADO' ? 'Pagado' : 'Registrar pago' }}</button></td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
+              @if (selectedMember() === 'TODOS') {
+                <table>
+                  <thead><tr><th>Socio</th><th>Estado</th><th>Mes reciente</th><th>Pendientes</th><th>Acciones</th></tr></thead>
+                  <tbody>
+                    @for (resumen of cuotasResumenSocios(); track resumen.socioId) {
+                      <tr>
+                        <td><strong>{{ resumen.socioNombre }}</strong><small class="muted-cell">{{ resumen.socioDni }}</small></td>
+                        <td><span class="badge" [class.pending]="resumen.estado !== 'AL_DIA'">{{ resumen.estado === 'AL_DIA' ? 'Al dia' : 'No al dia' }}</span></td>
+                        <td>{{ resumen.ultimoMes }}</td>
+                        <td>{{ resumen.pendientes }}</td>
+                        <td><button type="button" class="mini-action" (click)="verDetalleCuotasSocio(resumen.socioId)">Ver meses</button></td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="5" class="empty-cell">No hay socios para los filtros seleccionados.</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              } @else {
+                <table>
+                  <thead><tr><th>Socio</th><th>Mes</th><th>Importe</th><th>Estado</th><th>Vencimiento</th><th>Acciones</th></tr></thead>
+                  <tbody>
+                    @for (cuota of cuotasFiltradas(); track cuota.id) {
+                      <tr>
+                        <td><strong>{{ cuota.socioNombre }}</strong><small class="muted-cell">{{ cuota.socioDni }}</small></td>
+                        <td>{{ cuota.mes }}</td>
+                        <td>{{ formatearImporte(cuota.importe) }}</td>
+                        <td><span class="badge" [class.pending]="cuota.estado !== 'PAGADA'">{{ estadoCuotaVisible(cuota) }}</span></td>
+                        <td>{{ cuota.vencimiento }}</td>
+                        <td>
+                          <button type="button" [disabled]="cuota.estado === 'PAGADA' || cuota.estado === 'ANULADA'" [class.primary-action]="cuota.estado !== 'PAGADA' && cuota.estado !== 'ANULADA'" class="mini-action" (click)="registrarPago(cuota)">{{ cuota.estado === 'PAGADA' ? 'Pagada' : (cuota.estado === 'ANULADA' ? 'Anulada' : 'Registrar pago') }}</button>
+                          <button type="button" class="mini-action" (click)="verHistorialPagos(cuota)">Historial</button>
+                        </td>
+                      </tr>
+                      @if (cuotaPagosAbiertaId() === cuota.id) {
+                        <tr>
+                          <td colspan="6">
+                            <div class="detail-stack">
+                              @for (pago of pagosPorCuota()[cuota.id] ?? []; track pago.id) {
+                                <div class="detail-row">
+                                  <span>{{ pago.fechaPago ?? 'Fecha historica no disponible' }}</span>
+                                  <strong>{{ formatearImporte(pago.importe) }}</strong>
+                                  <span>{{ pago.medioPago }}</span>
+                                  <span class="badge" [class.pending]="pago.estado === 'ANULADO'">{{ pago.estado }}</span>
+                                  @if (pago.estado === 'ACTIVO' && esAdministradorClubActual()) {
+                                    <input type="text" maxlength="500" placeholder="Motivo de anulacion" [(ngModel)]="motivoAnulacionPago" />
+                                    <button type="button" class="mini-action" (click)="anularPago(cuota, pago)">Anular pago</button>
+                                  }
+                                </div>
+                              } @empty {
+                                <span class="muted-cell-inline">La cuota no tiene pagos registrados.</span>
+                              }
+                            </div>
+                          </td>
+                        </tr>
+                      }
+                    } @empty {
+                      <tr>
+                        <td colspan="6" class="empty-cell">No hay cuotas para el socio seleccionado.</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              }
             </div>
           }
 
           @case ('asistencias') {
             <div class="page-head row">
               <div>
-                <h2>Tomar asistencia</h2>
-                <p>Selecciona los presentes</p>
+                <h2>Asistencias</h2>
+                <p>Control de asistencia por actividad</p>
               </div>
-              <div class="attendance-controls">
-                <label>Actividad:
-                  <select [ngModel]="selectedActivityId()" (ngModelChange)="selectedActivityId.set($event); cargarAsistencia()">
-                    @for (actividad of actividades(); track actividad.id) {
-                      <option [ngValue]="actividad.id">{{ actividad.nombre }}</option>
-                    }
-                  </select>
-                </label>
-                <label>Fecha: <input type="date" [(ngModel)]="selectedAttendanceDate" (change)="cargarAsistencia()" /></label>
+              <label class="attendance-search"><input type="search" placeholder="Buscar socios, DNI o telefono..." [(ngModel)]="asistenciaBusqueda" /></label>
+            </div>
+
+            <div class="attendance-layout">
+              <div class="attendance-main">
+                <div class="metric-grid attendance-metrics">
+                  <article class="metric-card">
+                    <span class="material-metric-icon groups" aria-hidden="true"><svg lucideUsers></svg></span>
+                    <span>Inscritos</span>
+                    <strong>{{ asistencia().length }}</strong>
+                    <small>Total inscritos</small>
+                  </article>
+                  <article class="metric-card">
+                    <span class="material-metric-icon check-circle" aria-hidden="true"><svg lucideUserRoundCheck></svg></span>
+                    <span>Presentes</span>
+                    <strong>{{ asistenciaPresentes() }}</strong>
+                    <small>{{ asistenciaPorcentaje() }}% del total</small>
+                  </article>
+                  <article class="metric-card">
+                    <span class="material-metric-icon person-off" aria-hidden="true"><svg lucideUserX></svg></span>
+                    <span>Ausentes</span>
+                    <strong>{{ asistenciaAusentes() }}</strong>
+                    <small>{{ asistenciaJustificadas() }} justificados</small>
+                  </article>
+                  <article class="metric-card">
+                    <span class="material-metric-icon bar-chart" aria-hidden="true"><svg lucideCirclePercent></svg></span>
+                    <span>Asistencia</span>
+                    <strong>{{ asistenciaPorcentaje() }}%</strong>
+                    <small>Porcentaje de asistencia</small>
+                  </article>
+                </div>
+
+                <div class="attendance-filter-panel">
+                  <label>
+                    <span>Actividad</span>
+                    <select [ngModel]="selectedActivityId()" (ngModelChange)="cambiarActividadAsistencia($event)" [disabled]="actividades().length === 0">
+                      @for (actividad of actividades(); track actividad.id) {
+                        <option [ngValue]="actividad.id">{{ actividad.nombre }}</option>
+                      } @empty {
+                        <option [ngValue]="null">Sin actividades cargadas</option>
+                      }
+                    </select>
+                  </label>
+                  <label>
+                    <span>Fecha</span>
+                    <input
+                      type="date"
+                      [ngModel]="selectedAttendanceDate()"
+                      [attr.min]="esAdministradorClubActual() ? null : fechaActualIso()"
+                      [attr.max]="esAdministradorClubActual() ? null : fechaActualIso()"
+                      (ngModelChange)="cambiarFechaAsistencia($event)"
+                    />
+                  </label>
+                  <label>
+                    <span>Estado</span>
+                    <select [(ngModel)]="asistenciaEstadoFiltro">
+                      <option value="TODOS">Todos</option>
+                      <option value="PRESENTE">Presentes</option>
+                      <option value="AUSENTE">Ausentes</option>
+                      <option value="JUSTIFICADO">Justificados</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Buscar socio</span>
+                    <input type="search" placeholder="Buscar socio..." [(ngModel)]="asistenciaBusqueda" />
+                  </label>
+                  <div class="attendance-form-actions">
+                    <button class="secondary-action" type="button" [disabled]="!puedeEditarAsistencia()" (click)="marcarTodosPresentes()">Marcar todos presentes</button>
+                    <button class="primary-action compact" type="button" [disabled]="!puedeEditarAsistencia()" (click)="guardarAsistencia()">Guardar asistencia</button>
+                  </div>
+                </div>
+                @if (avisoAsistencia()) {
+                  <p class="attendance-warning">{{ avisoAsistencia() }}</p>
+                }
+                @if (dataError()) {
+                  <p class="form-error panel-error">{{ dataError() }}</p>
+                }
+
+                <div class="table-card attendance-table-card">
+                  <table>
+                    <thead>
+                      <tr><th>Nombre</th><th>DNI</th><th>Telefono</th><th>Estado</th><th>Observacion</th><th>Acciones</th></tr>
+                    </thead>
+                    <tbody>
+                      @for (item of asistenciaFiltrada(); track item.socioId) {
+                        <tr>
+                          <td><span class="table-person"><span class="member-photo small">{{ item.socioNombre.charAt(0) }}</span>{{ item.socioNombre }}</span></td>
+                          <td>{{ item.socioDni }}</td>
+                          <td>{{ item.socioTelefono || '-' }}</td>
+                          <td>
+                            <div class="attendance-toggle" [class.absent]="item.estado === 'AUSENTE'">
+                              <button type="button" [disabled]="!puedeEditarAsistencia()" [class.active]="item.estado === 'PRESENTE'" (click)="cambiarEstadoAsistencia(item, 'PRESENTE')">Presente</button>
+                              <button type="button" [disabled]="!puedeEditarAsistencia()" [class.active]="item.estado === 'AUSENTE'" (click)="cambiarEstadoAsistencia(item, 'AUSENTE')">Ausente</button>
+                              <button type="button" [disabled]="!puedeEditarAsistencia()" [class.active]="item.estado === 'JUSTIFICADO'" (click)="cambiarEstadoAsistencia(item, 'JUSTIFICADO')">Justificado</button>
+                            </div>
+                          </td>
+                          <td class="muted-cell-inline">{{ item.estado === 'JUSTIFICADO' ? 'Ausencia justificada' : '-' }}</td>
+                          <td class="actions">
+                            <button type="button" [disabled]="!puedeEditarAsistencia()" (click)="cambiarEstadoAsistencia(item, 'JUSTIFICADO')">Justificar</button>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="6" class="empty-cell">No hay socios para los filtros seleccionados.</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                  <div class="pagination"><span>Mostrando {{ asistenciaFiltrada().length }} de {{ asistencia().length }} inscriptos</span></div>
+                </div>
               </div>
-            </div>
-            <div class="attendance-card">
-              @for (item of asistencia(); track item.socioId) {
-                <label class="check-row">
-                  <input type="checkbox" [checked]="item.presente" (change)="alternarPresente(item, $any($event.target).checked)" />
-                  <span>{{ item.socioNombre }}</span>
-                </label>
-              }
-            </div>
-            <div class="center-actions">
-              <button class="primary-action compact" type="button" (click)="guardarAsistencia()">Guardar asistencia</button>
+
+              <aside class="attendance-side">
+                <article class="panel">
+                  <div class="panel-title">
+                    <h3>Resumen de la clase</h3>
+                  </div>
+                  <dl class="preview-list">
+                    <div><dt>Actividad</dt><dd>{{ actividadSeleccionada()?.nombre ?? 'Sin actividad' }}</dd></div>
+                    <div><dt>Dia y horario</dt><dd>{{ actividadSeleccionada()?.dias ?? '-' }}</dd></div>
+                    <div><dt>Profesor/a</dt><dd>{{ actividadSeleccionada()?.profesor ?? '-' }}</dd></div>
+                  </dl>
+                  <div class="attendance-ring" [style.--attendance-value]="asistenciaPorcentaje()">
+                    <strong>{{ asistenciaPorcentaje() }}%</strong>
+                    <span>Asistencia</span>
+                  </div>
+                  <dl class="attendance-summary-list">
+                    <div><dt>Presentes</dt><dd>{{ asistenciaPresentes() }}</dd></div>
+                    <div><dt>Ausentes</dt><dd>{{ asistenciaAusentes() }}</dd></div>
+                  </dl>
+                </article>
+
+                <article class="panel">
+                  <div class="panel-title">
+                    <h3>Notas rapidas</h3>
+                  </div>
+                  <ul class="quick-notes">
+                    <li>Revisar ausentes antes de guardar.</li>
+                    <li>La asistencia queda registrada en la base para la fecha elegida.</li>
+                    <li>Usa el filtro para encontrar socios por DNI o telefono.</li>
+                  </ul>
+                </article>
+              </aside>
             </div>
           }
 
@@ -544,22 +1099,78 @@
                 <h2>Reportes</h2>
                 <p>Reportes de {{ nombreClubActivo() }}</p>
               </div>
-              <span class="data-pill real">Datos del backend</span>
+              <label class="select-label">Año:
+                <input type="number" min="2000" max="2100" [(ngModel)]="reporteAnio" (change)="cambiarAnioReporte()" />
+              </label>
+            </div>
+            <div class="filters" aria-label="Filtros de reportes">
+              <label class="select-label">Desde:<input type="date" [(ngModel)]="reporteDesde" /></label>
+              <label class="select-label">Hasta:<input type="date" [(ngModel)]="reporteHasta" /></label>
+              <label class="select-label">Actividad:
+                <select [(ngModel)]="reporteActividadId">
+                  <option value="TODAS">Todas</option>
+                  @for (actividad of actividades(); track actividad.id) {
+                    <option [value]="actividad.id">{{ actividad.nombre }}</option>
+                  }
+                </select>
+              </label>
+              <label class="select-label">Estado del socio:
+                <select [(ngModel)]="reporteEstadoSocio">
+                  <option value="TODOS">Todos</option>
+                  <option value="ACTIVO">Activo</option>
+                  <option value="INACTIVO">Inactivo</option>
+                </select>
+              </label>
+              <button class="secondary-action" type="button" (click)="aplicarFiltrosReporte()">Aplicar filtros</button>
             </div>
             <div class="reports-grid">
+              <article class="metric-card report-metric">
+                <span class="material-metric-icon groups" aria-hidden="true"><svg lucideUsers></svg></span>
+                <span>Socios</span>
+                <strong>{{ sociosTotalReporte() }}</strong>
+                <small>{{ sociosActivosReporte() }} activos</small>
+              </article>
+              <article class="metric-card report-metric">
+                <span class="material-metric-icon event-available" aria-hidden="true"><svg lucideCalendarDays></svg></span>
+                <span>Actividades</span>
+                <strong>{{ actividadesActivasClub() }}</strong>
+                <small>{{ inscriptosTotalActividades() }} inscriptos</small>
+              </article>
+              <article class="metric-card report-metric">
+                <span class="material-metric-icon payments" aria-hidden="true"><svg lucideWalletCards></svg></span>
+                <span>Ingreso cobrado</span>
+                <strong>{{ formatearImporte(totalCobradoReporte()) }}</strong>
+                <small>Pagos activos en {{ reporteAnio }}</small>
+              </article>
+              <article class="metric-card report-metric">
+                <span class="material-metric-icon account-balance-wallet" aria-hidden="true"><svg lucideWalletCards></svg></span>
+                <span>Deuda</span>
+                <strong>{{ formatearImporte(deudaReporte().total) }}</strong>
+                <small>{{ deudaReporte().cantidad }} cuotas pendientes</small>
+              </article>
+
               <article class="panel">
-                <h3>Resumen del club</h3>
+                <h3><span class="panel-title-icon groups" aria-hidden="true"><svg lucideUsers></svg></span>Cantidad de socios</h3>
                 <div class="report-list">
-                  @for (club of reportes()?.sociosPorClub ?? []; track club.club) {
-                    <div class="report-row">
-                      <strong>{{ club.club }}</strong>
-                      <span>{{ club.socios }} socios · {{ club.actividades }} actividades</span>
-                    </div>
-                  }
+                  <div class="report-row"><strong>Total</strong><span>{{ sociosTotalReporte() }}</span></div>
+                  <div class="report-row"><strong>Activos</strong><span>{{ sociosActivosReporte() }}</span></div>
+                  <div class="report-row"><strong>Inactivos</strong><span>{{ sociosInactivosReporte() }}</span></div>
+                  <div class="report-row"><strong>Con deuda</strong><span>{{ reportes()?.sociosConDeuda ?? 0 }}</span></div>
                 </div>
               </article>
+
               <article class="panel">
-                <h3>Pagos por mes</h3>
+                <h3><span class="panel-title-icon event-available" aria-hidden="true"><svg lucideCalendarDays></svg></span>Talleres y actividades</h3>
+                <div class="report-list">
+                  <div class="report-row"><strong>Total</strong><span>{{ actividades().length }}</span></div>
+                  <div class="report-row"><strong>Activas</strong><span>{{ actividadesActivasClub() }}</span></div>
+                  <div class="report-row"><strong>Cupo total</strong><span>{{ cupoTotalActividades() }}</span></div>
+                  <div class="report-row"><strong>Inscriptos</strong><span>{{ inscriptosTotalActividades() }}</span></div>
+                </div>
+              </article>
+
+              <article class="panel report-wide">
+                <h3><span class="panel-title-icon bar-chart" aria-hidden="true"><svg lucideChartNoAxesColumnIncreasing></svg></span>Entrada de dinero por mes</h3>
                 <div class="bar-chart">
                   @for (mes of reportes()?.pagosPorMes ?? []; track mes.mes) {
                     <span [style.height.%]="alturaPagos(mes.valor)" [title]="formatearImporte(mes.valor)"></span>
@@ -571,17 +1182,14 @@
                   }
                 </div>
               </article>
+
               <article class="panel">
-                <h3>Asistencia mensual</h3>
-                <div class="bar-chart attendance-bars">
-                  @for (mes of reportes()?.asistenciaMensual ?? []; track mes.mes) {
-                    <span [style.height.%]="alturaAsistencia(mes.valor)" [title]="mes.valor + ' presentes'"></span>
-                  }
-                </div>
-                <div class="chart-labels">
-                  @for (mes of reportes()?.asistenciaMensual ?? []; track mes.mes) {
-                    <span>{{ mes.mes }}<small>{{ mes.valor }}</small></span>
-                  }
+                <h3><span class="panel-title-icon account-balance-wallet" aria-hidden="true"><svg lucideWalletCards></svg></span>Cantidad de deuda</h3>
+                <div class="report-list">
+                  <div class="report-row"><strong>Total adeudado</strong><span>{{ formatearImporte(deudaReporte().total) }}</span></div>
+                  <div class="report-row"><strong>Pendiente</strong><span>{{ formatearImporte(deudaReporte().pendiente) }}</span></div>
+                  <div class="report-row"><strong>Vencida</strong><span>{{ formatearImporte(deudaReporte().vencida) }}</span></div>
+                  <div class="report-row"><strong>Cuotas con deuda</strong><span>{{ deudaReporte().cantidad }}</span></div>
                 </div>
               </article>
             </div>
@@ -663,11 +1271,73 @@
                       <td><span class="badge" [class.inactive]="usuario.estado === 'INACTIVO'">{{ usuario.estado }}</span></td>
                       <td>{{ usuario.debeCambiarPassword ? 'Debe cambiar contrasena' : 'Actualizada' }}</td>
                       <td class="actions">
+                        @if (usuario.rol !== 'SUPERUSUARIO') {
+                          <button class="secondary-action compact" type="button" (click)="editarAsignacionesUsuario(usuario)">Asignar</button>
+                        }
                         @if (usuario.rol !== 'SUPERUSUARIO' && usuario.estado === 'ACTIVO') {
                           <button class="danger" type="button" (click)="desactivarUsuario(usuario.id)">Desactivar</button>
                         }
+                        @if (esSuperusuario() && usuario.rol !== 'SUPERUSUARIO' && usuario.estado === 'INACTIVO') {
+                          <button class="primary-action compact" type="button" (click)="activarUsuario(usuario.id)">Activar</button>
+                        }
                       </td>
                     </tr>
+                    @if (usuarioAsignacionesEditando()?.id === usuario.id) {
+                      <tr class="assignment-row">
+                        <td colspan="7">
+                          <div class="assignment-panel">
+                            <div class="assignment-head">
+                              <strong>Clubes y talleres asignados</strong>
+                              <button class="secondary-action compact" type="button" (click)="agregarAsignacionUsuario()">Agregar club</button>
+                            </div>
+                            @for (asignacion of asignacionesUsuarioForm; track $index) {
+                              <div class="assignment-item">
+                                <label>
+                                  <span>Club</span>
+                                  <select [ngModel]="asignacion.clubId" (ngModelChange)="cambiarClubAsignacion($index, $event)">
+                                    @for (club of clubesDisponibles(); track club.clubId) {
+                                      <option [ngValue]="club.clubId">{{ club.clubNombre }}</option>
+                                    }
+                                  </select>
+                                </label>
+                                <label>
+                                  <span>Rol en club</span>
+                                  <select [(ngModel)]="asignacion.rolClub">
+                                    <option value="PROFESOR">Profesor</option>
+                                    @if (esSuperusuario()) {
+                                      <option value="ADMINISTRADOR">Administrador</option>
+                                    }
+                                  </select>
+                                </label>
+                                @if (asignacion.rolClub === 'PROFESOR') {
+                                  <div class="assignment-workshops">
+                                    @for (actividad of actividadesDeAsignacion(asignacion.clubId); track actividad.id) {
+                                      <label class="checkbox-line">
+                                        <input
+                                          type="checkbox"
+                                          [checked]="actividadAsignada(asignacion, actividad.id)"
+                                          (change)="toggleActividadAsignacion($index, actividad.id, $any($event.target).checked)"
+                                        />
+                                        <span>{{ actividad.nombre }}</span>
+                                      </label>
+                                    } @empty {
+                                      <span class="help-text">Sin talleres cargados en este club.</span>
+                                    }
+                                  </div>
+                                } @else {
+                                  <span class="help-text">Los administradores acceden a todos los talleres del club.</span>
+                                }
+                                <button class="danger compact" type="button" (click)="quitarAsignacionUsuario($index)">Quitar</button>
+                              </div>
+                            }
+                            <div class="form-actions">
+                              <button class="secondary-action compact" type="button" (click)="cancelarAsignacionesUsuario()">Cancelar</button>
+                              <button class="primary-action compact" type="button" (click)="guardarAsignacionesUsuario()">Guardar asignaciones</button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    }
                   }
                 </tbody>
               </table>
@@ -748,6 +1418,16 @@
             </div>
           }
 
+          @case ('no-encontrado') {
+            <div class="page-head">
+              <div>
+                <h2>Pagina no encontrada</h2>
+                <p>La direccion no existe o fue movida.</p>
+                <button class="primary-action compact" type="button" (click)="goTo('dashboard')">Volver al inicio</button>
+              </div>
+            </div>
+          }
+
           @default {
             <div class="page-head">
               <div>
@@ -762,4 +1442,4 @@
   </main>
   }
 }
-
+<router-outlet />

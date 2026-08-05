@@ -10,6 +10,7 @@ Thumbs.db
 node_modules/
 dist/
 .angular/
+.npm-cache/
 
 # Java / Maven / Gradle
 target/
@@ -18,7 +19,16 @@ build/
 
 # Archivos de entorno
 .env
+.env.*
+!.env.example
 application-local.properties
 
 # Logs
 *.log
+
+# Backups locales con datos
+backups/
+
+# Temporales de renderizado de documentos
+docs/chrome-pdf-profile/
+docs/guia-red-clubes-render/

@@ -10,5 +10,7 @@ public interface AsistenciaRepository extends JpaRepository<Asistencia, Long> {
 
     List<Asistencia> findByClubId(Long clubId);
 
+    List<Asistencia> findByClubIdAndFechaBetween(Long clubId, LocalDate desde, LocalDate hasta);
+
     boolean existsByClubIdAndActividadIdAndSocioIdAndFecha(Long clubId, Long actividadId, Long socioId, LocalDate fecha);
 }
