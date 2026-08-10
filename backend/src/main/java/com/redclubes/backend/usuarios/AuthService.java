@@ -129,6 +129,15 @@ public class AuthService {
         throw new AccesoDenegadoException();
     }
 
+    public void exigirOperadorDeClub(String authorizationHeader, Long clubId) {
+        Usuario usuario = obtenerUsuarioAutenticado(authorizationHeader);
+        if (puedeOperarClub(usuario, clubId)) {
+            return;
+        }
+
+        throw new AccesoDenegadoException();
+    }
+
     public boolean esAdministradorDeClub(Usuario usuario, Long clubId) {
         if (usuario.getRol() == RolUsuario.SUPERUSUARIO) {
             return true;
@@ -139,8 +148,19 @@ public class AuthService {
                 .orElse(false);
     }
 
+    public boolean puedeOperarClub(Usuario usuario, Long clubId) {
+        if (usuario.getRol() == RolUsuario.SUPERUSUARIO) {
+            return true;
+        }
+
+        return usuarioClubRepository.findByUsuarioIdAndClubId(usuario.getId(), clubId)
+                .map(usuarioClub -> usuarioClub.getRol() == RolClub.ADMINISTRADOR
+                        || usuarioClub.getRol() == RolClub.OPERADOR)
+                .orElse(false);
+    }
+
     public void exigirAccesoAActividad(Usuario usuario, Long clubId, Long actividadId) {
-        if (esAdministradorDeClub(usuario, clubId)) {
+        if (puedeOperarClub(usuario, clubId)) {
             return;
         }
 
@@ -152,7 +172,7 @@ public class AuthService {
     }
 
     public List<Long> actividadesPermitidas(Usuario usuario, Long clubId) {
-        if (esAdministradorDeClub(usuario, clubId)) {
+        if (puedeOperarClub(usuario, clubId)) {
             return List.of();
         }
 

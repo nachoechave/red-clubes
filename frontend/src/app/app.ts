@@ -228,6 +228,9 @@ export class App {
     if (item.id === 'usuarios') {
       return this.puedeAdministrarUsuarios();
     }
+    if (this.currentUser()?.rol === 'OPERADOR') {
+      return item.id !== 'clubes';
+    }
     if (this.currentUser()?.rol === 'PROFESOR') {
       return ['actividades', 'asistencias', 'configuracion'].includes(item.id);
     }
@@ -386,7 +389,7 @@ export class App {
       return false;
     }
 
-    return this.esAdministradorClubActual() || this.selectedAttendanceDate() === this.fechaActualIso();
+    return this.puedeOperarClubActual() || this.selectedAttendanceDate() === this.fechaActualIso();
   });
   protected avisoAsistencia = computed(() => {
     if (!this.actividadSeleccionada()) {
@@ -395,7 +398,7 @@ export class App {
     if (!this.esFechaDeClaseSeleccionada()) {
       return 'La fecha elegida no corresponde a los dias de clase de esta actividad.';
     }
-    if (!this.esAdministradorClubActual() && this.selectedAttendanceDate() !== this.fechaActualIso()) {
+    if (!this.puedeOperarClubActual() && this.selectedAttendanceDate() !== this.fechaActualIso()) {
       return 'Los profesores solo pueden guardar asistencia el dia de la clase.';
     }
     return '';
@@ -605,13 +608,29 @@ export class App {
     return usuario?.rol === 'SUPERUSUARIO' || usuario?.clubes.some((club) => club.clubId === clubId && club.rol === 'ADMINISTRADOR') === true;
   }
 
+  protected puedeOperarClubActual(): boolean {
+    const usuario = this.currentUser();
+    const clubId = this.clubActivoId();
+    return usuario?.rol === 'SUPERUSUARIO' || usuario?.clubes.some((club) =>
+      club.clubId === clubId && (club.rol === 'ADMINISTRADOR' || club.rol === 'OPERADOR')) === true;
+  }
+
   protected nombreUsuarioActual(): string {
     const usuario = this.currentUser();
     return usuario ? `${usuario.nombre} ${usuario.apellido}` : 'Usuario';
   }
 
   protected rolVisible(rol: RolUsuario): string {
-    return { SUPERUSUARIO: 'Superusuario', ADMINISTRADOR: 'Administrador', PROFESOR: 'Profesor' }[rol];
+    return { SUPERUSUARIO: 'Superusuario', ADMINISTRADOR: 'Administrador', OPERADOR: 'Operador', PROFESOR: 'Profesor' }[rol];
+  }
+
+  protected sincronizarRolNuevoUsuario(rol: RolUsuario): void {
+    this.nuevoUsuario.rol = rol;
+    this.nuevoUsuario.rolClub = this.rolClubEsperado(rol);
+  }
+
+  private rolClubEsperado(rol: RolUsuario): RolClub {
+    return rol === 'ADMINISTRADOR' ? 'ADMINISTRADOR' : rol === 'OPERADOR' ? 'OPERADOR' : 'PROFESOR';
   }
 
   protected cargarUsuarios(): void {
@@ -665,7 +684,7 @@ export class App {
     this.usuarioAsignacionesEditando.set(usuario);
     this.asignacionesUsuarioForm = usuario.clubes.length > 0
       ? usuario.clubes.map((club) => ({ clubId: club.clubId, rolClub: club.rol, actividadIds: [...(club.actividadIds ?? [])] }))
-      : [{ clubId: this.clubActivoId(), rolClub: 'PROFESOR', actividadIds: [] }];
+      : [{ clubId: this.clubActivoId(), rolClub: this.rolClubEsperado(usuario.rol), actividadIds: [] }];
     this.asignacionesUsuarioForm.forEach((asignacion) => {
       if (asignacion.clubId) {
         this.cargarActividadesParaAsignacion(asignacion.clubId);
@@ -680,7 +699,8 @@ export class App {
 
   protected agregarAsignacionUsuario(): void {
     const clubId = this.clubesDisponibles().find((club) => !this.asignacionesUsuarioForm.some((asignacion) => asignacion.clubId === club.clubId))?.clubId ?? null;
-    this.asignacionesUsuarioForm.push({ clubId, rolClub: 'PROFESOR', actividadIds: [] });
+    const rol = this.usuarioAsignacionesEditando()?.rol ?? 'PROFESOR';
+    this.asignacionesUsuarioForm.push({ clubId, rolClub: this.rolClubEsperado(rol), actividadIds: [] });
     if (clubId) {
       this.cargarActividadesParaAsignacion(clubId);
     }
@@ -1150,7 +1170,7 @@ export class App {
 
   protected seleccionarActividadAsistencia(actividad: ActividadVista): void {
     const horario = this.extraerDiaHorario(actividad.dias);
-    if (this.esAdministradorClubActual() && !this.esFechaDeClase(actividad.dias, this.selectedAttendanceDate())) {
+    if (this.puedeOperarClubActual() && !this.esFechaDeClase(actividad.dias, this.selectedAttendanceDate())) {
       this.selectedAttendanceDate.set(this.proximaFechaParaDia(horario.dia));
     }
     this.selectedActivityId.set(actividad.id);
@@ -1316,6 +1336,9 @@ export class App {
     if (club.rol === 'ADMINISTRADOR') {
       return 'Todos los talleres';
     }
+    if (club.rol === 'OPERADOR') {
+      return 'Todas las actividades (operacion)';
+    }
     const nombres = (club.actividadIds ?? [])
       .map((actividadId) => this.actividadesPorClub()[club.clubId]?.find((actividad) => actividad.id === actividadId)?.nombre)
       .filter((nombre): nombre is string => Boolean(nombre));
@@ -1376,7 +1399,9 @@ export class App {
       const rutaActual = this.router.url.split('?')[0].replace(/^\//, '');
       const permitidaProfesor = ['actividades', 'asistencias', 'configuracion'].includes(rutaActual)
         || rutaActual.startsWith('actividades/');
-      if (rutaActual === 'login' || (usuario.rol === 'PROFESOR' && !permitidaProfesor)) {
+      const permitidaOperador = !['usuarios', 'clubes'].includes(rutaActual);
+      if (rutaActual === 'login' || (usuario.rol === 'PROFESOR' && !permitidaProfesor)
+        || (usuario.rol === 'OPERADOR' && !permitidaOperador)) {
         void this.router.navigate([usuario.rol === 'PROFESOR' ? '/actividades' : '/dashboard']);
       }
       this.cargarClubes();
@@ -1427,8 +1452,11 @@ export class App {
     this.asistencia.set([]);
     this.dashboard.set(null);
     this.socioSeleccionado.set(null);
-    this.cargarSocios(socioSeleccionadoId);
     this.cargarActividades();
+    if (this.currentUser()?.rol === 'PROFESOR') {
+      return;
+    }
+    this.cargarSocios(socioSeleccionadoId);
     this.cargarCuotas();
     this.cargarDashboard();
     if (this.activeSection() === 'reportes') {

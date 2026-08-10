@@ -1,6 +1,6 @@
-export type RolUsuario = 'SUPERUSUARIO' | 'ADMINISTRADOR' | 'PROFESOR';
+export type RolUsuario = 'SUPERUSUARIO' | 'ADMINISTRADOR' | 'OPERADOR' | 'PROFESOR';
 export type EstadoUsuario = 'ACTIVO' | 'INACTIVO';
-export type RolClub = 'ADMINISTRADOR' | 'PROFESOR';
+export type RolClub = 'ADMINISTRADOR' | 'OPERADOR' | 'PROFESOR';
 
 export interface ClubAsignado {
   clubId: number;

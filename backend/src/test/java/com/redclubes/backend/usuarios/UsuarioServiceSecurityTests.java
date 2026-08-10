@@ -46,4 +46,23 @@ class UsuarioServiceSecurityTests {
         assertThrows(AccesoDenegadoException.class, () -> service.crearUsuario(request, administrador));
         verify(usuarioRepository, never()).save(org.mockito.ArgumentMatchers.any());
     }
+
+    @Test
+    void rechazaRolGlobalYRolDeClubIncoherentes() {
+        Usuario superusuario = new Usuario("12345679", "Super", "Global", RolUsuario.SUPERUSUARIO,
+                EstadoUsuario.ACTIVO, "hash", false);
+        superusuario.setId(1L);
+        CrearUsuarioRequest request = new CrearUsuarioRequest(
+                "87654322", "Operador", "Incoherente", RolUsuario.OPERADOR,
+                null, null, "password-segura",
+                List.of(new AsignacionUsuarioRequest(1L, RolClub.PROFESOR, List.of()))
+        );
+        when(usuarioRepository.existsByDni("87654322")).thenReturn(false);
+
+        UsuarioService service = new UsuarioService(usuarioRepository, usuarioClubRepository,
+                usuarioActividadRepository, clubRepository, actividadRepository, passwordService, auditoriaService);
+
+        assertThrows(IllegalArgumentException.class, () -> service.crearUsuario(request, superusuario));
+        verify(usuarioRepository, never()).save(org.mockito.ArgumentMatchers.any());
+    }
 }

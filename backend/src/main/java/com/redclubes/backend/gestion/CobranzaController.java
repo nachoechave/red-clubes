@@ -33,7 +33,7 @@ public class CobranzaController {
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) Long socioId
     ) {
-        authService.exigirAccesoAClub(authorization, clubId);
+        authService.exigirOperadorDeClub(authorization, clubId);
         if (periodo != null && !periodo.matches("\\d{4}-(0[1-9]|1[0-2])")) {
             throw new IllegalArgumentException("El periodo debe tener formato YYYY-MM");
         }
@@ -50,7 +50,7 @@ public class CobranzaController {
     public CuotaResponse crear(@RequestHeader("Authorization") String authorization, @PathVariable Long clubId,
                                @Valid @RequestBody CrearCuotaRequest request) {
         Usuario actor = authService.obtenerUsuarioAutenticado(authorization);
-        authService.exigirAdministradorDeClub(authorization, clubId);
+        authService.exigirOperadorDeClub(authorization, clubId);
         return cobranzaService.crearCuota(clubId, request, actor);
     }
 
@@ -58,7 +58,7 @@ public class CobranzaController {
     public GeneracionCuotasResponse generar(@RequestHeader("Authorization") String authorization, @PathVariable Long clubId,
                                             @Valid @RequestBody GenerarCuotasRequest request) {
         Usuario actor = authService.obtenerUsuarioAutenticado(authorization);
-        authService.exigirAdministradorDeClub(authorization, clubId);
+        authService.exigirOperadorDeClub(authorization, clubId);
         return cobranzaService.generarCuotas(clubId, request, actor);
     }
 
@@ -66,14 +66,14 @@ public class CobranzaController {
     public PagoResponse pagar(@RequestHeader("Authorization") String authorization, @PathVariable Long clubId,
                               @PathVariable Long cuotaId, @Valid @RequestBody RegistrarPagoRequest request) {
         Usuario usuario = authService.obtenerUsuarioAutenticado(authorization);
-        authService.exigirAdministradorDeClub(authorization, clubId);
+        authService.exigirOperadorDeClub(authorization, clubId);
         return cobranzaService.registrarPago(clubId, cuotaId, request, usuario);
     }
 
     @GetMapping("/{cuotaId}/pagos")
     public List<PagoResponse> pagos(@RequestHeader("Authorization") String authorization, @PathVariable Long clubId,
                                     @PathVariable Long cuotaId) {
-        authService.exigirAccesoAClub(authorization, clubId);
+        authService.exigirOperadorDeClub(authorization, clubId);
         return cobranzaService.listarPagos(clubId, cuotaId);
     }
 
@@ -82,7 +82,7 @@ public class CobranzaController {
                                @PathVariable Long cuotaId, @PathVariable Long pagoId,
                                @Valid @RequestBody AnularPagoRequest request) {
         Usuario usuario = authService.obtenerUsuarioAutenticado(authorization);
-        authService.exigirAdministradorDeClub(authorization, clubId);
+        authService.exigirOperadorDeClub(authorization, clubId);
         return cobranzaService.anularPago(clubId, cuotaId, pagoId, request, usuario);
     }
 }

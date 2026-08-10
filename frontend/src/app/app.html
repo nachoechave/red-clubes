@@ -811,7 +811,9 @@
                     <span>Inscriptos: {{ actividad.inscriptos }}</span>
                   </div>
                   <div class="card-actions inline">
-                    <button type="button" (click)="goTo('socios')">Ver socios</button>
+                    @if (puedeOperarClubActual()) {
+                      <button type="button" (click)="goTo('socios')">Ver socios</button>
+                    }
                     @if (esAdministradorClubActual()) {
                       <button type="button" (click)="editarActividad(actividad)">Editar</button>
                     }
@@ -866,7 +868,7 @@
                   <option value="ANULADA">Anulada</option>
                 </select>
               </label>
-              @if (esAdministradorClubActual()) {
+              @if (puedeOperarClubActual()) {
                 <button class="secondary-action" type="button" (click)="generarCuotasMensuales()">Generar mes</button>
                 <button class="secondary-action" type="button" [disabled]="selectedMember() === 'TODOS'" (click)="crearCuotaIndividual()">Crear individual</button>
               }
@@ -918,7 +920,7 @@
                                   <strong>{{ formatearImporte(pago.importe) }}</strong>
                                   <span>{{ pago.medioPago }}</span>
                                   <span class="badge" [class.pending]="pago.estado === 'ANULADO'">{{ pago.estado }}</span>
-                                  @if (pago.estado === 'ACTIVO' && esAdministradorClubActual()) {
+                                  @if (pago.estado === 'ACTIVO' && puedeOperarClubActual()) {
                                     <input type="text" maxlength="500" placeholder="Motivo de anulacion" [(ngModel)]="motivoAnulacionPago" />
                                     <button type="button" class="mini-action" (click)="anularPago(cuota, pago)">Anular pago</button>
                                   }
@@ -995,8 +997,8 @@
                     <input
                       type="date"
                       [ngModel]="selectedAttendanceDate()"
-                      [attr.min]="esAdministradorClubActual() ? null : fechaActualIso()"
-                      [attr.max]="esAdministradorClubActual() ? null : fechaActualIso()"
+                      [attr.min]="puedeOperarClubActual() ? null : fechaActualIso()"
+                      [attr.max]="puedeOperarClubActual() ? null : fechaActualIso()"
                       (ngModelChange)="cambiarFechaAsistencia($event)"
                     />
                   </label>
@@ -1215,10 +1217,11 @@
                 <label><span>Apellido</span><input name="apellidoUsuario" placeholder="Apellido" [(ngModel)]="nuevoUsuario.apellido" /></label>
                 <label>
                   <span>Rol</span>
-                  <select name="rolUsuario" [(ngModel)]="nuevoUsuario.rol">
+                  <select name="rolUsuario" [ngModel]="nuevoUsuario.rol" (ngModelChange)="sincronizarRolNuevoUsuario($event)">
                     <option value="PROFESOR">Profesor</option>
-                    <option value="ADMINISTRADOR">Administrador</option>
+                    <option value="OPERADOR">Operador</option>
                     @if (esSuperusuario()) {
+                      <option value="ADMINISTRADOR">Administrador</option>
                       <option value="SUPERUSUARIO">Superusuario</option>
                     }
                   </select>
@@ -1234,8 +1237,9 @@
                   </label>
                   <label>
                     <span>Rol en club</span>
-                    <select name="rolClubUsuario" [(ngModel)]="nuevoUsuario.rolClub">
+                    <select name="rolClubUsuario" [(ngModel)]="nuevoUsuario.rolClub" disabled>
                       <option value="PROFESOR">Profesor</option>
+                      <option value="OPERADOR">Operador</option>
                       <option value="ADMINISTRADOR">Administrador</option>
                     </select>
                   </label>
@@ -1302,8 +1306,9 @@
                                 </label>
                                 <label>
                                   <span>Rol en club</span>
-                                  <select [(ngModel)]="asignacion.rolClub">
+                                  <select [(ngModel)]="asignacion.rolClub" disabled>
                                     <option value="PROFESOR">Profesor</option>
+                                    <option value="OPERADOR">Operador</option>
                                     @if (esSuperusuario()) {
                                       <option value="ADMINISTRADOR">Administrador</option>
                                     }

@@ -39,7 +39,7 @@ public class GestionController {
             @PathVariable Long clubId,
             @RequestParam(required = false) String periodo
     ) {
-        authService.exigirAccesoAClub(authorizationHeader, clubId);
+        authService.exigirOperadorDeClub(authorizationHeader, clubId);
         YearMonth periodoSeleccionado;
         try {
             periodoSeleccionado = periodo == null ? YearMonth.now() : YearMonth.parse(periodo);
@@ -56,7 +56,7 @@ public class GestionController {
     ) {
         Usuario usuario = authService.obtenerUsuarioAutenticado(authorizationHeader);
         authService.exigirAccesoAClub(authorizationHeader, clubId);
-        if (authService.esAdministradorDeClub(usuario, clubId)) {
+        if (authService.puedeOperarClub(usuario, clubId)) {
             return gestionService.listarActividades(clubId);
         }
 
@@ -92,7 +92,7 @@ public class GestionController {
             @PathVariable Long clubId,
             @PathVariable Long socioId
     ) {
-        authService.exigirAccesoAClub(authorizationHeader, clubId);
+        authService.exigirOperadorDeClub(authorizationHeader, clubId);
         return gestionService.listarActividadesDeSocio(clubId, socioId);
     }
 
@@ -104,7 +104,7 @@ public class GestionController {
             @RequestBody ActualizarInscripcionesRequest request
     ) {
         Usuario usuario = authService.obtenerUsuarioAutenticado(authorizationHeader);
-        authService.exigirAdministradorDeClub(authorizationHeader, clubId);
+        authService.exigirOperadorDeClub(authorizationHeader, clubId);
         return gestionService.actualizarActividadesDeSocio(clubId, socioId, request, usuario);
     }
 
@@ -132,7 +132,7 @@ public class GestionController {
         Usuario usuario = authService.obtenerUsuarioAutenticado(authorizationHeader);
         authService.exigirAccesoAClub(authorizationHeader, clubId);
         authService.exigirAccesoAActividad(usuario, clubId, actividadId);
-        boolean restringirAFechaActual = !authService.esAdministradorDeClub(usuario, clubId);
+        boolean restringirAFechaActual = !authService.puedeOperarClub(usuario, clubId);
         return gestionService.guardarAsistencia(clubId, actividadId, fecha, request, restringirAFechaActual, usuario);
     }
 
@@ -146,7 +146,7 @@ public class GestionController {
             @RequestParam(required = false) Long actividadId,
             @RequestParam(required = false) String estadoSocio
     ) {
-        authService.exigirAccesoAClub(authorizationHeader, clubId);
+        authService.exigirOperadorDeClub(authorizationHeader, clubId);
         int anioSeleccionado = anio == null ? YearMonth.now().getYear() : anio;
         if (anioSeleccionado < 2000 || anioSeleccionado > 2100) {
             throw new IllegalArgumentException("El anio debe estar entre 2000 y 2100");

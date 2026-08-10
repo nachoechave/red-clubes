@@ -37,7 +37,7 @@ class SocioControllerSecurityTests {
     @Test
     void usuarioSinSesionNoPuedeConsultarSocios() throws Exception {
         doThrow(new AutenticacionRequeridaException())
-                .when(authService).exigirAccesoAClub(null, 1L);
+                .when(authService).exigirOperadorDeClub(null, 1L);
 
         mockMvc.perform(get("/api/clubes/1/socios"))
                 .andExpect(status().isUnauthorized())

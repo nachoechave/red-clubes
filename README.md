@@ -6,14 +6,14 @@ El despliegue previsto tiene dos etapas: piloto en un Cloud Server portable —p
 
 ## Estado
 
-El núcleo del MVP está implementado y compila. La última verificación local ejecutó 30 pruebas backend, 12 frontend, el empaquetado Spring Boot, el build Angular de producción y seis migraciones Flyway sobre una base limpia. Compose valida sintácticamente; la construcción real de imágenes queda por repetir con Docker Desktop o un servidor Docker activo.
+El núcleo del MVP interno está implementado y compila. La última verificación local ejecutó 37 pruebas backend, 13 frontend, el empaquetado Spring Boot y el build Angular de producción. También construyó las imágenes Linux, levantó MySQL 8.4, backend y frontend con Compose, aplicó seis migraciones Flyway, aprobó health checks y verificó backup/restauración con recuperación de datos.
 
 No se debe usar todavía con datos personales reales hasta probar Compose, backups, restauración, TLS y smoke tests en el Cloud Server elegido.
 
 ## Funcionalidades
 
 - Login, logout real, sesión restaurable y cambio obligatorio de contraseña inicial.
-- Roles globales y por club; asignación de actividades a profesores.
+- Roles globales y por club para superusuario, administrador, operador y profesor; asignación de actividades a profesores.
 - Alta, edición, búsqueda y baja lógica de socios.
 - Alta, edición, activación y desactivación de actividades con profesor responsable y cupo.
 - Inscripciones con historial, reglas de club/estado/cupo y contador derivado.
@@ -29,7 +29,8 @@ Fuera de este MVP: pagos parciales, pasarela de cobro, WhatsApp, QR, aplicación
 ## Roles
 
 - `SUPERUSUARIO`: alcance global.
-- `ADMINISTRADOR`: opera solamente clubes asignados como administrador.
+- `ADMINISTRADOR`: administra solamente clubes asignados, incluida la gestión de usuarios locales y auditoría.
+- `OPERADOR`: realiza la gestión diaria de socios, inscripciones, cuotas, reportes y asistencia en sus clubes, sin administrar usuarios, actividades ni auditoría.
 - `PROFESOR`: ve actividades asignadas y toma asistencia bajo sus reglas.
 
 La matriz completa está en [roles y permisos](docs/ROLES_Y_PERMISOS.md).
@@ -174,10 +175,10 @@ Antes de presentar el piloto se deben agregar capturas sin datos personales de l
 
 ## Limitaciones conocidas
 
-- Falta validar imágenes y flujo completo en Docker Linux porque el daemon local no estaba activo.
 - Falta ensayar V1–V6 y restauración contra una copia MySQL real preexistente.
 - El frontend conserva parte de la orquestación de features en el componente raíz; core auth y routing ya están separados.
 - El límite de login es local a una instancia.
 - No existe aún monitoreo externo ni dominio/TLS del piloto contratados.
+- El workflow CI está corregido y su equivalente local aprobó; falta confirmar una ejecución remota verde después de publicar estos cambios.
 
 No se deben presentar esas limitaciones como funcionalidades terminadas; son los últimos criterios operativos para habilitar un piloto real.

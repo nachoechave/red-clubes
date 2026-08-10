@@ -22,7 +22,7 @@ public class SocioController {
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @PathVariable Long clubId
     ) {
-        authService.exigirAccesoAClub(authorizationHeader, clubId);
+        authService.exigirOperadorDeClub(authorizationHeader, clubId);
         return socioService.listarSociosPorClub(clubId);
     }
 
@@ -33,7 +33,7 @@ public class SocioController {
             @Valid @RequestBody CrearSocioRequest request
     ) {
         Usuario actor = authService.obtenerUsuarioAutenticado(authorizationHeader);
-        authService.exigirAdministradorDeClub(authorizationHeader, clubId);
+        authService.exigirOperadorDeClub(authorizationHeader, clubId);
         return socioService.crearSocioEnClub(clubId, request, actor);
     }
 
@@ -45,7 +45,7 @@ public class SocioController {
             @Valid @RequestBody ActualizarSocioRequest request
     ) {
         Usuario actor = authService.obtenerUsuarioAutenticado(authorizationHeader);
-        authService.exigirAdministradorDeClub(authorizationHeader, clubId);
+        authService.exigirOperadorDeClub(authorizationHeader, clubId);
         return socioService.actualizarSocioEnClub(clubId, id, request, actor);
     }
 
@@ -56,7 +56,7 @@ public class SocioController {
             @PathVariable Long id
     ) {
         Usuario actor = authService.obtenerUsuarioAutenticado(authorizationHeader);
-        authService.exigirAdministradorDeClub(authorizationHeader, clubId);
+        authService.exigirOperadorDeClub(authorizationHeader, clubId);
         return socioService.eliminarSocioEnClub(clubId, id, actor);
     }
 }

@@ -78,6 +78,7 @@ public class UsuarioService {
         asignaciones.stream()
                 .filter(asignacion -> asignacion.clubId() != null && asignacion.rolClub() != null)
                 .forEach(asignacion -> validarPuedeAsignar(usuarioAutenticado, asignacion));
+        validarCoherenciaRol(request.rol(), asignaciones);
 
         Usuario usuario = usuarioRepository.save(new Usuario(
                 request.dni(),
@@ -157,6 +158,7 @@ public class UsuarioService {
     }
 
     private void guardarAsignaciones(Usuario usuario, List<AsignacionUsuarioRequest> asignaciones, Usuario usuarioAutenticado) {
+        validarCoherenciaRol(usuario.getRol(), asignaciones);
         asignaciones.stream()
                 .filter(asignacion -> asignacion.clubId() != null && asignacion.rolClub() != null)
                 .forEach(asignacion -> validarPuedeAsignar(usuarioAutenticado, asignacion));
@@ -205,6 +207,27 @@ public class UsuarioService {
                 .orElseThrow(AccesoDenegadoException::new);
         if (asignacion.rolClub() == RolClub.ADMINISTRADOR) {
             throw new AccesoDenegadoException();
+        }
+    }
+
+    private void validarCoherenciaRol(RolUsuario rolUsuario, List<AsignacionUsuarioRequest> asignaciones) {
+        if (rolUsuario == RolUsuario.SUPERUSUARIO) {
+            if (!asignaciones.isEmpty()) {
+                throw new IllegalArgumentException("El superusuario no requiere asignaciones por club");
+            }
+            return;
+        }
+
+        RolClub rolEsperado = switch (rolUsuario) {
+            case ADMINISTRADOR -> RolClub.ADMINISTRADOR;
+            case OPERADOR -> RolClub.OPERADOR;
+            case PROFESOR -> RolClub.PROFESOR;
+            case SUPERUSUARIO -> throw new IllegalStateException("Rol no esperado");
+        };
+        boolean inconsistente = asignaciones.stream()
+                .anyMatch(asignacion -> asignacion != null && asignacion.rolClub() != rolEsperado);
+        if (inconsistente) {
+            throw new IllegalArgumentException("El rol global y el rol asignado al club deben coincidir");
         }
     }
 

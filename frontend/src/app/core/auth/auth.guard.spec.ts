@@ -41,6 +41,28 @@ describe('authGuard', () => {
     expect(runGuard('asistencias')).toBe(true);
   });
 
+  it('allows an operator to manage club operations but not users or clubs', () => {
+    const operator: UsuarioApp = {
+      id: 2,
+      dni: '87654321',
+      nombre: 'Maria',
+      apellido: 'Perez',
+      rol: 'OPERADOR',
+      estado: 'ACTIVO',
+      debeCambiarPassword: false,
+      clubes: [{ clubId: 1, clubNombre: 'Club A', rol: 'OPERADOR', actividadIds: [] }],
+    };
+    session.setSession('opaque-token', operator);
+
+    expect(runGuard('socios')).toBe(true);
+    expect(runGuard('cuotas')).toBe(true);
+    expect(runGuard('actividades/:id')).toBe(true);
+    const deniedUsers = runGuard('usuarios') as UrlTree;
+    const deniedClubs = runGuard('clubes') as UrlTree;
+    expect(router.serializeUrl(deniedUsers)).toBe('/dashboard');
+    expect(router.serializeUrl(deniedClubs)).toBe('/dashboard');
+  });
+
   function runGuard(path: string) {
     const route = { routeConfig: { path } } as ActivatedRouteSnapshot;
     const state = {} as RouterStateSnapshot;
