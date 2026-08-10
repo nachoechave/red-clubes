@@ -179,6 +179,5 @@ Antes de presentar el piloto se deben agregar capturas sin datos personales de l
 - El frontend conserva parte de la orquestación de features en el componente raíz; core auth y routing ya están separados.
 - El límite de login es local a una instancia.
 - No existe aún monitoreo externo ni dominio/TLS del piloto contratados.
-- El workflow CI está corregido y su equivalente local aprobó; falta confirmar una ejecución remota verde después de publicar estos cambios.
 
 No se deben presentar esas limitaciones como funcionalidades terminadas; son los últimos criterios operativos para habilitar un piloto real.

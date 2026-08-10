@@ -62,7 +62,7 @@ Prioridades: `P0` crítica, `P1` alta, `P2` media, `P3` mejora.
 | INF-01 | Docker reproducible | P1 | DB-02, FE-02 | Medio | MySQL/backend/frontend levantan con Compose y health checks | HECHO | Dockerfiles, compose, env example |
 | INF-02 | Piloto en Cloud Server | P1 | INF-01, FE-02, contratación del host | Medio | Docker Compose, DNS piloto, TLS, proxy `/api`, backup, límites y rollback verificados | PENDIENTE | compose, proxy, certificados, runbook, smoke tests |
 | INF-03 | Migración a subdominio municipal | P1 | INF-02, aprobación e infraestructura municipal | Medio | Datos exportados/importados, DNS, TLS, secretos y operación municipal verificados sin dependencia de Donweb | PENDIENTE | runbook de migración, configuración, smoke tests |
-| CI-01 | GitHub Actions | P1 | TEST-01, TEST-02 | Bajo | Backend verify + frontend install/test/build + stack Docker y health checks; falta confirmar ejecución remota después del próximo push | EN CURSO | `.github/workflows/ci.yml` |
+| CI-01 | GitHub Actions | P1 | TEST-01, TEST-02 | Bajo | Backend verify + frontend install/test/build + stack Docker y health checks aprobados en GitHub Actions | HECHO | `.github/workflows/ci.yml` |
 | DOC-02 | Documentación operativa completa | P1 | Fases previas | Bajo | README y cinco documentos exigidos describen solo lo implementado | HECHO | `README.md`, `docs/**` |
 
 ## Decisiones que requieren revisión antes de avanzar
