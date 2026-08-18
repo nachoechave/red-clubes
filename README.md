@@ -61,6 +61,8 @@ Copiá `.env.example` a `.env` y reemplazá todos los `change_me`. Las variables
 
 `.env` está ignorado por Git. No uses `root` como usuario normal de la aplicación.
 
+Cuando `DEMO_DATA_ENABLED=true`, se crea de forma idempotente un superusuario exclusivo para pruebas locales con DNI `41131131` y contraseña inicial `12345678`. El primer ingreso obliga a cambiarla. Nunca habilites los datos demo en producción.
+
 ## Ejecución con Docker
 
 ```bash
