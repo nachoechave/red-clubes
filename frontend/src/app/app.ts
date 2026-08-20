@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
@@ -71,7 +71,7 @@ const lucideIcons = [
     ...lucideIcons,
   ],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrls: ['./app.css', './app-legacy-features.css', './app-redesign.css']
 })
 export class App {
   private readonly authService = inject(AuthService);
@@ -103,6 +103,7 @@ export class App {
   });
   protected loginLoading = signal(false);
   protected loginError = signal('');
+  protected passwordVisible = signal(false);
   protected passwordActual = '';
   protected nuevaPassword = '';
   protected confirmarNuevaPassword = '';
@@ -200,14 +201,15 @@ export class App {
   protected asignacionesUsuarioForm: AsignacionUsuarioForm[] = [];
 
   protected readonly baseNavItems = [
-    { id: 'dashboard', label: 'Inicio', icon: 'home' },
+    { id: 'dashboard', label: 'Dashboard', icon: 'home' },
     { id: 'socios', label: 'Socios', icon: 'users' },
     { id: 'clubes', label: 'Clubes', icon: 'home' },
     { id: 'actividades', label: 'Actividades', icon: 'music' },
-    { id: 'cuotas', label: 'Cuotas', icon: 'receipt' },
+    { id: 'inscripciones', label: 'Inscripciones', icon: 'add' },
     { id: 'asistencias', label: 'Asistencias', icon: 'check' },
+    { id: 'cuotas', label: 'Cuotas y pagos', icon: 'receipt' },
     { id: 'reportes', label: 'Reportes', icon: 'chart' },
-    { id: 'usuarios', label: 'Usuarios', icon: 'key' },
+    { id: 'usuarios', label: 'Usuarios y roles', icon: 'key' },
     { id: 'configuracion', label: 'Configuracion', icon: 'settings' },
   ];
   protected readonly diasSemana = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo'];
@@ -222,6 +224,17 @@ export class App {
       takeUntilDestroyed(),
     ).subscribe((event) => this.activarSeccionDesdeUrl(event.urlAfterRedirects));
     this.restaurarSesion();
+  }
+
+  @HostListener('document:keydown.escape')
+  protected cerrarSuperficiesConEscape(): void {
+    this.userMenuOpen.set(false);
+    if (this.socioEditando()) {
+      this.cerrarPanelSocio();
+    }
+    if (this.clubPanelAbierto()) {
+      this.cerrarPanelClub();
+    }
   }
 
   protected navItems = computed(() => this.baseNavItems.filter((item) => {
@@ -307,12 +320,13 @@ export class App {
 
   protected metrics = computed(() => {
     const dashboard = this.dashboard();
-    const morosos = this.sociosMorosos();
     return [
-      { label: 'Socios activos', value: String(this.socios().filter((socio) => socio.estado === 'ACTIVO').length || dashboard?.sociosActivos || 0), change: `${this.socios().length || dashboard?.sociosTotales || 0} socios totales` },
-      { label: 'Cuotas al dia', value: String(this.cuotasCargadas() ? this.sociosAlDia() : dashboard?.cuotasAlDia ?? 0), change: `${this.formatearImporte(dashboard?.totalCobrado ?? 0)} cobrado` },
-      { label: 'Morosos', value: String(morosos), change: `${morosos} requieren revision`, danger: morosos > 0 },
-      { label: 'Actividades', value: String(this.actividades().filter((actividad) => actividad.estado === 'ACTIVA').length || dashboard?.actividadesActivas || 0), change: `${this.actividades().filter((actividad) => actividad.estado === 'ACTIVA').length || dashboard?.actividadesActivas || 0} en ${this.nombreClubActivo()}` },
+      { label: 'Clubes activos', value: String(this.clubes().filter((club) => club.estado === 'ACTIVO').length), change: `${this.clubes().length} disponibles para tu rol`, tone: 'info' },
+      { label: 'Socios activos', value: String(this.socios().filter((socio) => socio.estado === 'ACTIVO').length || dashboard?.sociosActivos || 0), change: `${this.socios().length || dashboard?.sociosTotales || 0} socios totales`, tone: 'success' },
+      { label: 'Actividades', value: String(this.actividades().filter((actividad) => actividad.estado === 'ACTIVA').length || dashboard?.actividadesActivas || 0), change: `${this.actividades().length} actividades registradas`, tone: 'violet' },
+      { label: 'Inscripciones', value: String(this.inscriptosTotalActividades()), change: 'Asignaciones activas a talleres', tone: 'info' },
+      { label: 'Asistencias', value: String(dashboard?.asistenciaMes ?? 0), change: 'Registros del periodo actual', tone: 'warning' },
+      { label: 'Recaudacion', value: this.formatearImporte(dashboard?.totalCobrado ?? 0), change: 'Total cobrado en el periodo', tone: 'success' },
     ];
   });
 
@@ -342,6 +356,31 @@ export class App {
     pendiente: this.cuotas().filter((cuota) => cuota.estado === 'PENDIENTE').reduce((total, cuota) => total + cuota.importe, 0),
     vencida: this.cuotas().filter((cuota) => cuota.estado === 'VENCIDA').reduce((total, cuota) => total + cuota.importe, 0),
   }));
+  protected totalDeudaPeriodo = computed(() => this.deudaPorEstado().pendiente + this.deudaPorEstado().vencida);
+  protected porcentajeCobranza = computed(() => {
+    const cobrado = this.dashboard()?.totalCobrado ?? 0;
+    const total = cobrado + this.totalDeudaPeriodo();
+    return total > 0 ? Math.round((cobrado / total) * 100) : 0;
+  });
+  protected distribucionSociosActivos = computed(() => {
+    const total = this.socios().length;
+    return total > 0 ? Math.round((this.sociosActivosClub() / total) * 100) : 0;
+  });
+  protected alertasGestion = computed(() => {
+    const alertas: { titulo: string; detalle: string; tono: 'danger' | 'warning' | 'info' }[] = [];
+    const vencidas = this.cuotas().filter((cuota) => cuota.estado === 'VENCIDA');
+    const completas = this.actividades().filter((actividad) => actividad.cupo > 0 && actividad.inscriptos >= actividad.cupo);
+    if (vencidas.length > 0) {
+      alertas.push({ titulo: `${vencidas.length} cuotas vencidas`, detalle: `${this.formatearImporte(this.deudaPorEstado().vencida)} requieren seguimiento`, tono: 'danger' });
+    }
+    if (completas.length > 0) {
+      alertas.push({ titulo: `${completas.length} actividades sin cupo`, detalle: 'Revisa la capacidad antes de nuevas inscripciones', tono: 'warning' });
+    }
+    if (this.socios().some((socio) => !socio.telefono || !socio.direccion)) {
+      alertas.push({ titulo: 'Informacion incompleta', detalle: 'Hay socios con datos de contacto pendientes', tono: 'info' });
+    }
+    return alertas;
+  });
   protected asistenciaBars = computed(() => this.normalizarBarras(this.dashboard()?.asistenciaMensual ?? this.reportes()?.asistenciaMensual ?? []));
   protected cumpleaniosDelMes = computed(() => {
     const mesActual = new Date().getMonth();
@@ -363,6 +402,9 @@ export class App {
   });
   protected actividadesParaAsistencia = computed(() => this.actividades().filter((actividad) => this.esFechaDeClase(actividad.dias, this.selectedAttendanceDate())));
   protected actividadSeleccionada = computed(() => this.actividades().find((actividad) => actividad.id === this.selectedActivityId()) ?? null);
+  protected actividadDetalleRuta = computed(() => this.actividadRutaId
+    ? this.actividades().find((actividad) => actividad.id === this.actividadRutaId) ?? null
+    : null);
   protected asistenciaFiltrada = computed(() => {
     const busqueda = this.asistenciaBusqueda().trim().toLowerCase();
     const estado = this.asistenciaEstadoFiltro();
@@ -466,7 +508,7 @@ export class App {
     this.actividadRutaId = actividadMatch ? Number(actividadMatch[1]) : null;
     const section = path === 'socios/nuevo'
       ? 'nuevo-socio'
-      : path.startsWith('socios/') || path === 'inscripciones'
+      : path.startsWith('socios/')
         ? 'socios'
         : path.startsWith('actividades/')
           ? 'actividades'
@@ -618,6 +660,15 @@ export class App {
   protected nombreUsuarioActual(): string {
     const usuario = this.currentUser();
     return usuario ? `${usuario.nombre} ${usuario.apellido}` : 'Usuario';
+  }
+
+  protected inicialesUsuarioActual(): string {
+    const usuario = this.currentUser();
+    return usuario ? `${usuario.nombre.charAt(0)}${usuario.apellido.charAt(0)}`.toUpperCase() : 'RC';
+  }
+
+  protected togglePasswordVisibility(): void {
+    this.passwordVisible.update((visible) => !visible);
   }
 
   protected rolVisible(rol: RolUsuario): string {

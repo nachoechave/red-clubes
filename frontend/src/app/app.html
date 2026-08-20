@@ -1,33 +1,52 @@
 @if (!loggedIn()) {
   <main class="login-shell">
-    <div class="login-card">
-      <div class="brand-mark large">
-        <img class="brand-logo" src="/brand/red-clubes-logo.png" alt="Red Clubes" />
+    <section class="login-visual" aria-label="Costa de Ensenada">
+      <div class="login-visual-content">
+        <span class="institution-pill">Municipalidad de Ensenada</span>
+        <h2>Gestion inteligente para los clubes de Ensenada.</h2>
+        <p>Conectamos clubes. Organizamos informacion. Mejoramos decisiones.</p>
+        <div class="login-location"><span aria-hidden="true">•</span> Punta Lara, Ensenada</div>
       </div>
-      <h1 class="sr-only">Red Clubes</h1>
-      <p>Gestion de clubes y centros de jubilados</p>
+    </section>
 
-      <form class="login-form" [formGroup]="loginForm" (ngSubmit)="login()" novalidate>
-        <label>
-          <span>DNI o usuario</span>
-          <input type="text" inputmode="numeric" autocomplete="username" formControlName="dni" placeholder="Ingresa tu DNI" [attr.aria-invalid]="loginForm.controls.dni.invalid && loginForm.controls.dni.touched" />
-        </label>
-        @if (loginForm.controls.dni.invalid && loginForm.controls.dni.touched) {
-          <p class="form-error">Ingresa un DNI de 7 a 11 digitos.</p>
-        }
-        <label>
-          <span>Contrasena</span>
-          <input type="password" autocomplete="current-password" formControlName="password" placeholder="Ingresa tu contrasena" [attr.aria-invalid]="loginForm.controls.password.invalid && loginForm.controls.password.touched" />
-        </label>
-        @if (loginForm.controls.password.invalid && loginForm.controls.password.touched) {
-          <p class="form-error">La contrasena debe tener al menos 8 caracteres.</p>
-        }
-        @if (loginError()) {
-          <p class="form-error">{{ loginError() }}</p>
-        }
-        <button class="primary-action" type="submit" [disabled]="loginLoading()">{{ loginLoading() ? 'Ingresando...' : 'Ingresar' }}</button>
-      </form>
-    </div>
+    <section class="login-panel">
+      <div class="login-card">
+        <div class="login-brand">
+          <img class="brand-logo" src="/brand/red-clubes-logo.png" alt="Red Clubes" />
+          <div><strong>Municipalidad de Ensenada</strong><span>Plataforma de gestion institucional</span></div>
+        </div>
+        <p class="eyebrow">Acceso seguro</p>
+        <h1>Bienvenido a Red Clubes</h1>
+        <p class="login-intro">Ingresa tus credenciales para acceder al centro de gestion.</p>
+
+        <form class="login-form" [formGroup]="loginForm" (ngSubmit)="login()" novalidate>
+          <label>
+            <span>DNI o usuario</span>
+            <input type="text" inputmode="numeric" autocomplete="username" formControlName="dni" placeholder="Ingresa tu DNI" [attr.aria-invalid]="loginForm.controls.dni.invalid && loginForm.controls.dni.touched" aria-describedby="dni-help" />
+          </label>
+          @if (loginForm.controls.dni.invalid && loginForm.controls.dni.touched) {
+            <p class="form-error" id="dni-help" role="alert">Ingresa un DNI de 7 a 11 digitos.</p>
+          }
+          <label>
+            <span>Contrasena</span>
+            <span class="password-field">
+              <input [type]="passwordVisible() ? 'text' : 'password'" autocomplete="current-password" formControlName="password" placeholder="Ingresa tu contrasena" [attr.aria-invalid]="loginForm.controls.password.invalid && loginForm.controls.password.touched" aria-describedby="password-help" />
+              <button type="button" (click)="togglePasswordVisibility()" [attr.aria-label]="passwordVisible() ? 'Ocultar contrasena' : 'Mostrar contrasena'">{{ passwordVisible() ? 'Ocultar' : 'Mostrar' }}</button>
+            </span>
+          </label>
+          @if (loginForm.controls.password.invalid && loginForm.controls.password.touched) {
+            <p class="form-error" id="password-help" role="alert">La contrasena debe tener al menos 8 caracteres.</p>
+          }
+          @if (loginError()) {
+            <p class="form-error login-error" role="alert">{{ loginError() }}</p>
+          }
+          <button class="primary-action login-submit" type="submit" [disabled]="loginLoading()" [attr.aria-busy]="loginLoading()">
+            {{ loginLoading() ? 'Validando acceso...' : 'Ingresar a la plataforma' }}
+          </button>
+        </form>
+        <p class="login-support">Acceso exclusivo para personal autorizado y responsables de clubes.</p>
+      </div>
+    </section>
   </main>
 } @else {
   @if (debeCambiarPassword()) {
@@ -66,17 +85,15 @@
       <button class="icon-button" type="button" [attr.aria-label]="sidebarOpen() ? 'Cerrar menu' : 'Abrir menu'" (click)="toggleSidebar()">
         <span class="hamburger"></span>
       </button>
-      <div class="brand">
-        <div class="brand-mark">
-          <img src="/brand/red-clubes-mark.png" alt="" aria-hidden="true" />
-        </div>
-        <strong>Red Clubes</strong>
+      <div class="topbar-context">
+        <span>Red Clubes Ensenada</span>
+        <strong>{{ sectionTitle() }}</strong>
       </div>
       <label class="club-switcher">
         @if (logoClubActivo()) {
           <img class="club-switcher-logo" [src]="logoClubActivo()!" alt="" aria-hidden="true" />
         }
-        <select [ngModel]="clubActivoId()" (ngModelChange)="cambiarClub($event)">
+        <select aria-label="Club activo" [ngModel]="clubActivoId()" (ngModelChange)="cambiarClub($event)">
           @for (club of clubesDisponibles(); track club.clubId) {
             <option [ngValue]="club.clubId">{{ club.clubNombre }}</option>
           }
@@ -84,8 +101,8 @@
       </label>
       <div class="user-menu">
         <button class="user-button" type="button" aria-label="Abrir menu de usuario" (click)="toggleUserMenu()">
-        <div class="avatar">A</div>
-          <span>{{ nombreUsuarioActual() }}</span>
+          <div class="avatar">{{ inicialesUsuarioActual() }}</div>
+          <span class="user-button-copy"><strong>{{ nombreUsuarioActual() }}</strong><small>{{ rolVisible(currentUser()!.rol) }}</small></span>
           <span class="chevron"></span>
         </button>
         @if (userMenuOpen()) {
@@ -106,13 +123,20 @@
 
     <div class="workspace">
       <aside class="sidebar">
-        @for (item of navItems(); track item.id) {
-          <button
-            type="button"
-            class="nav-item"
-            [class.active]="activeSection() === item.id"
-            (click)="goTo(item.id)"
-          >
+        <div class="sidebar-brand">
+          <img src="/brand/red-clubes-mark.png" alt="" aria-hidden="true" />
+          <div><strong>Red Clubes</strong><span>Municipalidad de Ensenada</span></div>
+        </div>
+        <nav class="sidebar-nav" aria-label="Navegacion principal">
+          <span class="nav-section-label">Gestion</span>
+          @for (item of navItems(); track item.id) {
+            <button
+              type="button"
+              class="nav-item"
+              [class.active]="activeSection() === item.id"
+              [attr.aria-current]="activeSection() === item.id ? 'page' : null"
+              (click)="goTo(item.id)"
+            >
             <span class="nav-icon" aria-hidden="true">
               @switch (item.id) {
                 @case ('dashboard') {
@@ -129,6 +153,9 @@
                 }
                 @case ('actividades') {
                   <svg lucideCalendarDays></svg>
+                }
+                @case ('inscripciones') {
+                  <svg lucideUserPlus></svg>
                 }
                 @case ('cuotas') {
                   <svg lucideWalletCards></svg>
@@ -150,9 +177,18 @@
                 }
               }
             </span>
-            <span>{{ item.label }}</span>
-          </button>
-        }
+              <span>{{ item.label }}</span>
+            </button>
+          }
+        </nav>
+        <div class="sidebar-footer">
+          <div class="sidebar-user">
+            <span class="avatar">{{ inicialesUsuarioActual() }}</span>
+            <div><strong>{{ nombreUsuarioActual() }}</strong><span>{{ rolVisible(currentUser()!.rol) }}</span></div>
+          </div>
+          <div class="sidebar-club"><span>Club activo</span><strong>{{ nombreClubActivo() }}</strong></div>
+          <button class="sidebar-logout" type="button" (click)="logout()">Cerrar sesion</button>
+        </div>
       </aside>
 
       <section class="content-panel">
@@ -164,145 +200,115 @@
         }
         @switch (activeSection()) {
           @case ('dashboard') {
-            <div class="page-head row">
+            <div class="page-head dashboard-head row">
               <div>
-                <h2>Inicio</h2>
-                <p>Resumen general de {{ nombreClubActivo() }}</p>
+                <p class="eyebrow">Centro de control municipal</p>
+                <h2>Estado general de la red</h2>
+                <p>Indicadores operativos de {{ nombreClubActivo() }} para el periodo actual.</p>
               </div>
-              <span class="data-pill real">Datos del backend</span>
+              <span class="period-chip"><svg lucideCalendarDays aria-hidden="true"></svg> Actualizado con datos del sistema</span>
             </div>
 
-            <div class="metric-grid hero-metrics">
+            <div class="metric-grid hero-metrics civic-kpis">
               @for (metric of metrics(); track metric.label) {
-                <article class="metric-card">
-                  <span class="metric-icon" [class.warn]="metric.danger" [class.money]="metric.label === 'Cuotas al dia'" [class.activity]="metric.label === 'Actividades'">
+                <article class="metric-card civic-kpi" [attr.data-tone]="metric.tone">
+                  <span class="metric-icon">
                     @switch (metric.label) {
-                      @case ('Socios activos') {
-                        <svg lucideUsers aria-hidden="true"></svg>
-                      }
-                      @case ('Cuotas al dia') {
-                        <svg lucideWalletCards aria-hidden="true"></svg>
-                      }
-                      @case ('Morosos') {
-                        <svg lucideWalletCards aria-hidden="true"></svg>
-                      }
-                      @case ('Actividades') {
-                        <svg lucideCalendarDays aria-hidden="true"></svg>
-                      }
+                      @case ('Clubes activos') { <svg lucideHeartHandshake aria-hidden="true"></svg> }
+                      @case ('Socios activos') { <svg lucideUsers aria-hidden="true"></svg> }
+                      @case ('Actividades') { <svg lucideCalendarDays aria-hidden="true"></svg> }
+                      @case ('Inscripciones') { <svg lucideUserPlus aria-hidden="true"></svg> }
+                      @case ('Asistencias') { <svg lucideClipboardCheck aria-hidden="true"></svg> }
+                      @default { <svg lucideWalletCards aria-hidden="true"></svg> }
                     }
                   </span>
-                  <span>{{ metric.label }}</span>
+                  <span class="kpi-label">{{ metric.label }}</span>
                   <strong>{{ metric.value }}</strong>
-                  <small [class.danger]="metric.danger">{{ metric.change }}</small>
+                  <small>{{ metric.change }}</small>
                 </article>
               }
             </div>
 
-            <div class="admin-dashboard-grid">
-              <article class="panel attendance-panel">
-                <div class="panel-title">
-                  <h3>Asistencia mensual</h3>
-                  <span class="data-pill real">Datos del backend</span>
+            <div class="control-grid">
+              <article class="panel analytics-card analytics-wide">
+                <div class="panel-title row-title">
+                  <div><span class="panel-kicker">Analitica</span><h3>Asistencia mensual</h3></div>
+                  <span class="data-pill real">Datos reales</span>
                 </div>
-                <div class="backend-bar-chart">
-                  @for (bar of asistenciaBars(); track $index) {
-                    <span [style.height.%]="bar"></span>
-                  }
-                </div>
-                <div class="chart-labels"><span>Ene</span><span>Feb</span><span>Mar</span><span>Abr</span><span>May</span><span>Jun</span><span>Jul</span></div>
-                <div class="insight-strip">Total asistencias este mes: {{ dashboard()?.asistenciaMes ?? 0 }}</div>
-              </article>
-
-              <article class="panel payments-panel">
-                <div class="panel-title">
-                  <h3>Cuotas cobradas</h3>
-                  <span class="data-pill real">Datos del backend</span>
-                </div>
-                <div class="payment-summary">
-                  <div class="donut strong"></div>
-                  <div>
-                    <strong>{{ formatearImporte(dashboard()?.totalCobrado ?? 0) }}</strong>
-                    <span>Total cobrado</span>
+                @if ((dashboard()?.asistenciaMensual?.length ?? 0) > 0) {
+                  <div class="analytics-bars" role="img" aria-label="Evolucion mensual de asistencias">
+                    @for (mes of dashboard()?.asistenciaMensual ?? []; track mes.mes; let i = $index) {
+                      <div class="analytics-column">
+                        <span class="analytics-value">{{ mes.valor }}</span>
+                        <span class="analytics-bar"><i [style.height.%]="asistenciaBars()[i]"></i></span>
+                        <small>{{ mes.mes }}</small>
+                      </div>
+                    }
                   </div>
-                </div>
-                <div class="insight-strip success">{{ cuotasCargadas() ? sociosAlDia() : dashboard()?.cuotasAlDia ?? 0 }} socios al dia</div>
+                } @else {
+                  <div class="empty-state compact"><img src="/ui/empty-state.svg" alt="" /><strong>Sin historial disponible</strong><span>La serie aparecera cuando existan asistencias registradas.</span></div>
+                }
+                <div class="analytics-summary"><strong>{{ dashboard()?.asistenciaMes ?? 0 }}</strong><span>asistencias registradas en el mes</span></div>
               </article>
 
-              <article class="panel next-panel">
-                <div class="panel-title row-title">
-                  <h3>Proximas actividades</h3>
-                  <span class="data-pill real">Datos del backend</span>
+              <article class="panel analytics-card">
+                <div class="panel-title"><span class="panel-kicker">Composicion</span><h3>Distribucion de socios</h3></div>
+                <div class="distribution-layout">
+                  <div class="dynamic-donut" [style.--active-value]="distribucionSociosActivos()" role="img" [attr.aria-label]="distribucionSociosActivos() + '% de socios activos'">
+                    <strong>{{ distribucionSociosActivos() }}%</strong><span>activos</span>
+                  </div>
+                  <dl class="distribution-legend">
+                    <div><dt><i class="legend-dot active"></i>Activos</dt><dd>{{ sociosActivosClub() }}</dd></div>
+                    <div><dt><i class="legend-dot inactive"></i>Inactivos</dt><dd>{{ sociosInactivosClub() }}</dd></div>
+                  </dl>
                 </div>
-                <div class="mini-list">
-                  @for (actividad of actividadesProximasDelClub(); track actividad.nombre) {
-                    <div class="mini-row">
-                      <span class="mini-thumb activity"></span>
-                      <div><strong>{{ actividad.nombre }}</strong><small>{{ actividad.dias }} · {{ actividad.profesor }}</small></div>
-                    </div>
-                  }
-                </div>
+              </article>
+
+              <article class="panel finance-card">
+                <div class="panel-title row-title"><div><span class="panel-kicker">Finanzas</span><h3>Recaudacion y cuotas</h3></div><strong class="collection-rate">{{ porcentajeCobranza() }}%</strong></div>
+                <div class="finance-total"><span>Recaudado</span><strong>{{ formatearImporte(dashboard()?.totalCobrado ?? 0) }}</strong></div>
+                <div class="finance-progress"><span [style.width.%]="porcentajeCobranza()"></span></div>
+                <dl class="finance-breakdown">
+                  <div><dt>Pendiente</dt><dd>{{ formatearImporte(deudaPorEstado().pendiente) }}</dd></div>
+                  <div class="danger"><dt>Vencido</dt><dd>{{ formatearImporte(deudaPorEstado().vencida) }}</dd></div>
+                  <div><dt>Socios al dia</dt><dd>{{ sociosAlDia() }}</dd></div>
+                </dl>
               </article>
             </div>
 
-            <div class="dashboard-bottom-grid">
-              <article class="panel">
-                <div class="panel-title row-title">
-                  <h3>Cumpleaños del mes</h3>
-                  <button class="link-action inline-link" type="button" (click)="goTo('socios')">Ver todos</button>
-                </div>
-                <div class="birthday-grid month-birthdays">
-                  @for (cumple of cumpleaniosDelMes(); track cumple.socio.id) {
-                    <div class="birthday-card">
-                      <span class="member-photo">{{ socioAvatarIniciales(cumple.socio) }}</span>
-                      <strong>{{ cumple.socio.nombre }} {{ cumple.socio.apellido }}</strong>
-                      <small>{{ fechaCumpleTexto(cumple.nacimiento) }}</small>
-                      <em>Cumple {{ cumple.edad }}</em>
-                    </div>
+            <div class="management-grid">
+              <article class="panel management-card">
+                <div class="panel-title row-title"><div><span class="panel-kicker">Gestion</span><h3>Actividad reciente</h3></div></div>
+                <div class="timeline-list">
+                  @for (movimiento of dashboard()?.movimientos ?? []; track $index) {
+                    <div class="timeline-item"><span class="timeline-dot"></span><div><strong>{{ movimiento.descripcion }}</strong><small>{{ movimiento.momento }}</small></div></div>
                   } @empty {
-                    <p class="empty-inline">No hay cumpleaños cargados para este club.</p>
+                    <p class="empty-inline">Todavia no hay movimientos recientes para mostrar.</p>
                   }
                 </div>
               </article>
 
-              <article class="panel">
-                <div class="panel-title row-title">
-                  <h3>Socios recientes</h3>
-                  <button class="link-action inline-link" type="button" (click)="goTo('socios')">Ver todos</button>
-                </div>
-                <div class="mini-list">
-                  @for (socio of sociosRecientesDelClub(); track socio.id) {
-                    <div class="mini-row">
-                      <span class="avatar soft">{{ socio.nombre.charAt(0) }}</span>
-                      <div><strong>{{ socio.nombre }}</strong><small>{{ socio.telefono }}</small></div>
-                    </div>
+              <article class="panel management-card">
+                <div class="panel-title row-title"><div><span class="panel-kicker">Agenda</span><h3>Proximas actividades</h3></div><button class="link-action inline-link" type="button" (click)="goTo('actividades')">Ver actividades</button></div>
+                <div class="agenda-list">
+                  @for (actividad of actividadesProximasDelClub(); track actividad.id) {
+                    <div class="agenda-item"><span class="agenda-date"><strong>{{ actividad.dias.split(' ')[0] }}</strong><small>Clase</small></span><div><strong>{{ actividad.nombre }}</strong><small>{{ actividad.clubNombre }} · {{ actividad.dias }}</small></div></div>
+                  } @empty {
+                    <p class="empty-inline">No hay actividades proximas informadas.</p>
                   }
                 </div>
               </article>
 
-              <article class="panel">
-                <div class="panel-title row-title">
-                  <h3>Cuotas pendientes</h3>
-                  <span class="data-pill real">Datos del backend</span>
-                </div>
-                <div class="mini-list">
-                  @for (cuota of cuotasPendientesDelClub(); track cuota.id) {
-                    <div class="mini-row">
-                      <span class="mini-thumb warning"></span>
-                      <div><strong>{{ cuota.socioNombre }}</strong><small>{{ cuota.estado }} · {{ formatearImporte(cuota.importe) }}</small></div>
-                    </div>
+              <article class="panel management-card alerts-card">
+                <div class="panel-title row-title"><div><span class="panel-kicker">Atencion</span><h3>Alertas de gestion</h3></div><span class="alert-count">{{ alertasGestion().length }}</span></div>
+                <div class="alerts-list">
+                  @for (alerta of alertasGestion(); track alerta.titulo) {
+                    <div class="alert-item" [attr.data-tone]="alerta.tono"><span aria-hidden="true">!</span><div><strong>{{ alerta.titulo }}</strong><small>{{ alerta.detalle }}</small></div></div>
+                  } @empty {
+                    <div class="all-clear"><strong>Sin alertas criticas</strong><span>Los indicadores actuales no requieren acciones inmediatas.</span></div>
                   }
                 </div>
               </article>
-            </div>
-
-            <div class="quick-actions">
-              <h3>Accesos rapidos</h3>
-              <div class="quick-grid">
-                <button type="button" (click)="goTo('nuevo-socio')"><span class="quick-icon add" aria-hidden="true"><svg lucideUserPlus></svg></span><strong>Nuevo socio</strong><small>Agregar un nuevo socio</small></button>
-                <button type="button" (click)="goTo('socios')"><span class="quick-icon members" aria-hidden="true"><svg lucideUsers></svg></span><strong>Ver socios</strong><small>Listado filtrado por club</small></button>
-                <button type="button" (click)="goTo('actividades')"><span class="quick-icon activity" aria-hidden="true"><svg lucideCalendarDays></svg></span><strong>Actividades</strong><small>Gestion desde backend</small></button>
-                <button type="button" (click)="goTo('reportes')"><span class="quick-icon reports" aria-hidden="true"><svg lucideChartNoAxesColumnIncreasing></svg></span><strong>Reportes</strong><small>Datos calculados</small></button>
-              </div>
             </div>
           }
 
@@ -310,7 +316,7 @@
             <div class="page-head row">
               <div>
                 <h2>Socios</h2>
-                <p>Gestiona los socios de {{ nombreClubActivo() }}</p>
+                <p>Administracion y seguimiento de socios de {{ nombreClubActivo() }}.</p>
               </div>
               <button class="primary-action compact" type="button" (click)="goTo('nuevo-socio')">+ Nuevo socio</button>
             </div>
@@ -338,6 +344,10 @@
                 </div>
 
                 <div class="socios-filter-panel">
+                  <label>
+                    <span>Busqueda general</span>
+                    <input type="search" placeholder="Nombre, DNI o telefono" [(ngModel)]="socioBusqueda" />
+                  </label>
                   <label>
                     <span>Buscar por apellido</span>
                     <input type="search" placeholder="Ej. Gonzalez" [(ngModel)]="socioApellidoFiltro" />
@@ -374,7 +384,6 @@
                   <div class="table-toolbar">
                     <strong>{{ sociosFiltrados().length }} socios encontrados</strong>
                     <div class="actions">
-                      <button type="button">Exportar</button>
                       <button class="primary-action compact" type="button" (click)="goTo('nuevo-socio')">+ Nuevo socio</button>
                     </div>
                   </div>
@@ -491,10 +500,10 @@
 
             @if (socioEditando()) {
               <div class="modal-backdrop">
-                <article class="modal-panel wide-modal">
+                <article class="modal-panel wide-modal" role="dialog" aria-modal="true" aria-labelledby="editar-socio-titulo">
                   <div class="modal-head">
                     <div>
-                      <h3>Editar socio</h3>
+                      <h3 id="editar-socio-titulo">Editar socio</h3>
                       <p>Actualiza los datos principales</p>
                     </div>
                     <button class="icon-button" type="button" aria-label="Cerrar" (click)="cerrarPanelSocio()">X</button>
@@ -576,43 +585,32 @@
             @if (clubMensaje()) {
               <p class="form-success panel-error">{{ clubMensaje() }}</p>
             }
-            <div class="club-grid">
-              @for (club of clubes(); track club.id) {
-                <article class="club-card">
-                  @if (club.logoUrl) {
-                    <img class="club-logo" [src]="club.logoUrl" [alt]="club.nombre" />
-                  } @else {
-                    <div class="club-logo placeholder"><svg lucideHeartHandshake aria-hidden="true"></svg></div>
+            <div class="table-card clubs-table">
+              <div class="table-toolbar"><div><strong>{{ clubes().length }} instituciones</strong><span>Clubes visibles segun tu alcance</span></div></div>
+              <table>
+                <thead><tr><th>Institucion</th><th>Direccion</th><th>Estado</th><th>Situacion</th><th>Acciones</th></tr></thead>
+                <tbody>
+                  @for (club of clubes(); track club.id) {
+                    <tr>
+                      <td><span class="club-table-name"><img [src]="club.logoUrl || '/ui/placeholder-club.svg'" [alt]="club.logoUrl ? club.nombre : ''" /><strong>{{ club.nombre }}</strong></span></td>
+                      <td>{{ club.direccion || 'Sin direccion informada' }}</td>
+                      <td><span class="badge" [class.inactive]="club.estado === 'INACTIVO'">{{ club.estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}</span></td>
+                      <td>{{ club.id === clubActivoId() ? socios().length + ' socios · ' + actividades().length + ' actividades' : 'Selecciona el club para consultar' }}</td>
+                      <td class="actions"><button type="button" (click)="cambiarClub(club.id); goTo('dashboard')">Ver dashboard</button>@if (esSuperusuario()) { <button class="primary-action compact" type="button" (click)="editarClub(club)">Editar</button> }</td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="5"><div class="empty-state compact"><img src="/ui/empty-state.svg" alt="" /><strong>No hay clubes cargados</strong><span>Comenza creando la primera institucion.</span></div></td></tr>
                   }
-                  <h3>{{ club.nombre }}</h3>
-                  <dl>
-                    <div><dt>Direccion:</dt><dd>{{ club.direccion }}</dd></div>
-                    <div><dt>Estado:</dt><dd>{{ club.estado }}</dd></div>
-                  </dl>
-                  <div class="card-actions">
-                    <button type="button" (click)="cambiarClub(club.id); goTo('dashboard')">Ver inicio</button>
-                    @if (esSuperusuario()) {
-                      <button class="primary-action compact" type="button" (click)="editarClub(club)">Editar</button>
-                    }
-                  </div>
-                </article>
-              } @empty {
-                <div class="empty-state wide">
-                  <strong>No hay clubes cargados</strong>
-                  <span>Comenza creando el primer club para cargar socios, actividades y usuarios.</span>
-                  @if (esSuperusuario()) {
-                    <button class="primary-action compact" type="button" (click)="nuevoClub()">+ Nuevo club</button>
-                  }
-                </div>
-              }
+                </tbody>
+              </table>
             </div>
 
             @if (clubPanelAbierto()) {
               <div class="modal-backdrop">
-                <article class="modal-panel">
+                <article class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="editar-club-titulo">
                   <div class="modal-head">
                     <div>
-                      <h3>{{ clubEditando() ? 'Editar club' : 'Nuevo club' }}</h3>
+                      <h3 id="editar-club-titulo">{{ clubEditando() ? 'Editar club' : 'Nuevo club' }}</h3>
                       <p>Solo disponible para superusuario</p>
                     </div>
                     <button class="icon-button" type="button" aria-label="Cerrar" (click)="cerrarPanelClub()">X</button>
@@ -659,6 +657,14 @@
             </div>
             @if (dataError()) {
               <p class="form-error panel-error">{{ dataError() }}</p>
+            }
+            @if (actividadDetalleRuta()) {
+              <article class="activity-hero">
+                <div class="activity-hero-icon"><svg lucideDumbbell aria-hidden="true"></svg></div>
+                <div><p class="eyebrow">Detalle de actividad</p><h2>{{ actividadDetalleRuta()!.nombre }}</h2><span>{{ actividadDetalleRuta()!.clubNombre }} · {{ actividadDetalleRuta()!.categoria }}</span></div>
+                <span class="badge" [class.inactive]="actividadDetalleRuta()!.estado === 'INACTIVA'">{{ actividadDetalleRuta()!.estado }}</span>
+                <dl><div><dt>Profesor</dt><dd>{{ actividadDetalleRuta()!.profesor }}</dd></div><div><dt>Dia y horario</dt><dd>{{ actividadDetalleRuta()!.dias }}</dd></div><div><dt>Cupo</dt><dd>{{ actividadDetalleRuta()!.inscriptos }} / {{ actividadDetalleRuta()!.cupo }}</dd></div></dl>
+              </article>
             }
             @if (esAdministradorClubActual() && !actividadEditando()) {
                 <form class="member-form activity-create-form" (ngSubmit)="crearActividad()">
@@ -807,13 +813,14 @@
                     <p><strong>Dias:</strong> {{ actividad.dias }}</p>
                   </div>
                   <div class="activity-capacity">
-                    <span>Cupo: {{ actividad.cupo }}</span>
-                    <span>Inscriptos: {{ actividad.inscriptos }}</span>
+                    <span><strong>{{ actividad.inscriptos }} / {{ actividad.cupo }}</strong> inscriptos</span>
+                    <span class="capacity-track"><i [style.width.%]="actividad.cupo > 0 ? (actividad.inscriptos / actividad.cupo) * 100 : 0"></i></span>
                   </div>
                   <div class="card-actions inline">
                     @if (puedeOperarClubActual()) {
                       <button type="button" (click)="goTo('socios')">Ver socios</button>
                     }
+                    <button type="button" (click)="goTo('actividades/' + actividad.id)">Ver detalle</button>
                     @if (esAdministradorClubActual()) {
                       <button type="button" (click)="editarActividad(actividad)">Editar</button>
                     }
@@ -824,13 +831,55 @@
             </div>
           }
 
+          @case ('inscripciones') {
+            <div class="page-head row">
+              <div>
+                <p class="eyebrow">Gestion operativa</p>
+                <h2>Inscripciones</h2>
+                <p>Seguimiento de socios vinculados a actividades de {{ nombreClubActivo() }}.</p>
+              </div>
+              <button class="primary-action compact" type="button" (click)="goTo('socios')">Gestionar desde socios</button>
+            </div>
+            <div class="filters enrollment-filters">
+              <label class="search-field"><span>Buscar socio</span><input type="search" placeholder="Nombre, DNI o telefono" [(ngModel)]="socioBusqueda" /></label>
+              <label><span>Actividad</span><select [(ngModel)]="socioActividadFiltro"><option value="TODAS">Todas las actividades</option>@for (actividad of actividadesFiltro(); track actividad) { <option [value]="actividad">{{ actividad }}</option> }</select></label>
+              <label><span>Estado del socio</span><select [(ngModel)]="socioEstadoFiltro"><option value="TODOS">Todos</option><option value="ACTIVO">Activo</option><option value="INACTIVO">Inactivo</option></select></label>
+            </div>
+            <div class="table-card enrollment-table">
+              <div class="table-toolbar"><div><strong>{{ sociosFiltrados().length }} socios</strong><span>Las inscripciones actuales son asignaciones directas socio–actividad.</span></div></div>
+              <table>
+                <thead><tr><th>Socio</th><th>DNI</th><th>Actividades inscriptas</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <tbody>
+                  @for (socio of sociosFiltrados(); track socio.id) {
+                    <tr>
+                      <td><span class="table-person"><span class="member-photo small">{{ socioAvatarIniciales(socio) }}</span><strong>{{ socio.nombre }} {{ socio.apellido }}</strong></span></td>
+                      <td>{{ socio.dni }}</td>
+                      <td><div class="activity-chip-list">@for (actividad of socioActividadesPreview(socio); track actividad.nombre) { <span class="club-chip">{{ actividad.nombre }}</span> } @empty { <span class="muted-cell-inline">Sin actividades</span> }</div></td>
+                      <td><span class="badge" [class.inactive]="socio.estado === 'INACTIVO'">{{ socio.estado }}</span></td>
+                      <td><button class="secondary-action compact" type="button" (click)="prepararInscripcionesSocio(socio); goTo('socios')">Gestionar inscripcion</button></td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="5" class="empty-cell">No hay inscripciones para los filtros seleccionados.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
           @case ('cuotas') {
             <div class="page-head row">
               <div>
-                <h2>Cuotas</h2>
-                <p>Gestiona las cuotas de los socios</p>
+                <p class="eyebrow">Administracion financiera</p>
+                <h2>Cuotas y pagos</h2>
+                <p>Seguimiento de cobranza de {{ nombreClubActivo() }}.</p>
               </div>
               <span class="data-pill real">Datos del backend</span>
+            </div>
+            <div class="metric-grid finance-kpis">
+              <article class="metric-card"><span>Recaudado</span><strong>{{ formatearImporte(dashboard()?.totalCobrado ?? 0) }}</strong><small>Pagos activos del periodo</small></article>
+              <article class="metric-card"><span>Pendiente</span><strong>{{ formatearImporte(deudaPorEstado().pendiente) }}</strong><small>Cuotas por cobrar</small></article>
+              <article class="metric-card danger-kpi"><span>Vencido</span><strong>{{ formatearImporte(deudaPorEstado().vencida) }}</strong><small>Requiere seguimiento</small></article>
+              <article class="metric-card"><span>Cobranza</span><strong>{{ porcentajeCobranza() }}%</strong><small>Sobre deuda y recaudacion</small></article>
             </div>
             <div class="filters">
               <label class="search-field"><input type="search" placeholder="Buscar socio..." [(ngModel)]="socioBusqueda" /></label>
@@ -1200,8 +1249,9 @@
           @case ('usuarios') {
             <div class="page-head row">
               <div>
-                <h2>Usuarios</h2>
-                <p>Administra quienes pueden acceder a la app</p>
+                <p class="eyebrow">Administracion y seguridad</p>
+                <h2>Usuarios y roles</h2>
+                <p>Administra quienes pueden acceder a la plataforma y su alcance institucional.</p>
               </div>
               <button class="secondary-action" type="button" (click)="cargarUsuarios()">Actualizar</button>
             </div>
@@ -1352,13 +1402,22 @@
           @case ('configuracion') {
             <div class="page-head">
               <div>
+                <p class="eyebrow">Preferencias</p>
                 <h2>Configuracion</h2>
-                <p>Administra tu cuenta y preferencias del sistema</p>
+                <p>Administra tu cuenta y las opciones actualmente soportadas.</p>
               </div>
             </div>
 
-            <div class="settings-grid">
+            <div class="settings-layout">
+              <aside class="settings-nav" aria-label="Categorias de configuracion">
+                <strong>Configuracion</strong>
+                <a href="#datos-personales" class="active">General</a>
+                <a href="#seguridad">Seguridad</a>
+                <span>Las demas categorias requieren soporte funcional.</span>
+              </aside>
+              <div class="settings-grid">
               <article class="panel settings-profile">
+                <span id="datos-personales"></span>
                 <div class="panel-title">
                   <h3>Datos personales</h3>
                   <span>Actualiza como figura tu usuario en el sistema</span>
@@ -1391,6 +1450,7 @@
               </article>
 
               <article class="panel">
+                <span id="seguridad"></span>
                 <div class="panel-title">
                   <h3>Seguridad</h3>
                   <span>Cambia tu contrasena de acceso</span>
@@ -1420,6 +1480,7 @@
                   </div>
                 </form>
               </article>
+              </div>
             </div>
           }
 

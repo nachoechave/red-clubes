@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 150" role="img" aria-labelledby="title">
+  <title id="title">Sin resultados</title>
+  <rect x="44" y="24" width="132" height="96" rx="16" fill="#F7F9F8" stroke="#E4E9E6" stroke-width="3"/>
+  <path d="M72 52h76M72 70h54M72 88h34" stroke="#9FB1A9" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="160" cy="108" r="26" fill="#EAF6F0" stroke="#078C4C" stroke-width="4"/>
+  <path d="m178 126 18 18" stroke="#075A3D" stroke-width="7" stroke-linecap="round"/>
+</svg>

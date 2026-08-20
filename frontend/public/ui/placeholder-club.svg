@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title">
+  <title id="title">Club sin logo</title>
+  <rect width="96" height="96" rx="24" fill="#EAF6F0"/>
+  <path d="M28 44 48 28l20 16v24H28V44Z" fill="#fff" stroke="#078C4C" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M40 68V52h16v16M24 68h48" fill="none" stroke="#075A3D" stroke-width="4" stroke-linecap="round"/>
+</svg>
