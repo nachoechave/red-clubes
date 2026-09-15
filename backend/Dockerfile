@@ -4,7 +4,7 @@ COPY pom.xml ./
 COPY src ./src
 RUN mvn -B -ntp clean package -DskipTests
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 RUN apk upgrade --no-cache \
     && apk add --no-cache wget \
     && addgroup -S redclubes \
