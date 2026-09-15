@@ -4,13 +4,15 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
 
 @Service
 public class PasswordService {
 
-    private static final int ITERACIONES = 120_000;
+    static final int ITERACIONES_ACTUALES = 600_000;
+    private static final int ITERACIONES_MAXIMAS_ACEPTADAS = 10_000_000;
     private static final int LONGITUD_CLAVE = 256;
     private static final int LONGITUD_SALT = 16;
     private static final String ALGORITMO = "PBKDF2WithHmacSHA256";
@@ -21,7 +23,7 @@ public class PasswordService {
         secureRandom.nextBytes(salt);
         byte[] hash = calcularHash(password, salt);
 
-        return ITERACIONES
+        return ITERACIONES_ACTUALES
                 + ":"
                 + Base64.getEncoder().encodeToString(salt)
                 + ":"
@@ -29,39 +31,61 @@ public class PasswordService {
     }
 
     public boolean coincide(String password, String passwordHash) {
-        String[] partes = passwordHash.split(":");
-        if (partes.length != 3) {
+        HashAlmacenado almacenado = parsear(passwordHash);
+        if (almacenado == null) {
             return false;
         }
+        byte[] hashIngresado = calcularHash(password, almacenado.salt(), almacenado.iteraciones());
+        return MessageDigest.isEqual(almacenado.hash(), hashIngresado);
+    }
 
-        int iteraciones = Integer.parseInt(partes[0]);
-        byte[] salt = Base64.getDecoder().decode(partes[1]);
-        byte[] hashGuardado = Base64.getDecoder().decode(partes[2]);
-        byte[] hashIngresado = calcularHash(password, salt, iteraciones);
-
-        if (hashGuardado.length != hashIngresado.length) {
-            return false;
-        }
-
-        int diferencias = 0;
-        for (int i = 0; i < hashGuardado.length; i++) {
-            diferencias |= hashGuardado[i] ^ hashIngresado[i];
-        }
-
-        return diferencias == 0;
+    public boolean necesitaRehash(String passwordHash) {
+        HashAlmacenado almacenado = parsear(passwordHash);
+        return almacenado == null || almacenado.iteraciones() < ITERACIONES_ACTUALES;
     }
 
     private byte[] calcularHash(String password, byte[] salt) {
-        return calcularHash(password, salt, ITERACIONES);
+        return calcularHash(password, salt, ITERACIONES_ACTUALES);
     }
 
     private byte[] calcularHash(String password, byte[] salt, int iteraciones) {
         try {
             PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, iteraciones, LONGITUD_CLAVE);
-            SecretKeyFactory factory = SecretKeyFactory.getInstance(ALGORITMO);
-            return factory.generateSecret(spec).getEncoded();
+            try {
+                SecretKeyFactory factory = SecretKeyFactory.getInstance(ALGORITMO);
+                return factory.generateSecret(spec).getEncoded();
+            } finally {
+                spec.clearPassword();
+            }
         } catch (Exception exception) {
             throw new IllegalStateException("No se pudo generar el hash de la contrasena", exception);
         }
+    }
+
+    private HashAlmacenado parsear(String passwordHash) {
+        if (passwordHash == null) {
+            return null;
+        }
+        String[] partes = passwordHash.split(":", -1);
+        if (partes.length != 3) {
+            return null;
+        }
+        try {
+            int iteraciones = Integer.parseInt(partes[0]);
+            if (iteraciones < 1 || iteraciones > ITERACIONES_MAXIMAS_ACEPTADAS) {
+                return null;
+            }
+            byte[] salt = Base64.getDecoder().decode(partes[1]);
+            byte[] hash = Base64.getDecoder().decode(partes[2]);
+            if (salt.length < LONGITUD_SALT || hash.length != LONGITUD_CLAVE / Byte.SIZE) {
+                return null;
+            }
+            return new HashAlmacenado(iteraciones, salt, hash);
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
+    }
+
+    private record HashAlmacenado(int iteraciones, byte[] salt, byte[] hash) {
     }
 }
