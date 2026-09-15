@@ -1,83 +1,44 @@
 # Red Clubes
 
-Sistema web multi-club para gestionar socios, actividades, inscripciones, cuotas, pagos, asistencia, usuarios y reportes. Está pensado para clubes barriales, centros de jubilados y un eventual uso municipal.
+Aplicación web multi-club para administrar socios, actividades, inscripciones, asistencia, cuotas, pagos, usuarios, auditoría y reportes. El repositorio contiene un monolito Spring Boot + Angular, MySQL y una topología Docker Compose portable para un piloto de bajo volumen.
 
-El despliegue previsto tiene dos etapas: piloto en un Cloud Server portable —por ejemplo Donweb— y, si la Municipalidad adopta la propuesta, migración al dominio e infraestructura asociados a un subdominio de `ensenada.gov.ar`.
+## Estado del proyecto
 
-## Estado
+El código está preparado como **candidato a piloto controlado**. No equivale a una autorización para cargar datos personales reales: antes se debe completar un despliegue en infraestructura destino, configurar DNS/TLS, restaurar un backup de ensayo y cerrar la checklist operativa de [la guía de despliegue](docs/GUIA_DESPLIEGUE.md).
 
-El núcleo del MVP interno está implementado y compila. La última verificación local ejecutó 37 pruebas backend, 13 frontend, el empaquetado Spring Boot y el build Angular de producción. También construyó las imágenes Linux, levantó MySQL 8.4, backend y frontend con Compose, aplicó seis migraciones Flyway, aprobó health checks y verificó backup/restauración con recuperación de datos.
+La rama de preparación productiva es `chore/production-readiness`; `main` no debe recibir estos cambios sin Pull Request y CI verde.
 
-No se debe usar todavía con datos personales reales hasta probar Compose, backups, restauración, TLS y smoke tests en el Cloud Server elegido.
+## Stack soportado
 
-## Funcionalidades
+- Java 21, Spring Boot 3.5, Maven Wrapper y Flyway.
+- Angular 21.2, TypeScript 5.9, Node 22.23.2 y npm.
+- MySQL 8.4, Nginx no privilegiado y Docker Compose v2.
+- H2 solo para pruebas automatizadas.
 
-- Login, logout real, sesión restaurable y cambio obligatorio de contraseña inicial.
-- Roles globales y por club para superusuario, administrador, operador y profesor; asignación de actividades a profesores.
-- Alta, edición, búsqueda y baja lógica de socios.
-- Alta, edición, activación y desactivación de actividades con profesor responsable y cupo.
-- Inscripciones con historial, reglas de club/estado/cupo y contador derivado.
-- Asistencia presente, ausente o justificada solo para socios inscriptos.
-- Cuotas manuales y generación mensual idempotente.
-- Pagos totales, medios de pago, historial y anulación trazable.
-- Dashboard mensual y reportes anuales basados en pagos/asistencias reales.
-- Administración de usuarios y permisos con aislamiento multi-club.
-- Auditoría consultable por club de cambios sensibles.
-
-Fuera de este MVP: pagos parciales, pasarela de cobro, WhatsApp, QR, aplicación móvil y módulo de eventos completo.
-
-## Roles
-
-- `SUPERUSUARIO`: alcance global.
-- `ADMINISTRADOR`: administra solamente clubes asignados, incluida la gestión de usuarios locales y auditoría.
-- `OPERADOR`: realiza la gestión diaria de socios, inscripciones, cuotas, reportes y asistencia en sus clubes, sin administrar usuarios, actividades ni auditoría.
-- `PROFESOR`: ve actividades asignadas y toma asistencia bajo sus reglas.
-
-La matriz completa está en [roles y permisos](docs/ROLES_Y_PERMISOS.md).
-
-## Arquitectura y versiones
-
-- Angular 21.2, TypeScript 5.9 y Node 22.23.2.
-- Java 21 y Spring Boot 3.5.0.
-- MySQL 8.4 en Compose; H2 2.3 en pruebas.
-- Flyway, Spring Security, Maven Wrapper, Nginx y Docker Compose.
-
-Ver [arquitectura](docs/ARQUITECTURA.md) y [modelo de datos](docs/MODELO_DE_DATOS.md).
-
-## Requisitos
-
-Para ejecución manual: JDK 21, Node 22.23.2, npm y MySQL 8. Para ejecución completa: Docker Engine con Compose v2. En Windows puede usarse Docker Desktop con contenedores Linux.
-
-## Variables de entorno
-
-Copiá `.env.example` a `.env` y reemplazá todos los `change_me`. Las variables centrales son:
-
-- `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`.
-- `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD` para Compose.
-- `CORS_ALLOWED_ORIGINS` o `PUBLIC_ORIGIN`.
-- `AUTH_SESSION_HOURS` y parámetros `AUTH_LOGIN_*`.
-- `FLYWAY_BASELINE_ON_MIGRATE=false` salvo adopción controlada.
-- `DEMO_DATA_ENABLED=false` y `BOOTSTRAP_SUPERUSER_ENABLED=false` en producción.
-
-`.env` está ignorado por Git. No uses `root` como usuario normal de la aplicación.
-
-Cuando `DEMO_DATA_ENABLED=true`, se crea de forma idempotente un superusuario exclusivo para pruebas locales con DNI `41131131` y contraseña inicial `12345678`. El primer ingreso obliga a cambiarla. Nunca habilites los datos demo en producción.
-
-## Ejecución con Docker
+## Inicio rápido local con Docker
 
 ```bash
 cp .env.example .env
-# editar secretos y origen público
+# Reemplazar todos los change_me y revisar el origen público.
 docker compose config --quiet
-docker compose up --build -d
-docker compose ps
+docker compose build
+docker compose up -d --wait
+BASE_URL=http://127.0.0.1:8080 sh ops/smoke-test.sh
 ```
 
-Por defecto la app queda en `http://localhost:8080`. MySQL y backend no publican puertos. Para detener sin borrar datos: `docker compose down`. No agregues `-v` salvo que quieras eliminar el volumen de MySQL de forma consciente.
+La única publicación de Compose es `127.0.0.1:${APP_PORT:-8080}`. MySQL y backend permanecen en una red interna. En producción, un reverse proxy instalado en el host entrega HTTPS y reenvía a ese puerto local.
+
+Para detener sin borrar datos:
+
+```bash
+docker compose down
+```
+
+No agregues `-v`: elimina el volumen de MySQL.
 
 ## Ejecución manual
 
-Backend, con variables de `.env.example` exportadas:
+Backend, con las variables de `.env.example` exportadas:
 
 ```powershell
 cd backend
@@ -93,15 +54,22 @@ npm ci
 npm start
 ```
 
-Angular abre `http://localhost:4200` y redirige `/api` a `localhost:8080` mediante `proxy.conf.json`.
+Angular sirve en `http://localhost:4200` y deriva `/api` al backend mediante `proxy.conf.json`.
 
-## Migraciones
+## Controles de seguridad relevantes
 
-Producción usa `ddl-auto=validate`; el esquema cambia únicamente mediante `backend/src/main/resources/db/migration`. Una base nueva aplica V1–V6. Una base existente requiere dump, inventario de duplicados, ensayo sobre una copia y el procedimiento de [migraciones](docs/GUIA_MIGRACIONES.md).
+- Spring Security deniega por defecto toda API salvo login, health y preflight.
+- Sesiones opacas de 256 bits; la base conserva solo SHA-256 del bearer.
+- Contraseñas PBKDF2-HMAC-SHA256 con salt y 600.000 iteraciones; hashes anteriores se validan y actualizan al iniciar sesión.
+- Límite de login en Nginx por IP y en backend por identidad + IP.
+- Nginx confía headers de cliente solo desde el gateway Docker configurado.
+- Contenedores de backend/frontend sin root, root filesystem de solo lectura y sin privilegios nuevos.
+- `.env` y `backups/` ignorados; CI ejecuta Gitleaks, auditorías Maven/npm y Trivy.
+- CSP y headers defensivos; el reverse proxy público debe manejar TLS y redirección HTTP→HTTPS.
 
-V4 revoca sesiones existentes una sola vez para adoptar hashes de bearer. Es esperado que los usuarios deban volver a iniciar sesión después de esa migración.
+Ver [seguridad](docs/SEGURIDAD.md).
 
-## Pruebas y build
+## Pruebas
 
 ```powershell
 cd backend
@@ -110,76 +78,57 @@ cd backend
 
 ```powershell
 cd frontend
-nvm use
 npm ci
 npm test -- --watch=false
-npm run build -- --configuration production
+npm run build
 ```
 
-GitHub Actions repite backend, frontend y construcción de contenedores en cada push y pull request.
+La validación integral agrega `docker compose config`, construcción de imágenes, health checks, [smoke test](ops/smoke-test.sh), [backup](ops/backup-mysql.sh) y [restore aislado](ops/restore-test.sh). GitHub Actions repite estas pruebas y bloquea hallazgos de seguridad altos/críticos.
 
-## Backups
+## Datos y migraciones
 
-En un host Linux con el stack levantado:
+Producción usa `spring.jpa.hibernate.ddl-auto=validate`. Flyway es la única autoridad del esquema y las migraciones aplicadas nunca se editan. Una base preexistente se adopta únicamente sobre una copia, después de inventario, saneamiento y backup verificable. Ver [guía de migraciones](docs/GUIA_MIGRACIONES.md).
+
+El usuario de aplicación es `MYSQL_USER`; no es root. `MYSQL_ROOT_PASSWORD` queda reservado al bootstrap/operación del contenedor y no se usa desde la aplicación ni desde el backup normal.
+
+## Backup y recuperación
 
 ```bash
 sh ops/backup-mysql.sh
-CONFIRM_RESTORE=RESTAURAR sh ops/restore-mysql.sh backups/red-clubes-<fecha>.sql.gz
+sh ops/restore-test.sh backups/red-clubes-<fecha>.sql.gz
 ```
 
-El backup se comprime, se verifica y aplica retención local de 14 días por defecto. Definí `BACKUP_DIR` y `BACKUP_RETENTION_DAYS` si corresponde. Copiá luego el archivo cifrado a una ubicación externa; un backup dentro del mismo servidor no cubre pérdida del host. Toda restauración debe probarse fuera de producción.
+El backup es atómico, privado por `umask`, comprimido, validado, acompañado por SHA-256 y sujeto a retención. `BACKUP_EXPORT_HOOK` permite cifrar con `age` y/o copiar fuera del host usando [el hook de ejemplo](ops/backup-export-hook.example.sh).
 
-## Estructura
+La restauración productiva es deliberadamente explícita, detiene backend y crea un backup previo:
 
-```text
-backend/                 API, dominio, seguridad, migraciones y pruebas
-frontend/                Angular, core/auth, rutas, interfaz y Nginx
-docs/                    auditoría, roadmap y guías técnicas/operativas
-ops/                     backup y restauración
-.github/workflows/ci.yml integración continua
-docker-compose.yml       MySQL + backend + frontend
+```bash
+CONFIRM_RESTORE=RESTAURAR ALLOW_PRODUCTION_RESTORE=true \
+  sh ops/restore-mysql.sh backups/red-clubes-<fecha>.sql.gz
 ```
 
-## Endpoints principales
+## Versionado y releases
 
-- `POST /api/auth/login`, `POST /api/auth/logout`, `GET/PUT /api/auth/me`.
-- `/api/clubes` y `/api/clubes/{clubId}/socios`.
-- `/api/clubes/{clubId}/actividades` e inscripciones por socio.
-- `/api/clubes/{clubId}/actividades/{id}/asistencias/{fecha}`.
-- `/api/clubes/{clubId}/cuotas`, generación y pagos.
-- `/api/clubes/{clubId}/dashboard`, `/reportes` y `/auditoria`.
-- `/api/usuarios` y `GET /api/health`.
+Usar SemVer (`vMAJOR.MINOR.PATCH`) y el mismo tag inmutable para Git, `IMAGE_TAG`, imagen backend e imagen frontend. No desplegar `latest`. Cada release debe registrar migraciones incluidas, resultado de CI, backup previo y rollback previsto. La guía documenta el flujo completo.
 
-Todos salvo health y login requieren bearer. La autorización concreta depende de rol y club.
+## Documentación
 
-## Seguridad
-
-Los bearers son opacos y en base solo se guarda SHA-256; las contraseñas tienen hash con salt. Spring Security protege `/api/**` por defecto, CORS es configurable, Nginx agrega CSP y headers defensivos, y aplicación/proxy limitan intentos de login. Los errores no exponen stack traces. Ver [seguridad](docs/SEGURIDAD.md).
-
-## Despliegue
-
-La [guía de despliegue](docs/GUIA_DESPLIEGUE.md) cubre el Cloud Server piloto, TLS, DNS, backups, rollback y la migración posterior a `ensenada.gov.ar`. El proveedor no está codificado en la aplicación.
-
-## Capturas
-
-Antes de presentar el piloto se deben agregar capturas sin datos personales de login, dashboard, socios, actividad/asistencia y cuotas/reportes bajo `docs/capturas/`.
-
-## Documentación y roadmap
-
-- [Auditoría técnica](docs/AUDITORIA_TECNICA.md)
-- [Roadmap de profesionalización](docs/ROADMAP_PROFESIONALIZACION.md)
+- [Auditoría técnica vigente](docs/AUDITORIA_TECNICA.md)
+- [Roadmap](docs/ROADMAP_PROFESIONALIZACION.md)
+- [Seguridad](docs/SEGURIDAD.md)
+- [Despliegue, actualización y rollback](docs/GUIA_DESPLIEGUE.md)
+- [Migraciones Flyway](docs/GUIA_MIGRACIONES.md)
+- [Observabilidad mínima](docs/OBSERVABILIDAD.md)
 - [Arquitectura](docs/ARQUITECTURA.md)
 - [Modelo de datos](docs/MODELO_DE_DATOS.md)
 - [Roles y permisos](docs/ROLES_Y_PERMISOS.md)
-- [Seguridad](docs/SEGURIDAD.md)
-- [Guía de migraciones](docs/GUIA_MIGRACIONES.md)
-- [Guía de despliegue](docs/GUIA_DESPLIEGUE.md)
 
-## Limitaciones conocidas
+## Límites conocidos
 
-- Falta ensayar V1–V6 y restauración contra una copia MySQL real preexistente.
-- El frontend conserva parte de la orquestación de features en el componente raíz; core auth y routing ya están separados.
-- El límite de login es local a una instancia.
-- No existe aún monitoreo externo ni dominio/TLS del piloto contratados.
+- El rate limit de backend vive en memoria y solo coordina una instancia.
+- Falta validar el candidato en el Cloud Server y con el proxy/dominio definitivos.
+- Una base histórica real requiere adopción Flyway ensayada; las pruebas limpias no reemplazan ese ejercicio.
+- No hay alta disponibilidad, WAF, SIEM ni observabilidad distribuida; para el piloto se propone monitoreo externo simple y alertas de host.
+- El frontend conserva parte de la orquestación en el componente raíz; no bloquea el piloto, pero limita mantenibilidad futura.
 
-No se deben presentar esas limitaciones como funcionalidades terminadas; son los últimos criterios operativos para habilitar un piloto real.
+Fuera de alcance de este endurecimiento: nuevas reglas de negocio, pagos parciales, pasarela de cobro, WhatsApp, QR, app móvil y módulo de eventos.
