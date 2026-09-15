@@ -17,7 +17,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import java.time.LocalDateTime;
+import java.util.Base64;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -94,6 +97,22 @@ class SecurityIntegrationTests {
     }
 
     @Test
+    void loginValidoActualizaUnHashPbkdf2Anterior() throws Exception {
+        usuarioRepository.save(new Usuario(
+                "99887766", "Katherine", "Johnson", RolUsuario.SUPERUSUARIO,
+                EstadoUsuario.ACTIVO, generarHashAnterior("contrasena-segura"), false
+        ));
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"dni\":\"99887766\",\"password\":\"contrasena-segura\"}"))
+                .andExpect(status().isOk());
+
+        String hashActualizado = usuarioRepository.findByDni("99887766").orElseThrow().getPasswordHash();
+        assertTrue(hashActualizado.startsWith("600000:"));
+    }
+
+    @Test
     void profesorAutenticadoRecibe403EnAdministracionDeUsuarios() throws Exception {
         Usuario profesor = usuarioRepository.save(new Usuario(
                 "11223344", "Grace", "Hopper", RolUsuario.PROFESOR,
@@ -117,5 +136,22 @@ class SecurityIntegrationTests {
                 .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"))
                 .andExpect(jsonPath("$.fieldErrors.dni").exists())
                 .andExpect(jsonPath("$.fieldErrors.password").exists());
+    }
+
+    private String generarHashAnterior(String password) throws Exception {
+        byte[] salt = new byte[16];
+        for (int indice = 0; indice < salt.length; indice++) {
+            salt[indice] = (byte) (indice + 1);
+        }
+        PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 120_000, 256);
+        try {
+            byte[] hash = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+                    .generateSecret(spec)
+                    .getEncoded();
+            return "120000:" + Base64.getEncoder().encodeToString(salt)
+                    + ":" + Base64.getEncoder().encodeToString(hash);
+        } finally {
+            spec.clearPassword();
+        }
     }
 }

@@ -60,10 +60,20 @@ Prioridades: `P0` crítica, `P1` alta, `P2` media, `P3` mejora.
 | FE-04 | Formularios y accesibilidad | P1 | FE-03 | Medio | Reactive Forms críticos, doble envío, mensajes, teclado y contraste verificados | EN CURSO | features/shared y tests |
 | FE-05 | Runtime de build reproducible | P0 | TEST-02 | Bajo | Node fijado, versión inválida falla temprano y build de producción pasa | HECHO | `.nvmrc`, `package.json`, `scripts/verify-node.cjs` |
 | INF-01 | Docker reproducible | P1 | DB-02, FE-02 | Medio | MySQL/backend/frontend levantan con Compose y health checks | HECHO | Dockerfiles, compose, env example |
-| INF-02 | Piloto en Cloud Server | P1 | INF-01, FE-02, contratación del host | Medio | Docker Compose, DNS piloto, TLS, proxy `/api`, backup, límites y rollback verificados | PENDIENTE | compose, proxy, certificados, runbook, smoke tests |
+| INF-02 | Piloto en Cloud Server | P1 | INF-01, FE-02, contratación del host | Medio | Docker Compose, DNS piloto, TLS, proxy `/api`, backup, límites y rollback verificados | EN CURSO | hardening/runbook listos; host, DNS y TLS externos pendientes |
 | INF-03 | Migración a subdominio municipal | P1 | INF-02, aprobación e infraestructura municipal | Medio | Datos exportados/importados, DNS, TLS, secretos y operación municipal verificados sin dependencia de Donweb | PENDIENTE | runbook de migración, configuración, smoke tests |
-| CI-01 | GitHub Actions | P1 | TEST-01, TEST-02 | Bajo | Backend verify + frontend install/test/build + stack Docker y health checks aprobados en GitHub Actions | HECHO | `.github/workflows/ci.yml` |
+| CI-01 | GitHub Actions | P1 | TEST-01, TEST-02 | Bajo | Backend/frontend, stack, backup/restore, Gitleaks, SCA npm/Maven y Trivy bloquean regresiones | HECHO | `.github/workflows/ci.yml`, `dependabot.yml` |
 | DOC-02 | Documentación operativa completa | P1 | Fases previas | Bajo | README y cinco documentos exigidos describen solo lo implementado | HECHO | `README.md`, `docs/**` |
+
+## Fase 6 — Preparación productiva
+
+| ID | Tarea | Prioridad | Dependencias | Riesgo | Criterio de aceptación | Estado | Archivos |
+|---|---|---:|---|---|---|---|---|
+| SEC-10 | Elevar PBKDF2 con compatibilidad | P0 | SEC-07 | Bajo | Hash nuevo 600k, legado válido, rehash al login y tests | HECHO | `PasswordService`, `AuthService`, tests |
+| INF-04 | Aislar red y endurecer runtime | P0 | INF-01 | Medio | Loopback, red interna, non-root, read-only, recursos, logs e IP real | HECHO | Dockerfiles, Compose, Nginx, config Spring |
+| OPS-01 | Backup/restore verificable | P0 | INF-04 | Medio | Backup atómico/checksum/retención/export y restore aislado | HECHO | `ops/*.sh` |
+| OPS-02 | Observabilidad mínima | P1 | INF-04 | Bajo | Health app+DB, señales, umbrales y responsables documentados | HECHO | `HealthController`, `OBSERVABILIDAD.md` |
+| OPS-03 | Validar infraestructura destino | P0 | Contratación, DNS | Medio | TLS, firewall, proxy, monitoreo, backup externo y restore reales | BLOQUEADO | Depende del host del piloto |
 
 ## Decisiones que requieren revisión antes de avanzar
 

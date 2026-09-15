@@ -40,6 +40,7 @@ public class AuthService {
         this.sessionHours = sessionHours;
     }
 
+    @Transactional
     public LoginResponse login(LoginRequest request, String clientAddress) {
         String attemptKey = loginAttemptService.key(request.dni(), clientAddress);
         loginAttemptService.verifyAllowed(attemptKey);
@@ -54,6 +55,11 @@ public class AuthService {
             throw exception;
         }
         loginAttemptService.recordSuccess(attemptKey);
+
+        if (passwordService.necesitaRehash(usuario.getPasswordHash())) {
+            usuario.setPasswordHash(passwordService.generarHash(request.password()));
+            usuarioRepository.save(usuario);
+        }
 
         String token = sessionTokenService.generarToken();
         SesionUsuario sesion = new SesionUsuario(
