@@ -37,7 +37,7 @@ Capacidad inicial: 2 vCPU, 4 GB RAM, 30 GB SSD y espacio externo para backups. C
 | `DB_POOL_CONNECTION_TIMEOUT_MS` | No | No | Default 5000. |
 | `DB_POOL_VALIDATION_TIMEOUT_MS` | No | No | Default 3000. |
 | `DB_POOL_MAX_LIFETIME_MS` | No | No | Default 1800000. |
-| `DEMO_DATA_ENABLED` | Sí/revisar | No | Debe ser `false`. |
+| `DEMO_DATA_ENABLED` | Sí/revisar | No | Debe ser `false`; los datos demo nunca crean usuarios. |
 | `BOOTSTRAP_SUPERUSER_ENABLED` | Sí/revisar | No | `true` solo durante alta inicial; luego `false`. |
 | `BOOTSTRAP_SUPERUSER_DNI/PASSWORD` | Solo bootstrap | Password sí | Eliminar después del aprovisionamiento. |
 | `FLYWAY_BASELINE_ON_MIGRATE` | Sí/revisar | No | Debe ser `false`, salvo ensayo puntual aprobado. |
