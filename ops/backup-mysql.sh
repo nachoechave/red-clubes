@@ -38,16 +38,17 @@ fi
 
 gzip -9 < "$temporary_sql" > "$temporary_gzip"
 gzip -t "$temporary_gzip"
-mv -- "$temporary_gzip" "$backup_file"
 
 if command -v sha256sum >/dev/null 2>&1; then
-  (cd "$backup_dir" && sha256sum "$(basename "$backup_file")") > "$checksum_file.tmp"
+  checksum=$(sha256sum "$temporary_gzip" | cut -d ' ' -f 1)
 elif command -v shasum >/dev/null 2>&1; then
-  (cd "$backup_dir" && shasum -a 256 "$(basename "$backup_file")") > "$checksum_file.tmp"
+  checksum=$(shasum -a 256 "$temporary_gzip" | cut -d ' ' -f 1)
 else
   printf '%s\n' 'No se encontro sha256sum ni shasum para generar la suma de control.' >&2
   exit 1
 fi
+printf '%s  %s\n' "$checksum" "$(basename "$backup_file")" > "$checksum_file.tmp"
+mv -- "$temporary_gzip" "$backup_file"
 mv -- "$checksum_file.tmp" "$checksum_file"
 
 printf '%s\n' "$(basename "$backup_file")" > "$backup_dir/.last-success.tmp"

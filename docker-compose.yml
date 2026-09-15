@@ -111,6 +111,7 @@ services:
     read_only: true
     tmpfs:
       - /tmp:size=32m,mode=1777
+      - /etc/nginx/conf.d:size=1m,uid=101,gid=101,mode=0755
     security_opt:
       - no-new-privileges:true
     logging:
