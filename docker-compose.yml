@@ -119,7 +119,7 @@ services:
       options:
         max-size: "5m"
         max-file: "3"
-    networks: [private]
+    networks: [private, edge]
 
 volumes:
   mysql_data:
@@ -132,3 +132,5 @@ networks:
       config:
         - subnet: ${DOCKER_SUBNET:-172.30.0.0/24}
           gateway: ${DOCKER_GATEWAY:-172.30.0.1}
+  edge:
+    driver: bridge
