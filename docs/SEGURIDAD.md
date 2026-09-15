@@ -60,7 +60,7 @@ CI ejecuta:
 
 - Gitleaks sobre el historial Git completo.
 - `npm audit --audit-level=high`.
-- OWASP Dependency-Check para Maven con umbral CVSS 7.
+- Trivy sobre el JAR empaquetado para auditar dependencias Maven altas/críticas.
 - Trivy sobre imágenes backend/frontend, severidades `HIGH,CRITICAL`, incluidos hallazgos sin fix.
 - Dependabot semanal para Actions, Maven, npm y Docker.
 

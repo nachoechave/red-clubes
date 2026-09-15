@@ -64,7 +64,7 @@ Angular sirve en `http://localhost:4200` y deriva `/api` al backend mediante `pr
 - Límite de login en Nginx por IP y en backend por identidad + IP.
 - Nginx confía headers de cliente solo desde el gateway Docker configurado.
 - Contenedores de backend/frontend sin root, root filesystem de solo lectura y sin privilegios nuevos.
-- `.env` y `backups/` ignorados; CI ejecuta Gitleaks, auditorías Maven/npm y Trivy.
+- `.env` y `backups/` ignorados; CI ejecuta Gitleaks, npm audit y Trivy sobre dependencias Maven/imágenes.
 - CSP y headers defensivos; el reverse proxy público debe manejar TLS y redirección HTTP→HTTPS.
 
 Ver [seguridad](docs/SEGURIDAD.md).

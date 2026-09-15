@@ -58,7 +58,7 @@ No se encontró `.env` versionado en el estado actual; `.env` y `backups/` estab
 
 ### Cadena de suministro y operación
 
-- CI suma Gitleaks v8.30.1, npm audit high, OWASP Dependency-Check 13.0.0 con CVSS 7 y Trivy v0.36.0 para ambas imágenes.
+- CI suma Gitleaks v8.30.1, npm audit high y Trivy v0.36.0 sobre el JAR Maven y ambas imágenes.
 - Dependabot semanal para Actions, Maven, npm y Docker.
 - Imágenes/tag coordinados mediante `IMAGE_TAG`; documentación SemVer, digest, actualización y rollback.
 - Runbook de 22 pasos, seguridad, migraciones, observabilidad, backups y checklist reconciliados.
@@ -80,7 +80,7 @@ Una instalación limpia se valida con tests H2 en modo MySQL, pero la adopción 
 | Disco agotado por logs | Rotación `json-file` por tamaño/cantidad. |
 | Backup parcial/no comprobable | Publicación atómica, validación y checksum. |
 | Restore sobre producción durante pruebas | Script aislado y procedimiento productivo con guardas. |
-| Vulnerabilidades no bloqueadas | Gitleaks, SCA npm/Maven y Trivy en CI. |
+| Vulnerabilidades no bloqueadas | Gitleaks, npm audit y Trivy para Maven/imágenes en CI. |
 | Health falso positivo sin base | `SELECT 1` dentro de `/api/health`. |
 
 ## Riesgos que continúan
@@ -96,7 +96,7 @@ Una instalación limpia se valida con tests H2 en modo MySQL, pero la adopción 
 - Rate limit backend en memoria: una instancia y pérdida de contador tras reinicio.
 - Sin alta disponibilidad; la restauración define el RTO y debe medirse mensualmente.
 - CSP aún permite estilos inline por compatibilidad Angular.
-- OWASP Dependency-Check puede requerir ajustes de fuente/API/supresiones justificadas para mantener estabilidad de CI.
+- Los feeds externos de Trivy pueden requerir caché/mirror si el proveedor limita descargas; una supresión exige evidencia y vencimiento.
 
 ### MEJORA
 
@@ -116,7 +116,7 @@ Los resultados exactos del último cierre se mantienen en el reporte de la tarea
 - `docker compose build`
 - `docker compose up -d --wait`, health y `ops/smoke-test.sh`
 - `ops/backup-mysql.sh` y `ops/restore-test.sh` sobre entorno no productivo
-- Gitleaks, npm audit, Dependency-Check y Trivy en CI
+- Gitleaks, npm audit y Trivy (JAR + imágenes) en CI
 
 Toda prueba no ejecutada debe declararse `NO VERIFICADO`; no se infiere por documentación ni por una ejecución anterior.
 

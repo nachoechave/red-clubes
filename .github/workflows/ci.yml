@@ -69,20 +69,19 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
-      - name: Scan Maven dependencies with OWASP Dependency-Check
-        run: >-
-          bash ./mvnw --batch-mode --no-transfer-progress
-          org.owasp:dependency-check-maven:13.0.0:check
-          -DfailBuildOnCVSS=7
-          -DfailOnError=true
-          -Dformats=HTML,JSON
-      - name: Upload dependency report
-        if: always()
-        uses: actions/upload-artifact@v6
+      - name: Package backend dependencies for analysis
+        run: bash ./mvnw --batch-mode --no-transfer-progress package -DskipTests
+      - name: Scan packaged Maven dependencies with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
-          name: backend-dependency-check
-          path: backend/target/dependency-check-report.*
-          if-no-files-found: ignore
+          scan-type: fs
+          scan-ref: backend/target
+          scanners: vuln
+          format: table
+          exit-code: "1"
+          ignore-unfixed: false
+          vuln-type: library
+          severity: HIGH,CRITICAL
 
   containers:
     runs-on: ubuntu-latest
