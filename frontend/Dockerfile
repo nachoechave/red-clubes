@@ -5,7 +5,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM nginxinc/nginx-unprivileged:1.29-alpine
+FROM nginxinc/nginx-unprivileged:1.31-alpine
 ENV NGINX_ENVSUBST_FILTER=TRUSTED_PROXY_CIDR
 USER root
 RUN apk upgrade --no-cache
