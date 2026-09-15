@@ -10,7 +10,7 @@ RUN apk add --no-cache wget \
     && addgroup -S redclubes \
     && adduser -S redclubes -G redclubes
 WORKDIR /app
-COPY --from=build /workspace/target/backend-*.jar app.jar
+COPY --from=build --chown=redclubes:redclubes /workspace/target/backend-*.jar app.jar
 USER redclubes:redclubes
 EXPOSE 8080
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-Djava.security.egd=file:/dev/urandom", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/urandom", "-jar", "/app/app.jar"]
