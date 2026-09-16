@@ -6,7 +6,7 @@ Aplicación web multi-club para administrar socios, actividades, inscripciones, 
 
 El código está preparado como **candidato a piloto controlado**. No equivale a una autorización para cargar datos personales reales: antes se debe completar un despliegue en infraestructura destino, configurar DNS/TLS, restaurar un backup de ensayo y cerrar la checklist operativa de [la guía de despliegue](docs/GUIA_DESPLIEGUE.md).
 
-La rama de preparación productiva es `chore/production-readiness`; `main` no debe recibir estos cambios sin Pull Request y CI verde.
+`main` contiene el baseline técnico para el piloto desde el merge del PR #3 (`994134d`). La infraestructura y la aceptación del piloto siguen pendientes. Para el primer servidor, seguir [PILOTO_SERVIDOR.md](docs/PILOTO_SERVIDOR.md) y registrar evidencia en [CHECKLIST_PILOTO.md](docs/CHECKLIST_PILOTO.md).
 
 ## Stack soportado
 
@@ -62,7 +62,7 @@ Angular sirve en `http://localhost:4200` y deriva `/api` al backend mediante `pr
 - Sesiones opacas de 256 bits; la base conserva solo SHA-256 del bearer.
 - Contraseñas PBKDF2-HMAC-SHA256 con salt y 600.000 iteraciones; hashes anteriores se validan y actualizan al iniciar sesión.
 - Límite de login en Nginx por IP y en backend por identidad + IP.
-- Nginx confía headers de cliente solo desde el gateway Docker configurado.
+- Nginx confía headers de cliente solo desde la IP del proxy observada en destino y configurada en `TRUSTED_PROXY_CIDR`; no se deduce de la red privada.
 - Contenedores de backend/frontend sin root, root filesystem de solo lectura y sin privilegios nuevos.
 - `.env` y `backups/` ignorados; CI ejecuta Gitleaks, npm audit y Trivy sobre dependencias Maven/imágenes.
 - CSP y headers defensivos; el reverse proxy público debe manejar TLS y redirección HTTP→HTTPS.
@@ -113,7 +113,14 @@ Usar SemVer (`vMAJOR.MINOR.PATCH`) y el mismo tag inmutable para Git, `IMAGE_TAG
 
 ## Documentación
 
-- [Auditoría técnica vigente](docs/AUDITORIA_TECNICA.md)
+- [Auditoría del baseline de hardening](docs/AUDITORIA_TECNICA.md)
+- [Auditoría y alcance de preparación del piloto](docs/AUDITORIA_PILOTO.md)
+- [Primer despliegue Linux, DNS, HTTPS y operación](docs/PILOTO_SERVIDOR.md)
+- [Aceptación con datos ficticios](docs/CHECKLIST_PILOTO.md)
+- [Backup cifrado y timers](docs/BACKUP_PILOTO.md)
+- [Restauración productiva](docs/RESTORE_PRODUCCION.md)
+- [Adopción de base histórica](docs/MIGRACION_BASE_HISTORICA.md)
+- [PRs Dependabot: decisiones propuestas](docs/DEPENDABOT_PILOTO.md)
 - [Roadmap](docs/ROADMAP_PROFESIONALIZACION.md)
 - [Seguridad](docs/SEGURIDAD.md)
 - [Despliegue, actualización y rollback](docs/GUIA_DESPLIEGUE.md)

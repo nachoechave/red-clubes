@@ -3,6 +3,18 @@
 Estados: `PENDIENTE`, `EN CURSO`, `BLOQUEADO`, `HECHO`.
 Prioridades: `P0` crítica, `P1` alta, `P2` media, `P3` mejora.
 
+## Corte del piloto — 2026-09-16
+
+| Entrega | Estado y evidencia |
+|---|---|
+| Baseline técnico de código | HECHO: PR #3 integrado en `main`, `994134d04582ba581ec6fe73fa6f516c24b336c8`, cinco jobs CI verdes |
+| Preparación operativa del piloto | Guías/configuraciones en esta rama; validación registrada en `INFORME_PILOTO.md` |
+| Infraestructura piloto real | PENDIENTE: servidor, DNS, TLS, firewall, proxy y backups externos sin verificar |
+| Piloto ficticio | PENDIENTE: ejecutar `CHECKLIST_PILOTO.md` en destino |
+| Datos personales reales | BLOQUEADO HASTA VALIDACIÓN de infraestructura, aceptación funcional, recuperación y responsables |
+
+Los estados HECHO de código/scripts no certifican instalación ni operación en un servidor real. Sin pruebas de carga ni alta disponibilidad; una única instancia backend.
+
 ## Fase 1 — Baseline y hardening inmediato
 
 | ID | Tarea | Prioridad | Dependencias | Riesgo | Criterio de aceptación | Estado | Archivos estimados |
@@ -60,7 +72,7 @@ Prioridades: `P0` crítica, `P1` alta, `P2` media, `P3` mejora.
 | FE-04 | Formularios y accesibilidad | P1 | FE-03 | Medio | Reactive Forms críticos, doble envío, mensajes, teclado y contraste verificados | EN CURSO | features/shared y tests |
 | FE-05 | Runtime de build reproducible | P0 | TEST-02 | Bajo | Node fijado, versión inválida falla temprano y build de producción pasa | HECHO | `.nvmrc`, `package.json`, `scripts/verify-node.cjs` |
 | INF-01 | Docker reproducible | P1 | DB-02, FE-02 | Medio | MySQL/backend/frontend levantan con Compose y health checks | HECHO | Dockerfiles, compose, env example |
-| INF-02 | Piloto en Cloud Server | P1 | INF-01, FE-02, contratación del host | Medio | Docker Compose, DNS piloto, TLS, proxy `/api`, backup, límites y rollback verificados | EN CURSO | hardening/runbook listos; host, DNS y TLS externos pendientes |
+| INF-02 | Piloto en Cloud Server | P1 | INF-01, FE-02, contratación del host | Medio | Docker Compose, DNS piloto, TLS, proxy `/api`, backup, límites y rollback verificados | PENDIENTE | guías listas; evidencia del host pendiente |
 | INF-03 | Migración a subdominio municipal | P1 | INF-02, aprobación e infraestructura municipal | Medio | Datos exportados/importados, DNS, TLS, secretos y operación municipal verificados sin dependencia de Donweb | PENDIENTE | runbook de migración, configuración, smoke tests |
 | CI-01 | GitHub Actions | P1 | TEST-01, TEST-02 | Bajo | Backend/frontend, stack, backup/restore, Gitleaks, SCA npm/Maven y Trivy bloquean regresiones | HECHO | `.github/workflows/ci.yml`, `dependabot.yml` |
 | DOC-02 | Documentación operativa completa | P1 | Fases previas | Bajo | README y cinco documentos exigidos describen solo lo implementado | HECHO | `README.md`, `docs/**` |
