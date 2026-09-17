@@ -87,6 +87,24 @@ public class GestionService {
     }
 
     @Transactional
+    public List<ActividadResponse> actualizarActividadesHistoricasDeSocio(
+            Long clubId, Long socioId, ActualizarInscripcionesRequest request, Usuario actor) {
+        Set<Long> ids = new HashSet<>(request.actividadIds() == null ? List.of() : request.actividadIds());
+        for (Long id : ids) {
+            if (obtenerGrupo(clubId, id).getTipo() != TipoGrupo.ACTIVIDAD) {
+                throw new IllegalArgumentException("Usa la API de grupos para inscribir en categorias o talleres");
+            }
+        }
+        // El cliente histórico solo conoce actividades; no puede dar de baja otros tipos.
+        listarActividadesDeSocio(clubId, socioId).stream()
+                .filter(grupo -> grupo.tipo() != TipoGrupo.ACTIVIDAD)
+                .map(ActividadResponse::id).forEach(ids::add);
+        return actualizarActividadesDeSocio(clubId, socioId,
+                new ActualizarInscripcionesRequest(List.copyOf(ids), request.observaciones()), actor).stream()
+                .filter(grupo -> grupo.tipo() == TipoGrupo.ACTIVIDAD).toList();
+    }
+
+    @Transactional
     public List<ActividadResponse> actualizarActividadesDeSocio(
             Long clubId,
             Long socioId,
