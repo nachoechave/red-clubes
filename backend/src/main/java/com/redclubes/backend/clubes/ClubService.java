@@ -84,4 +84,13 @@ public class ClubService {
         }
         return logoUrl;
     }
+
+    @org.springframework.transaction.annotation.Transactional
+    public ClubResponse configurar(String authorization, Long clubId, ConfiguracionClubRequest request) {
+        authService.exigirAdministradorDeClub(authorization, clubId);
+        Club club = clubRepository.findById(clubId).orElseThrow(() -> new ClubNoEncontradoException(clubId));
+        club.setModulos(request.modulos());
+        club.setNombreParticipantes(request.nombreParticipantes());
+        return ClubResponse.desde(clubRepository.save(club));
+    }
 }

@@ -22,6 +22,12 @@ public class ClubController {
         this.clubService = clubService;
     }
 
+    @PutMapping("/{clubId}/configuracion")
+    public ClubResponse configurar(@RequestHeader("Authorization") String authorization,
+            @PathVariable Long clubId, @Valid @RequestBody ConfiguracionClubRequest request) {
+        return clubService.configurar(authorization, clubId, request);
+    }
+
     @GetMapping
     public List<ClubResponse> listarClubes(@RequestHeader("Authorization") String authorizationHeader) {
         return clubService.listarClubesDisponibles(authorizationHeader);

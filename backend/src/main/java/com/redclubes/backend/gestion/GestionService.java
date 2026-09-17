@@ -76,6 +76,9 @@ public class GestionService {
     }
 
     public List<ActividadResponse> listarActividadesDeSocio(Long clubId, Long socioId) {
+        socioRepository.findById(socioId)
+                .filter(socio -> socio.getClub() != null && clubId.equals(socio.getClub().getId()))
+                .orElseThrow(() -> new IllegalArgumentException("Participante no encontrado en el club"));
         return inscripcionActividadRepository.findByClubIdAndSocioIdAndEstado(clubId, socioId, EstadoInscripcion.ACTIVA).stream()
                 .filter(inscripcion -> inscripcionValidaParaClub(inscripcion, clubId))
                 .map(InscripcionActividad::getActividad)
@@ -152,7 +155,7 @@ public class GestionService {
                 .stream()
                 .filter(inscripcion -> inscripcionValidaParaClub(inscripcion, clubId))
                 .count();
-        if (!yaActiva && totalActivas >= actividad.getCupo()) {
+        if (!yaActiva && actividad.getCupo() != null && totalActivas >= actividad.getCupo()) {
             throw new IllegalArgumentException("La actividad no tiene cupos disponibles");
         }
     }
@@ -160,6 +163,7 @@ public class GestionService {
     @Transactional
     public ActividadResponse crearActividad(Long clubId, CrearActividadRequest request, Usuario actor) {
         Club club = clubRepository.findById(clubId).orElseThrow(() -> new ClubNoEncontradoException(clubId));
+        exigirModuloActividades(club);
 
         Actividad actividad = new Actividad();
         actividad.setClub(club);
@@ -182,6 +186,11 @@ public class GestionService {
         Actividad actividad = actividadRepository.findById(actividadId)
                 .filter(encontrada -> encontrada.getClub().getId().equals(clubId))
                 .orElseThrow(() -> new IllegalArgumentException("Actividad no encontrada"));
+
+        exigirModuloActividades(actividad.getClub());
+        if (actividad.getTipo() != TipoGrupo.ACTIVIDAD) {
+            throw new IllegalArgumentException("Edita categorias y talleres mediante la API de grupos");
+        }
 
         actividad.setNombre(request.nombre());
         actividad.setProfesorUsuario(validarProfesorDelClub(clubId, request.profesorUsuarioId()));
@@ -206,7 +215,68 @@ public class GestionService {
                 .orElseThrow(() -> new IllegalArgumentException("Selecciona un profesor creado y activo para este club"));
     }
 
+    private void exigirModuloActividades(Club club) {
+        if (!club.tieneModulo(com.redclubes.backend.clubes.ModuloClub.ACTIVIDADES)) {
+            throw new IllegalArgumentException("El modulo de actividades no esta habilitado");
+        }
+    }
+
+    @Transactional
+    public ActividadResponse guardarGrupo(Long clubId, Long grupoId, GuardarGrupoRequest request, Usuario actor) {
+        Club club = clubRepository.findById(clubId).orElseThrow(() -> new ClubNoEncontradoException(clubId));
+        var modulo = switch (request.tipo()) {
+            case ACTIVIDAD -> com.redclubes.backend.clubes.ModuloClub.ACTIVIDADES;
+            case TALLER -> com.redclubes.backend.clubes.ModuloClub.TALLERES;
+            case CATEGORIA_DEPORTIVA -> com.redclubes.backend.clubes.ModuloClub.CATEGORIAS;
+        };
+        if (!club.tieneModulo(modulo)) throw new IllegalArgumentException("El modulo del grupo no esta habilitado");
+        if (request.asistenciaHabilitada() && !club.tieneModulo(com.redclubes.backend.clubes.ModuloClub.ASISTENCIAS)) {
+            throw new IllegalArgumentException("El modulo de asistencias no esta habilitado");
+        }
+        Actividad grupo = grupoId == null ? new Actividad() : obtenerGrupo(clubId, grupoId);
+        grupo.setClub(club);
+        grupo.setNombre(request.nombre().trim());
+        grupo.setTipo(request.tipo());
+        grupo.setDisciplina(request.disciplina());
+        grupo.setAnioCategoria(request.anioCategoria());
+        // La asignación es opcional. El rol de profesor mantiene sus permisos actuales.
+        Usuario responsable = request.profesorUsuarioId() == null ? null : usuarioClubRepository
+                .findByUsuarioIdAndClubId(request.profesorUsuarioId(), clubId)
+                .map(asignacion -> asignacion.getUsuario())
+                .filter(usuario -> usuario.getEstado() == EstadoUsuario.ACTIVO)
+                .orElseThrow(() -> new IllegalArgumentException("El responsable debe ser un usuario activo del club"));
+        grupo.setProfesor(null);
+        grupo.setProfesorUsuario(responsable);
+        grupo.setDias(request.dias());
+        grupo.setCategoria(request.categoria());
+        grupo.setIcono(request.icono());
+        if (grupoId != null && request.cupo() != null && request.cupo() < inscripcionActividadRepository
+                .countByClubIdAndActividadIdAndEstado(clubId, grupo.getId(), EstadoInscripcion.ACTIVA)) {
+            throw new IllegalArgumentException("El cupo no puede ser menor que las inscripciones activas");
+        }
+        grupo.setCupo(request.cupo());
+        grupo.setAsistenciaHabilitada(request.asistenciaHabilitada());
+        grupo.setEstado(request.estado() == null ? EstadoActividad.ACTIVA : request.estado());
+        Actividad guardado = actividadRepository.save(grupo);
+        auditoriaService.registrar(actor, clubId, grupoId == null ? "ALTA" : "MODIFICACION", "GRUPO", guardado.getId(),
+                "Tipo=" + guardado.getTipo());
+        return actividadResponse(guardado);
+    }
+
+    public Actividad obtenerGrupo(Long clubId, Long grupoId) {
+        return actividadRepository.findById(grupoId)
+                .filter(grupo -> grupo.getClub() != null && clubId.equals(grupo.getClub().getId()))
+                .orElseThrow(() -> new IllegalArgumentException("Grupo no encontrado en el club"));
+    }
+
+    private void exigirAsistenciaHabilitada(Actividad grupo) {
+        if (!grupo.isAsistenciaHabilitada() || !grupo.getClub().tieneModulo(com.redclubes.backend.clubes.ModuloClub.ASISTENCIAS)) {
+            throw new IllegalArgumentException("La asistencia no esta habilitada para este grupo");
+        }
+    }
+
     public List<AsistenciaResponse> listarAsistencia(Long clubId, Long actividadId, LocalDate fecha) {
+        exigirAsistenciaHabilitada(obtenerGrupo(clubId, actividadId));
         Map<Long, Asistencia> asistenciasPorSocio = asistenciaRepository.findByClubIdAndActividadIdAndFecha(clubId, actividadId, fecha).stream()
                 .collect(Collectors.toMap(asistencia -> asistencia.getSocio().getId(), Function.identity()));
 
@@ -265,7 +335,8 @@ public class GestionService {
     }
 
     private void validarFechaDeAsistencia(Actividad actividad, LocalDate fecha, boolean restringirAFechaActual) {
-        if (!esDiaDeClase(actividad.getDias(), fecha.getDayOfWeek())) {
+        exigirAsistenciaHabilitada(actividad);
+        if (actividad.getDias() != null && !actividad.getDias().isBlank() && !esDiaDeClase(actividad.getDias(), fecha.getDayOfWeek())) {
             throw new IllegalArgumentException("La asistencia solo se puede guardar en dias configurados para la actividad");
         }
 

@@ -14,6 +14,23 @@ import jakarta.validation.constraints.Size;
 @Entity
 public class Club {
 
+    @jakarta.persistence.ElementCollection(fetch = jakarta.persistence.FetchType.EAGER)
+    @jakarta.persistence.CollectionTable(name = "club_modulo", joinColumns = @jakarta.persistence.JoinColumn(name = "club_id"))
+    @jakarta.persistence.Column(name = "modulo", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private java.util.Set<ModuloClub> modulos = java.util.EnumSet.of(ModuloClub.PARTICIPANTES,
+            ModuloClub.ACTIVIDADES, ModuloClub.PROFESORES, ModuloClub.ASISTENCIAS, ModuloClub.CUOTAS);
+
+    @Enumerated(EnumType.STRING)
+    @jakarta.persistence.Column(nullable = false)
+    private NombreParticipantes nombreParticipantes = NombreParticipantes.SOCIOS;
+
+    public java.util.Set<ModuloClub> getModulos() { return java.util.Set.copyOf(modulos); }
+    public void setModulos(java.util.Set<ModuloClub> modulos) { this.modulos = new java.util.HashSet<>(modulos); }
+    public boolean tieneModulo(ModuloClub modulo) { return modulos.contains(modulo); }
+    public NombreParticipantes getNombreParticipantes() { return nombreParticipantes; }
+    public void setNombreParticipantes(NombreParticipantes nombre) { this.nombreParticipantes = nombre; }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

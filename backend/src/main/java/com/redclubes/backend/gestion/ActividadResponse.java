@@ -10,9 +10,13 @@ public record ActividadResponse(
         String dias,
         String categoria,
         String icono,
-        int cupo,
+        Integer cupo,
         int inscriptos,
-        EstadoActividad estado
+        EstadoActividad estado,
+        TipoGrupo tipo,
+        String disciplina,
+        String anioCategoria,
+        boolean asistenciaHabilitada
 ) {
     public static ActividadResponse desde(Actividad actividad, int inscriptosActivos) {
         return new ActividadResponse(
@@ -20,14 +24,18 @@ public record ActividadResponse(
                 actividad.getClub().getId(),
                 actividad.getClub().getNombre(),
                 actividad.getNombre(),
-                actividad.getProfesor(),
+                actividad.getProfesor() == null ? "" : actividad.getProfesor(),
                 actividad.getProfesorUsuario() == null ? null : actividad.getProfesorUsuario().getId(),
-                actividad.getDias(),
-                actividad.getCategoria(),
-                actividad.getIcono(),
+                actividad.getDias() == null ? "" : actividad.getDias(),
+                actividad.getCategoria() == null ? "" : actividad.getCategoria(),
+                actividad.getIcono() == null ? "check" : actividad.getIcono(),
                 actividad.getCupo(),
                 inscriptosActivos,
-                actividad.getEstado()
+                actividad.getEstado(),
+                actividad.getTipo(),
+                actividad.getDisciplina(),
+                actividad.getAnioCategoria(),
+                actividad.isAsistenciaHabilitada()
         );
     }
 }
