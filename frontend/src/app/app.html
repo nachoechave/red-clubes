@@ -215,8 +215,8 @@
                   <span class="metric-icon">
                     @switch (metric.label) {
                       @case ('Clubes activos') { <svg lucideHeartHandshake aria-hidden="true"></svg> }
-                      @case ('Socios activos') { <svg lucideUsers aria-hidden="true"></svg> }
-                      @case ('Actividades') { <svg lucideCalendarDays aria-hidden="true"></svg> }
+                      @case (participantesLabel() + ' activos') { <svg lucideUsers aria-hidden="true"></svg> }
+                      @case ('Grupos') { <svg lucideCalendarDays aria-hidden="true"></svg> }
                       @case ('Inscripciones') { <svg lucideUserPlus aria-hidden="true"></svg> }
                       @case ('Asistencias') { <svg lucideClipboardCheck aria-hidden="true"></svg> }
                       @default { <svg lucideWalletCards aria-hidden="true"></svg> }
@@ -230,7 +230,8 @@
             </div>
 
             <div class="control-grid">
-              <article class="panel analytics-card analytics-wide">
+              @if (moduloActivo('ASISTENCIAS')) {
+<article class="panel analytics-card analytics-wide">
                 <div class="panel-title row-title">
                   <div><span class="panel-kicker">Analitica</span><h3>Asistencia mensual</h3></div>
                   <span class="data-pill real">Datos reales</span>
@@ -250,9 +251,11 @@
                 }
                 <div class="analytics-summary"><strong>{{ dashboard()?.asistenciaMes ?? 0 }}</strong><span>asistencias registradas en el mes</span></div>
               </article>
+              }
 
-              <article class="panel analytics-card">
-                <div class="panel-title"><span class="panel-kicker">Composicion</span><h3>Distribucion de socios</h3></div>
+              @if (moduloActivo('PARTICIPANTES')) {
+<article class="panel analytics-card">
+                <div class="panel-title"><span class="panel-kicker">Composicion</span><h3>Distribucion de {{ participantesLabel().toLowerCase() }}</h3></div>
                 <div class="distribution-layout">
                   <div class="dynamic-donut" [style.--active-value]="distribucionSociosActivos()" role="img" [attr.aria-label]="distribucionSociosActivos() + '% de socios activos'">
                     <strong>{{ distribucionSociosActivos() }}%</strong><span>activos</span>
@@ -263,22 +266,25 @@
                   </dl>
                 </div>
               </article>
+              }
 
-              <article class="panel finance-card">
+              @if (moduloActivo('CUOTAS')) {
+<article class="panel finance-card">
                 <div class="panel-title row-title"><div><span class="panel-kicker">Finanzas</span><h3>Recaudacion y cuotas</h3></div><strong class="collection-rate">{{ porcentajeCobranza() }}%</strong></div>
                 <div class="finance-total"><span>Recaudado</span><strong>{{ formatearImporte(dashboard()?.totalCobrado ?? 0) }}</strong></div>
                 <div class="finance-progress"><span [style.width.%]="porcentajeCobranza()"></span></div>
                 <dl class="finance-breakdown">
                   <div><dt>Pendiente</dt><dd>{{ formatearImporte(deudaPorEstado().pendiente) }}</dd></div>
                   <div class="danger"><dt>Vencido</dt><dd>{{ formatearImporte(deudaPorEstado().vencida) }}</dd></div>
-                  <div><dt>Socios al dia</dt><dd>{{ sociosAlDia() }}</dd></div>
+                  <div><dt>{{ participantesLabel() }} al dia</dt><dd>{{ sociosAlDia() }}</dd></div>
                 </dl>
               </article>
+              }
             </div>
 
             <div class="management-grid">
               <article class="panel management-card">
-                <div class="panel-title row-title"><div><span class="panel-kicker">Gestion</span><h3>Actividad reciente</h3></div></div>
+                <div class="panel-title row-title"><div><span class="panel-kicker">Gestion</span><h3>Movimientos recientes</h3></div></div>
                 <div class="timeline-list">
                   @for (movimiento of dashboard()?.movimientos ?? []; track $index) {
                     <div class="timeline-item"><span class="timeline-dot"></span><div><strong>{{ movimiento.descripcion }}</strong><small>{{ movimiento.momento }}</small></div></div>
@@ -288,16 +294,18 @@
                 </div>
               </article>
 
-              <article class="panel management-card">
-                <div class="panel-title row-title"><div><span class="panel-kicker">Agenda</span><h3>Proximas actividades</h3></div><button class="link-action inline-link" type="button" (click)="goTo('actividades')">Ver actividades</button></div>
+              @if (tiposGrupo().length > 0) {
+<article class="panel management-card">
+                <div class="panel-title row-title"><div><span class="panel-kicker">Agenda</span><h3>Grupos del club</h3></div><button class="link-action inline-link" type="button" (click)="goTo('actividades')">Ver grupos</button></div>
                 <div class="agenda-list">
                   @for (actividad of actividadesProximasDelClub(); track actividad.id) {
                     <div class="agenda-item"><span class="agenda-date"><strong>{{ actividad.dias.split(' ')[0] }}</strong><small>Clase</small></span><div><strong>{{ actividad.nombre }}</strong><small>{{ actividad.clubNombre }} · {{ actividad.dias }}</small></div></div>
                   } @empty {
-                    <p class="empty-inline">No hay actividades proximas informadas.</p>
+                    <p class="empty-inline">No hay grupos registrados.</p>
                   }
                 </div>
               </article>
+              }
 
               <article class="panel management-card alerts-card">
                 <div class="panel-title row-title"><div><span class="panel-kicker">Atencion</span><h3>Alertas de gestion</h3></div><span class="alert-count">{{ alertasGestion().length }}</span></div>
@@ -315,26 +323,28 @@
           @case ('socios') {
             <div class="page-head row">
               <div>
-                <h2>Socios</h2>
-                <p>Administracion y seguimiento de socios de {{ nombreClubActivo() }}.</p>
+                <h2>{{ participantesLabel() }}</h2>
+                <p>Administracion y seguimiento de {{ participantesLabel().toLowerCase() }} de {{ nombreClubActivo() }}.</p>
               </div>
-              <button class="primary-action compact" type="button" (click)="goTo('nuevo-socio')">+ Nuevo socio</button>
+              <button class="primary-action compact" type="button" (click)="goTo('nuevo-socio')">+ Nuevo participante</button>
             </div>
             <div class="socios-layout">
               <div class="socios-main">
                 <div class="metric-grid socios-metrics">
                   <article class="metric-card">
                     <span class="metric-icon members"><svg lucideUserRoundCheck aria-hidden="true"></svg></span>
-                    <span>Socios activos</span>
+                    <span>{{ participantesLabel() }} activos</span>
                     <strong>{{ dashboard()?.sociosActivos ?? socios().length }}</strong>
-                    <small>{{ socios().length }} socios totales</small>
+                    <small>{{ socios().length }} {{ participantesLabel().toLowerCase() }} totales</small>
                   </article>
-                  <article class="metric-card">
+                  @if (moduloActivo('CUOTAS')) {
+<article class="metric-card">
                     <span class="metric-icon warn"><svg lucideWalletCards aria-hidden="true"></svg></span>
                     <span>Morosos</span>
                     <strong>{{ sociosMorosos() }}</strong>
                     <small class="danger">{{ sociosMorosos() }} requieren revision</small>
                   </article>
+                  }
                   <article class="metric-card">
                     <span class="metric-icon add"><svg lucideUserPlus aria-hidden="true"></svg></span>
                     <span>Nuevos este mes</span>
@@ -361,7 +371,7 @@
                     </select>
                   </label>
                   <label>
-                    <span>Actividad</span>
+                    <span>Grupo</span>
                     <select [(ngModel)]="socioActividadFiltro">
                       <option value="TODAS">Todas</option>
                       @for (actividad of actividadesFiltro(); track actividad) {
@@ -373,7 +383,7 @@
                     <span>Edad</span>
                     <select [(ngModel)]="socioEdadFiltro">
                       <option value="TODOS">Todos</option>
-                      <option value="60_69">60 a 69</option>
+                      <option value="MENORES">Menores de 18</option><option value="18_59">18 a 59</option><option value="60_69">60 a 69</option>
                       <option value="70_79">70 a 79</option>
                       <option value="80_MAS">80 o mas</option>
                     </select>
@@ -382,14 +392,14 @@
 
                 <div class="table-card socios-table">
                   <div class="table-toolbar">
-                    <strong>{{ sociosFiltrados().length }} socios encontrados</strong>
+                    <strong>{{ sociosFiltrados().length }} {{ participantesLabel().toLowerCase() }} encontrados</strong>
                     <div class="actions">
-                      <button class="primary-action compact" type="button" (click)="goTo('nuevo-socio')">+ Nuevo socio</button>
+                      <button class="primary-action compact" type="button" (click)="goTo('nuevo-socio')">+ Nuevo participante</button>
                     </div>
                   </div>
                   <table>
                     <thead>
-                      <tr><th>Nombre</th><th>DNI</th><th>Edad</th><th>Telefono</th><th>Estado</th><th>Cuota</th><th>Actividades</th><th>Acciones</th></tr>
+                      <tr><th>Nombre</th><th>DNI</th><th>Edad</th><th>Telefono</th><th>Estado</th>@if (moduloActivo('CUOTAS')) { <th>Cuota</th> }<th>Grupos</th><th>Acciones</th></tr>
                     </thead>
                     <tbody>
                       @for (socio of sociosFiltrados(); track socio.dni) {
@@ -399,11 +409,13 @@
                           <td>{{ socioEdadTexto(socio) }}</td>
                           <td>{{ socio.telefono }}</td>
                           <td><span class="badge" [class.inactive]="socio.estado === 'INACTIVO'">{{ socio.estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}</span></td>
-                          <td>
+                          @if (moduloActivo('CUOTAS')) {
+<td>
                             <span class="badge" [class.pending]="socioCuotaResumen(socio).estado === 'Moroso'">
                               {{ socioCuotaResumen(socio).estado === 'Moroso' ? formatearImporte(socioCuotaResumen(socio).importe) : socioCuotaResumen(socio).estado }}
                             </span>
                           </td>
+                          }
                           <td>{{ socioActividadesCount(socio) }}</td>
                           <td class="actions">
                             <button type="button" (click)="prepararInscripcionesSocio(socio); $event.stopPropagation()">Ver</button>
@@ -415,12 +427,12 @@
                         </tr>
                       } @empty {
                         <tr>
-                          <td colspan="8" class="empty-cell">No hay socios para los filtros seleccionados.</td>
+                          <td [attr.colspan]="moduloActivo('CUOTAS') ? 8 : 7" class="empty-cell">No hay {{ participantesLabel().toLowerCase() }} para los filtros seleccionados.</td>
                         </tr>
                       }
                     </tbody>
                   </table>
-                  <div class="pagination"><span>Mostrando {{ sociosFiltrados().length }} de {{ socios().length }} socios</span></div>
+                  <div class="pagination"><span>Mostrando {{ sociosFiltrados().length }} de {{ socios().length }} {{ participantesLabel().toLowerCase() }}</span></div>
                 </div>
               </div>
 
@@ -430,8 +442,8 @@
                     <span class="member-photo large">{{ socioAvatarIniciales(socioPreview()!) }}</span>
                     <h3>{{ socioPreview()!.nombre }} {{ socioPreview()!.apellido }}</h3>
                     <span class="badge" [class.inactive]="socioPreview()!.estado === 'INACTIVO'">{{ socioPreview()!.estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}</span>
-                    <small>Socio desde {{ socioAltaTexto(socioPreview()!) }}</small>
-                    <small>N de socio: {{ socioNumero(socioPreview()!) }}</small>
+                    <small>Participante desde {{ socioAltaTexto(socioPreview()!) }}</small>
+                    <small>N de participante: {{ socioNumero(socioPreview()!) }}</small>
                   </div>
 
                   <div class="preview-section">
@@ -455,7 +467,7 @@
                   </div>
 
                   <div class="preview-section">
-                    <h3>Actividades inscriptas</h3>
+                    <h3>Grupos con inscripción</h3>
                     <div class="preview-activities">
                       @for (actividad of socioActividadesPreview(socioPreview()!); track actividad.nombre) {
                         <div>
@@ -464,13 +476,13 @@
                         </div>
                       }
                       @empty {
-                        <p class="empty-inline">Sin actividades inscriptas.</p>
+                        <p class="empty-inline">Sin grupos inscriptas.</p>
                       }
                     </div>
                   </div>
 
                   <div class="preview-section">
-                    <h3>Matricular en actividades</h3>
+                    <h3>Matricular en grupos</h3>
                     <div class="enrollment-list">
                       @for (actividad of actividades(); track actividad.id) {
                         <label class="enrollment-option">
@@ -485,15 +497,15 @@
                           </span>
                         </label>
                       } @empty {
-                        <p class="empty-inline">Primero crea una actividad o taller.</p>
+                        <p class="empty-inline">Primero crea un grupo o taller.</p>
                       }
                     </div>
-                    <button class="primary-action compact preview-edit" type="button" (click)="guardarInscripcionesSocio(socioPreview()!)">Guardar actividades</button>
+                    <button class="primary-action compact preview-edit" type="button" (click)="guardarInscripcionesSocio(socioPreview()!)">Guardar grupos</button>
                   </div>
 
-                  <button class="secondary-action preview-edit" type="button" (click)="editarSocio(socioPreview()!)">Editar socio</button>
+                  <button class="secondary-action preview-edit" type="button" (click)="editarSocio(socioPreview()!)">Editar participante</button>
                 } @else {
-                  <p class="empty-inline">Selecciona un socio para ver el detalle.</p>
+                  <p class="empty-inline">Selecciona un participante para ver el detalle.</p>
                 }
               </aside>
             </div>
@@ -503,7 +515,7 @@
                 <article class="modal-panel wide-modal" role="dialog" aria-modal="true" aria-labelledby="editar-socio-titulo">
                   <div class="modal-head">
                     <div>
-                      <h3 id="editar-socio-titulo">Editar socio</h3>
+                      <h3 id="editar-socio-titulo">Editar participante</h3>
                       <p>Actualiza los datos principales</p>
                     </div>
                     <button class="icon-button" type="button" aria-label="Cerrar" (click)="cerrarPanelSocio()">X</button>
@@ -538,10 +550,10 @@
           @case ('nuevo-socio') {
             <div class="page-head row">
               <div>
-                <h2>Nuevo socio</h2>
-                <p>Completa los datos del nuevo socio para {{ nombreClubActivo() }}</p>
+                <h2>Nuevo participante</h2>
+                <p>Completa los datos del nuevo participante para {{ nombreClubActivo() }}</p>
               </div>
-              <div class="breadcrumbs">Inicio / Socios / Nuevo</div>
+              <div class="breadcrumbs">Inicio / {{ participantesLabel() }} / Nuevo</div>
             </div>
             <form class="member-form" (ngSubmit)="guardarNuevoSocio()">
               @if (dataError()) {
@@ -562,7 +574,7 @@
               </div>
               <div class="form-actions">
                 <button class="secondary-action" type="button" (click)="goTo('socios')">Cancelar</button>
-                <button class="primary-action compact" type="submit">Guardar socio</button>
+                <button class="primary-action compact" type="submit">Guardar participante</button>
               </div>
             </form>
           }
@@ -650,8 +662,8 @@
           @case ('actividades') {
             <div class="page-head row">
               <div>
-                <h2>Actividades / Talleres</h2>
-                <p>Gestiona las actividades y talleres</p>
+                <h2>{{ sectionTitle() }}</h2>
+                <p>Gestiona los grupos de este club</p>
               </div>
               <span class="data-pill real">Datos del backend</span>
             </div>
@@ -661,24 +673,28 @@
             @if (actividadDetalleRuta()) {
               <article class="activity-hero">
                 <div class="activity-hero-icon"><svg lucideDumbbell aria-hidden="true"></svg></div>
-                <div><p class="eyebrow">Detalle de actividad</p><h2>{{ actividadDetalleRuta()!.nombre }}</h2><span>{{ actividadDetalleRuta()!.clubNombre }} · {{ actividadDetalleRuta()!.categoria }}</span></div>
+                <div><p class="eyebrow">Detalle de grupo</p><h2>{{ actividadDetalleRuta()!.nombre }}</h2><span>{{ actividadDetalleRuta()!.clubNombre }} · {{ actividadDetalleRuta()!.categoria }}</span></div>
                 <span class="badge" [class.inactive]="actividadDetalleRuta()!.estado === 'INACTIVA'">{{ actividadDetalleRuta()!.estado }}</span>
-                <dl><div><dt>Profesor</dt><dd>{{ actividadDetalleRuta()!.profesor }}</dd></div><div><dt>Dia y horario</dt><dd>{{ actividadDetalleRuta()!.dias }}</dd></div><div><dt>Cupo</dt><dd>{{ actividadDetalleRuta()!.inscriptos }} / {{ actividadDetalleRuta()!.cupo }}</dd></div></dl>
+                <dl>@if (actividadDetalleRuta()!.profesor) { <div><dt>Responsable</dt><dd>{{ actividadDetalleRuta()!.profesor }}</dd></div> } @if (actividadDetalleRuta()!.dias) { <div><dt>Día y horario</dt><dd>{{ actividadDetalleRuta()!.dias }}</dd></div> } <div><dt>Inscripciones / cupo</dt><dd>{{ actividadDetalleRuta()!.inscriptos }} / {{ actividadDetalleRuta()!.cupo ?? 'Sin límite' }}</dd></div></dl>
               </article>
             }
             @if (esAdministradorClubActual() && !actividadEditando()) {
                 <form class="member-form activity-create-form" (ngSubmit)="crearActividad()">
                 <div class="form-grid">
-                  <label><span>Actividad o taller</span><input name="actividadNombre" placeholder="Ej: Taller de memoria" [(ngModel)]="nuevaActividad.nombre" required /></label>
+                  <label><span>Tipo de grupo</span><select name="actividadTipo" [(ngModel)]="nuevaActividad.tipo" (ngModelChange)="nuevaActividad.asistenciaHabilitada = $event !== 'CATEGORIA_DEPORTIVA' && moduloActivo('ASISTENCIAS')">@for (tipo of tiposGrupo(); track tipo.tipo) { <option [value]="tipo.tipo">{{ tipo.nombre }}</option> }</select></label>
+                  <label><span>Nombre</span><input name="actividadNombre" placeholder="Ej: Taller de memoria" [(ngModel)]="nuevaActividad.nombre" required /></label>
+                  @if (moduloActivo('PROFESORES')) {
                   <label>
-                    <span>Profesor/a</span>
-                    <select name="actividadProfesor" [(ngModel)]="nuevaActividad.profesorUsuarioId" required>
-                      <option [ngValue]="null" disabled>Selecciona un profesor</option>
-                      @for (profesor of profesoresDelClubActual(); track profesor.id) {
+                    <span>Responsable (opcional)</span>
+                    <select name="actividadProfesor" [(ngModel)]="nuevaActividad.profesorUsuarioId">
+                      <option [ngValue]="null">Sin responsable</option>
+                      @for (profesor of responsablesDelClubActual(); track profesor.id) {
                         <option [ngValue]="profesor.id">{{ profesor.nombre }} {{ profesor.apellido }}</option>
                       }
                     </select>
                   </label>
+                  }
+                  @if (nuevaActividad.tipo !== 'CATEGORIA_DEPORTIVA') {
                   <label>
                     <span>Dia</span>
                     <select name="actividadDia" [(ngModel)]="nuevaActividadDia">
@@ -694,7 +710,7 @@
                       <option>Bienestar</option>
                       <option>Cultura</option>
                       <option>Manualidades</option>
-                      <option>Actividad fisica</option>
+                      <option>Grupo fisica</option>
                     </select>
                   </label>
                   <label>
@@ -708,32 +724,39 @@
                     </select>
                   </label>
                   <label><span>Cupo</span><input type="number" min="1" name="actividadCupo" [(ngModel)]="nuevaActividad.cupo" /></label>
+                  } @else {
+                    <label><span>Disciplina</span><input name="actividadDisciplina" [(ngModel)]="nuevaActividad.disciplina" /></label>
+                    <label><span>Año / categoría</span><input name="actividadAnio" [(ngModel)]="nuevaActividad.anioCategoria" /></label>
+                  }
+                  @if (moduloActivo('ASISTENCIAS')) {
+                    <label><span>Asistencia habilitada</span><input type="checkbox" name="actividadAsistencia" [(ngModel)]="nuevaActividad.asistenciaHabilitada" /></label>
+                  }
                 </div>
                 <div class="form-actions">
                   <span class="help-text">
-                    @if (profesoresDelClubActual().length === 0) {
-                      No hay profesores activos asignados a {{ nombreClubActivo() }}.
-                    } @else {
-                      La actividad queda asociada a {{ nombreClubActivo() }}.
-                    }
+                    El grupo queda asociado a {{ nombreClubActivo() }}. El responsable es opcional.
                   </span>
-                  <button class="primary-action compact" type="submit">Crear actividad</button>
+                  <button class="primary-action compact" type="submit">Crear grupo</button>
                 </div>
               </form>
             }
             @if (actividadEditando()) {
               <form class="member-form activity-create-form" (ngSubmit)="guardarActividadEditada()">
                 <div class="form-grid">
-                  <label><span>Actividad o taller</span><input name="editarActividadNombre" [(ngModel)]="actividadForm.nombre" required /></label>
+                  <label><span>Tipo de grupo</span><select name="editarActividadTipo" [(ngModel)]="actividadForm.tipo" (ngModelChange)="actividadForm.asistenciaHabilitada = $event !== 'CATEGORIA_DEPORTIVA' && moduloActivo('ASISTENCIAS')">@for (tipo of tiposGrupo(); track tipo.tipo) { <option [value]="tipo.tipo">{{ tipo.nombre }}</option> }</select></label>
+                  <label><span>Nombre</span><input name="editarActividadNombre" [(ngModel)]="actividadForm.nombre" required /></label>
+                  @if (moduloActivo('PROFESORES')) {
                   <label>
-                    <span>Profesor/a</span>
-                    <select name="editarActividadProfesor" [(ngModel)]="actividadForm.profesorUsuarioId" required>
-                      <option [ngValue]="null" disabled>Selecciona un profesor</option>
-                      @for (profesor of profesoresDelClubActual(); track profesor.id) {
+                    <span>Responsable (opcional)</span>
+                    <select name="editarActividadProfesor" [(ngModel)]="actividadForm.profesorUsuarioId">
+                      <option [ngValue]="null">Sin responsable</option>
+                      @for (profesor of responsablesDelClubActual(); track profesor.id) {
                         <option [ngValue]="profesor.id">{{ profesor.nombre }} {{ profesor.apellido }}</option>
                       }
                     </select>
                   </label>
+                  }
+                  @if (actividadForm.tipo !== 'CATEGORIA_DEPORTIVA') {
                   <label>
                     <span>Dia</span>
                     <select name="editarActividadDia" [(ngModel)]="actividadFormDia">
@@ -749,7 +772,7 @@
                       <option>Bienestar</option>
                       <option>Cultura</option>
                       <option>Manualidades</option>
-                      <option>Actividad fisica</option>
+                      <option>Grupo fisica</option>
                     </select>
                   </label>
                   <label>
@@ -763,6 +786,13 @@
                     </select>
                   </label>
                   <label><span>Cupo</span><input type="number" min="1" name="editarActividadCupo" [(ngModel)]="actividadForm.cupo" /></label>
+                  } @else {
+                    <label><span>Disciplina</span><input name="editarActividadDisciplina" [(ngModel)]="actividadForm.disciplina" /></label>
+                    <label><span>Año / categoría</span><input name="editarActividadAnio" [(ngModel)]="actividadForm.anioCategoria" /></label>
+                  }
+                  @if (moduloActivo('ASISTENCIAS')) {
+                    <label><span>Asistencia habilitada</span><input type="checkbox" name="editarActividadAsistencia" [(ngModel)]="actividadForm.asistenciaHabilitada" /></label>
+                  }
                   <label>
                     <span>Estado</span>
                     <select name="editarActividadEstado" [(ngModel)]="actividadForm.estado">
@@ -784,8 +814,9 @@
                 </div>
               </form>
             }
+            <label>Tipo de grupo <select [ngModel]="grupoTipoFiltro()" (ngModelChange)="grupoTipoFiltro.set($event)"><option value="TODOS">Todos</option>@for (tipo of tiposGrupo(); track tipo.tipo) { <option [value]="tipo.tipo">{{ tipo.nombre }}</option> }</select></label>
             <div class="activity-list">
-              @for (actividad of actividades(); track actividad.id) {
+              @for (actividad of gruposVisibles(); track actividad.id) {
                 <article class="activity-card">
                   <div class="activity-icon" [attr.data-icon]="actividad.icono" aria-hidden="true">
                     @switch (actividad.icono) {
@@ -809,22 +840,22 @@
                   <div class="activity-info">
                     <h3>{{ actividad.nombre }}</h3>
                     <p><strong>Club:</strong> {{ actividad.clubNombre }}</p>
-                    <p><strong>Profesor:</strong> {{ actividad.profesor }}</p>
-                    <p><strong>Dias:</strong> {{ actividad.dias }}</p>
+                    @if (actividad.profesor) { <p><strong>Responsable:</strong> {{ actividad.profesor }}</p> }
+                    @if (actividad.dias) { <p><strong>Días:</strong> {{ actividad.dias }}</p> } @if (actividad.disciplina) { <p>{{ actividad.disciplina }} · {{ actividad.anioCategoria }}</p> }
                   </div>
                   <div class="activity-capacity">
-                    <span><strong>{{ actividad.inscriptos }} / {{ actividad.cupo }}</strong> inscriptos</span>
-                    <span class="capacity-track"><i [style.width.%]="actividad.cupo > 0 ? (actividad.inscriptos / actividad.cupo) * 100 : 0"></i></span>
+                    <span><strong>{{ actividad.inscriptos }} / {{ actividad.cupo ?? 'Sin límite' }}</strong> inscriptos</span>
+                    <span class="capacity-track"><i [style.width.%]="(actividad.cupo ?? 0) > 0 ? (actividad.inscriptos / (actividad.cupo ?? 1)) * 100 : 0"></i></span>
                   </div>
                   <div class="card-actions inline">
                     @if (puedeOperarClubActual()) {
-                      <button type="button" (click)="goTo('socios')">Ver socios</button>
+                      <button type="button" (click)="socioActividadFiltro.set(actividad.nombre); goTo('socios')">Ver {{ participantesLabel() }}</button>
                     }
                     <button type="button" (click)="goTo('actividades/' + actividad.id)">Ver detalle</button>
                     @if (esAdministradorClubActual()) {
                       <button type="button" (click)="editarActividad(actividad)">Editar</button>
                     }
-                    <button class="primary-action compact" type="button" (click)="seleccionarActividadAsistencia(actividad)">Tomar asistencia</button>
+                    @if (asistenciaDisponible(actividad)) { <button class="primary-action compact" type="button" (click)="seleccionarActividadAsistencia(actividad)">Tomar asistencia</button> }
                   </div>
                 </article>
               }
@@ -836,25 +867,25 @@
               <div>
                 <p class="eyebrow">Gestion operativa</p>
                 <h2>Inscripciones</h2>
-                <p>Seguimiento de socios vinculados a actividades de {{ nombreClubActivo() }}.</p>
+                <p>Seguimiento de {{ participantesLabel().toLowerCase() }} vinculados a grupos de {{ nombreClubActivo() }}.</p>
               </div>
-              <button class="primary-action compact" type="button" (click)="goTo('socios')">Gestionar desde socios</button>
+              <button class="primary-action compact" type="button" (click)="goTo('socios')">Gestionar desde {{ participantesLabel().toLowerCase() }}</button>
             </div>
             <div class="filters enrollment-filters">
-              <label class="search-field"><span>Buscar socio</span><input type="search" placeholder="Nombre, DNI o telefono" [(ngModel)]="socioBusqueda" /></label>
-              <label><span>Actividad</span><select [(ngModel)]="socioActividadFiltro"><option value="TODAS">Todas las actividades</option>@for (actividad of actividadesFiltro(); track actividad) { <option [value]="actividad">{{ actividad }}</option> }</select></label>
-              <label><span>Estado del socio</span><select [(ngModel)]="socioEstadoFiltro"><option value="TODOS">Todos</option><option value="ACTIVO">Activo</option><option value="INACTIVO">Inactivo</option></select></label>
+              <label class="search-field"><span>Buscar participante</span><input type="search" placeholder="Nombre, DNI o telefono" [(ngModel)]="socioBusqueda" /></label>
+              <label><span>Grupo</span><select [(ngModel)]="socioActividadFiltro"><option value="TODAS">Todos los grupos</option>@for (actividad of actividadesFiltro(); track actividad) { <option [value]="actividad">{{ actividad }}</option> }</select></label>
+              <label><span>Estado del participante</span><select [(ngModel)]="socioEstadoFiltro"><option value="TODOS">Todos</option><option value="ACTIVO">Activo</option><option value="INACTIVO">Inactivo</option></select></label>
             </div>
             <div class="table-card enrollment-table">
-              <div class="table-toolbar"><div><strong>{{ sociosFiltrados().length }} socios</strong><span>Las inscripciones actuales son asignaciones directas socio–actividad.</span></div></div>
+              <div class="table-toolbar"><div><strong>{{ sociosFiltrados().length }} {{ participantesLabel().toLowerCase() }}</strong><span>Las inscripciones actuales son asignaciones directas participante–grupo.</span></div></div>
               <table>
-                <thead><tr><th>Socio</th><th>DNI</th><th>Actividades inscriptas</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <thead><tr><th>Participante</th><th>DNI</th><th>Grupos con inscripción</th><th>Estado</th><th>Acciones</th></tr></thead>
                 <tbody>
                   @for (socio of sociosFiltrados(); track socio.id) {
                     <tr>
                       <td><span class="table-person"><span class="member-photo small">{{ socioAvatarIniciales(socio) }}</span><strong>{{ socio.nombre }} {{ socio.apellido }}</strong></span></td>
                       <td>{{ socio.dni }}</td>
-                      <td><div class="activity-chip-list">@for (actividad of socioActividadesPreview(socio); track actividad.nombre) { <span class="club-chip">{{ actividad.nombre }}</span> } @empty { <span class="muted-cell-inline">Sin actividades</span> }</div></td>
+                      <td><div class="activity-chip-list">@for (actividad of socioActividadesPreview(socio); track actividad.nombre) { <span class="club-chip">{{ actividad.nombre }}</span> } @empty { <span class="muted-cell-inline">Sin grupos</span> }</div></td>
                       <td><span class="badge" [class.inactive]="socio.estado === 'INACTIVO'">{{ socio.estado }}</span></td>
                       <td><button class="secondary-action compact" type="button" (click)="prepararInscripcionesSocio(socio); goTo('socios')">Gestionar inscripcion</button></td>
                     </tr>
@@ -883,7 +914,7 @@
             </div>
             <div class="filters">
               <label class="search-field"><input type="search" placeholder="Buscar socio..." [(ngModel)]="socioBusqueda" /></label>
-              <label class="select-label">Socio:
+              <label class="select-label">Participante:
                 <select [(ngModel)]="selectedMember">
                   <option value="TODOS">Todos</option>
                   @for (socio of socios(); track socio.id) {
@@ -926,7 +957,7 @@
             <div class="table-card compact-table">
               @if (selectedMember() === 'TODOS') {
                 <table>
-                  <thead><tr><th>Socio</th><th>Estado</th><th>Mes reciente</th><th>Pendientes</th><th>Acciones</th></tr></thead>
+                  <thead><tr><th>Participante</th><th>Estado</th><th>Mes reciente</th><th>Pendientes</th><th>Acciones</th></tr></thead>
                   <tbody>
                     @for (resumen of cuotasResumenSocios(); track resumen.socioId) {
                       <tr>
@@ -938,14 +969,14 @@
                       </tr>
                     } @empty {
                       <tr>
-                        <td colspan="5" class="empty-cell">No hay socios para los filtros seleccionados.</td>
+                        <td colspan="5" class="empty-cell">No hay {{ participantesLabel().toLowerCase() }} para los filtros seleccionados.</td>
                       </tr>
                     }
                   </tbody>
                 </table>
               } @else {
                 <table>
-                  <thead><tr><th>Socio</th><th>Mes</th><th>Importe</th><th>Estado</th><th>Vencimiento</th><th>Acciones</th></tr></thead>
+                  <thead><tr><th>Participante</th><th>Mes</th><th>Importe</th><th>Estado</th><th>Vencimiento</th><th>Acciones</th></tr></thead>
                   <tbody>
                     @for (cuota of cuotasFiltradas(); track cuota.id) {
                       <tr>
@@ -983,7 +1014,7 @@
                       }
                     } @empty {
                       <tr>
-                        <td colspan="6" class="empty-cell">No hay cuotas para el socio seleccionado.</td>
+                        <td colspan="6" class="empty-cell">No hay cuotas para el participante seleccionado.</td>
                       </tr>
                     }
                   </tbody>
@@ -996,7 +1027,7 @@
             <div class="page-head row">
               <div>
                 <h2>Asistencias</h2>
-                <p>Control de asistencia por actividad</p>
+                <p>Control de asistencia por grupo</p>
               </div>
               <label class="attendance-search"><input type="search" placeholder="Buscar socios, DNI o telefono..." [(ngModel)]="asistenciaBusqueda" /></label>
             </div>
@@ -1032,12 +1063,12 @@
 
                 <div class="attendance-filter-panel">
                   <label>
-                    <span>Actividad</span>
+                    <span>Grupo</span>
                     <select [ngModel]="selectedActivityId()" (ngModelChange)="cambiarActividadAsistencia($event)" [disabled]="actividades().length === 0">
-                      @for (actividad of actividades(); track actividad.id) {
+                      @for (actividad of actividadesParaAsistencia(); track actividad.id) {
                         <option [ngValue]="actividad.id">{{ actividad.nombre }}</option>
                       } @empty {
-                        <option [ngValue]="null">Sin actividades cargadas</option>
+                        <option [ngValue]="null">Sin grupos cargadas</option>
                       }
                     </select>
                   </label>
@@ -1061,7 +1092,7 @@
                     </select>
                   </label>
                   <label>
-                    <span>Buscar socio</span>
+                    <span>Buscar participante</span>
                     <input type="search" placeholder="Buscar socio..." [(ngModel)]="asistenciaBusqueda" />
                   </label>
                   <div class="attendance-form-actions">
@@ -1101,7 +1132,7 @@
                         </tr>
                       } @empty {
                         <tr>
-                          <td colspan="6" class="empty-cell">No hay socios para los filtros seleccionados.</td>
+                          <td colspan="6" class="empty-cell">No hay {{ participantesLabel().toLowerCase() }} para los filtros seleccionados.</td>
                         </tr>
                       }
                     </tbody>
@@ -1116,7 +1147,7 @@
                     <h3>Resumen de la clase</h3>
                   </div>
                   <dl class="preview-list">
-                    <div><dt>Actividad</dt><dd>{{ actividadSeleccionada()?.nombre ?? 'Sin actividad' }}</dd></div>
+                    <div><dt>Grupo</dt><dd>{{ actividadSeleccionada()?.nombre ?? 'Sin actividad' }}</dd></div>
                     <div><dt>Dia y horario</dt><dd>{{ actividadSeleccionada()?.dias ?? '-' }}</dd></div>
                     <div><dt>Profesor/a</dt><dd>{{ actividadSeleccionada()?.profesor ?? '-' }}</dd></div>
                   </dl>
@@ -1137,7 +1168,7 @@
                   <ul class="quick-notes">
                     <li>Revisar ausentes antes de guardar.</li>
                     <li>La asistencia queda registrada en la base para la fecha elegida.</li>
-                    <li>Usa el filtro para encontrar socios por DNI o telefono.</li>
+                    <li>Usa el filtro para encontrar {{ participantesLabel().toLowerCase() }} por DNI o telefono.</li>
                   </ul>
                 </article>
               </aside>
@@ -1157,7 +1188,7 @@
             <div class="filters" aria-label="Filtros de reportes">
               <label class="select-label">Desde:<input type="date" [(ngModel)]="reporteDesde" /></label>
               <label class="select-label">Hasta:<input type="date" [(ngModel)]="reporteHasta" /></label>
-              <label class="select-label">Actividad:
+              <label class="select-label">Grupo:
                 <select [(ngModel)]="reporteActividadId">
                   <option value="TODAS">Todas</option>
                   @for (actividad of actividades(); track actividad.id) {
@@ -1165,7 +1196,7 @@
                   }
                 </select>
               </label>
-              <label class="select-label">Estado del socio:
+              <label class="select-label">Estado del participante:
                 <select [(ngModel)]="reporteEstadoSocio">
                   <option value="TODOS">Todos</option>
                   <option value="ACTIVO">Activo</option>
@@ -1177,50 +1208,58 @@
             <div class="reports-grid">
               <article class="metric-card report-metric">
                 <span class="material-metric-icon groups" aria-hidden="true"><svg lucideUsers></svg></span>
-                <span>Socios</span>
+                <span>{{ participantesLabel() }}</span>
                 <strong>{{ sociosTotalReporte() }}</strong>
                 <small>{{ sociosActivosReporte() }} activos</small>
               </article>
               <article class="metric-card report-metric">
                 <span class="material-metric-icon event-available" aria-hidden="true"><svg lucideCalendarDays></svg></span>
-                <span>Actividades</span>
+                <span>Grupos</span>
                 <strong>{{ actividadesActivasClub() }}</strong>
                 <small>{{ inscriptosTotalActividades() }} inscriptos</small>
               </article>
-              <article class="metric-card report-metric">
+              @if (moduloActivo('CUOTAS')) {
+<article class="metric-card report-metric">
                 <span class="material-metric-icon payments" aria-hidden="true"><svg lucideWalletCards></svg></span>
                 <span>Ingreso cobrado</span>
                 <strong>{{ formatearImporte(totalCobradoReporte()) }}</strong>
                 <small>Pagos activos en {{ reporteAnio }}</small>
               </article>
-              <article class="metric-card report-metric">
+              }
+              @if (moduloActivo('CUOTAS')) {
+<article class="metric-card report-metric">
                 <span class="material-metric-icon account-balance-wallet" aria-hidden="true"><svg lucideWalletCards></svg></span>
                 <span>Deuda</span>
                 <strong>{{ formatearImporte(deudaReporte().total) }}</strong>
                 <small>{{ deudaReporte().cantidad }} cuotas pendientes</small>
               </article>
+              }
 
               <article class="panel">
-                <h3><span class="panel-title-icon groups" aria-hidden="true"><svg lucideUsers></svg></span>Cantidad de socios</h3>
+                <h3><span class="panel-title-icon groups" aria-hidden="true"><svg lucideUsers></svg></span>Cantidad de {{ participantesLabel().toLowerCase() }}</h3>
                 <div class="report-list">
                   <div class="report-row"><strong>Total</strong><span>{{ sociosTotalReporte() }}</span></div>
                   <div class="report-row"><strong>Activos</strong><span>{{ sociosActivosReporte() }}</span></div>
                   <div class="report-row"><strong>Inactivos</strong><span>{{ sociosInactivosReporte() }}</span></div>
-                  <div class="report-row"><strong>Con deuda</strong><span>{{ reportes()?.sociosConDeuda ?? 0 }}</span></div>
+                  @if (moduloActivo('CUOTAS')) { <div class="report-row"><strong>Con deuda</strong><span>{{ reportes()?.sociosConDeuda ?? 0 }}</span></div> }
                 </div>
               </article>
 
               <article class="panel">
-                <h3><span class="panel-title-icon event-available" aria-hidden="true"><svg lucideCalendarDays></svg></span>Talleres y actividades</h3>
+                <h3><span class="panel-title-icon event-available" aria-hidden="true"><svg lucideCalendarDays></svg></span>Inscripciones actuales por grupo</h3>
                 <div class="report-list">
                   <div class="report-row"><strong>Total</strong><span>{{ actividades().length }}</span></div>
                   <div class="report-row"><strong>Activas</strong><span>{{ actividadesActivasClub() }}</span></div>
-                  <div class="report-row"><strong>Cupo total</strong><span>{{ cupoTotalActividades() }}</span></div>
-                  <div class="report-row"><strong>Inscriptos</strong><span>{{ inscriptosTotalActividades() }}</span></div>
+                  <div class="report-row"><strong>Plazas con cupo definido</strong><span>{{ cupoTotalActividades() }}</span></div>
+                  <div class="report-row"><strong>Inscripciones activas</strong><span>{{ inscriptosTotalActividades() }}</span></div>
+                  @for (grupo of actividades(); track grupo.id) {
+                    <div class="report-row"><strong>{{ grupo.nombre }}</strong><span>{{ grupo.inscriptos }} {{ participantesLabel().toLowerCase() }}</span></div>
+                  }
                 </div>
               </article>
 
-              <article class="panel report-wide">
+              @if (moduloActivo('CUOTAS')) {
+<article class="panel report-wide">
                 <h3><span class="panel-title-icon bar-chart" aria-hidden="true"><svg lucideChartNoAxesColumnIncreasing></svg></span>Entrada de dinero por mes</h3>
                 <div class="bar-chart">
                   @for (mes of reportes()?.pagosPorMes ?? []; track mes.mes) {
@@ -1233,8 +1272,10 @@
                   }
                 </div>
               </article>
+              }
 
-              <article class="panel">
+              @if (moduloActivo('CUOTAS')) {
+<article class="panel">
                 <h3><span class="panel-title-icon account-balance-wallet" aria-hidden="true"><svg lucideWalletCards></svg></span>Cantidad de deuda</h3>
                 <div class="report-list">
                   <div class="report-row"><strong>Total adeudado</strong><span>{{ formatearImporte(deudaReporte().total) }}</span></div>
@@ -1243,6 +1284,7 @@
                   <div class="report-row"><strong>Cuotas con deuda</strong><span>{{ deudaReporte().cantidad }}</span></div>
                 </div>
               </article>
+              }
             </div>
           }
 
@@ -1408,6 +1450,18 @@
               </div>
             </div>
 
+            @if (esAdministradorClubActual()) {
+              <form class="panel member-form" (ngSubmit)="guardarConfiguracionClub()">
+                <h3>Módulos de {{ nombreClubActivo() }}</h3>
+                <div class="form-grid">
+                  @for (modulo of opcionesModulos; track modulo.id) {
+                    <label><span>{{ modulo.nombre }}</span><input type="checkbox" [name]="'modulo' + modulo.id" [ngModel]="configModulos.includes(modulo.id)" (ngModelChange)="alternarModulo(modulo.id, $event)" /></label>
+                  }
+                  <label><span>Nombre de los participantes</span><select name="nombreParticipantes" [(ngModel)]="configParticipantes"><option value="SOCIOS">{{ participantesLabel() }}</option><option value="JUGADORES">Jugadores</option><option value="ALUMNOS">Alumnos</option><option value="PARTICIPANTES">Participantes</option></select></label>
+                </div>
+                <p>{{ configuracionClubMensaje() }}</p><button class="primary-action" type="submit">Guardar configuración del club</button>
+              </form>
+            }
             <div class="settings-layout">
               <aside class="settings-nav" aria-label="Categorias de configuracion">
                 <strong>Configuracion</strong>
