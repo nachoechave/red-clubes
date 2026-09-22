@@ -17,19 +17,22 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class SuperUsuarioInitializerTests {
 
+    private static final String TEST_DNI = "99999999";
+    private static final String TEST_PASSWORD = "bootstrap-test-password";
+
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private PasswordService passwordService;
 
     @Test
     void creaSuperusuarioSoloConCredencialesConfiguradas() throws Exception {
-        when(usuarioRepository.existsByDni("41131131")).thenReturn(false);
-        when(passwordService.generarHash("password-inicial-seguro")).thenReturn("hash-seguro");
+        when(usuarioRepository.existsByDni(TEST_DNI)).thenReturn(false);
+        when(passwordService.generarHash(TEST_PASSWORD)).thenReturn("hash-seguro");
 
         SuperUsuarioInitializer initializer = new SuperUsuarioInitializer(
                 usuarioRepository,
                 passwordService,
-                "41131131",
-                "password-inicial-seguro",
+                TEST_DNI,
+                TEST_PASSWORD,
                 "Administrador",
                 "Inicial"
         );
@@ -38,7 +41,7 @@ class SuperUsuarioInitializerTests {
         ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
         verify(usuarioRepository).save(captor.capture());
         Usuario usuario = captor.getValue();
-        assertEquals("41131131", usuario.getDni());
+        assertEquals(TEST_DNI, usuario.getDni());
         assertEquals("hash-seguro", usuario.getPasswordHash());
         assertEquals(RolUsuario.SUPERUSUARIO, usuario.getRol());
         assertEquals(EstadoUsuario.ACTIVO, usuario.getEstado());
@@ -47,13 +50,13 @@ class SuperUsuarioInitializerTests {
 
     @Test
     void noModificaUnSuperusuarioExistente() throws Exception {
-        when(usuarioRepository.existsByDni("41131131")).thenReturn(true);
+        when(usuarioRepository.existsByDni(TEST_DNI)).thenReturn(true);
 
         SuperUsuarioInitializer initializer = new SuperUsuarioInitializer(
                 usuarioRepository,
                 passwordService,
-                "41131131",
-                "password-inicial-seguro",
+                TEST_DNI,
+                TEST_PASSWORD,
                 "Administrador",
                 "Inicial"
         );
