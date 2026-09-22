@@ -6,7 +6,24 @@ Aplicación web multi-club para administrar socios, actividades, inscripciones, 
 
 El código está preparado como **candidato a piloto controlado**. No equivale a una autorización para cargar datos personales reales: antes se debe completar un despliegue en infraestructura destino, configurar DNS/TLS, restaurar un backup de ensayo y cerrar la checklist operativa de [la guía de despliegue](docs/GUIA_DESPLIEGUE.md).
 
-La rama de preparación productiva es `chore/production-readiness`; `main` no debe recibir estos cambios sin Pull Request y CI verde.
+La preparación productiva del PR #3 ya fue integrada en `main`. Los cambios nuevos deben ingresar mediante Pull Request y con CI verde.
+
+## Trabajo académico 2026
+
+Para el trabajo grupal de facultad se conserva un punto de partida explícito:
+
+- `facultad`: snapshot del código previo al trabajo del equipo;
+- `develop`: rama de integración del trabajo académico;
+- `feature/*`, `fix/*` y `docs/*`: ramas por tarea;
+- `main`: versión estable general.
+
+La trazabilidad académica se documenta en:
+
+- [Baseline académico](docs/BASELINE.md)
+- [Alcance del TP](docs/ALCANCE_TP.md)
+- [Contribuciones](docs/CONTRIBUCIONES.md)
+
+Las ramas de trabajo deben salir de `develop` y volver mediante Pull Request. No se reescribe el historial previo para atribuir código anterior a integrantes que se incorporan al proyecto.
 
 ## Stack soportado
 
@@ -113,6 +130,9 @@ Usar SemVer (`vMAJOR.MINOR.PATCH`) y el mismo tag inmutable para Git, `IMAGE_TAG
 
 ## Documentación
 
+- [Baseline académico](docs/BASELINE.md)
+- [Alcance del TP](docs/ALCANCE_TP.md)
+- [Contribuciones](docs/CONTRIBUCIONES.md)
 - [Auditoría técnica vigente](docs/AUDITORIA_TECNICA.md)
 - [Roadmap](docs/ROADMAP_PROFESIONALIZACION.md)
 - [Seguridad](docs/SEGURIDAD.md)
