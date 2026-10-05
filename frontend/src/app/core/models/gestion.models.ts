@@ -88,6 +88,20 @@ export interface CuotaResumenSocio {
   ultimoMes: string;
 }
 
+export interface EstadoCuentaSocioVista {
+  socioId: number;
+  numeroSocio?: number | null;
+  socioNombre: string;
+  socioDni: string;
+  estadoSocio: EstadoSocio;
+  cuotasPendientes: number;
+  cuotasVencidas: number;
+  cuotasAdeudadas: number;
+  deudaTotal: number;
+  ultimoPeriodo?: string | null;
+  alDia: boolean;
+}
+
 export interface AsistenciaVista {
   id: number | null;
   actividadId: number;
