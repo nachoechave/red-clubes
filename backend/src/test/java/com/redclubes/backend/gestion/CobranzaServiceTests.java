@@ -113,6 +113,35 @@ class CobranzaServiceTests {
         verify(pagoRepository).save(pago);
     }
 
+    @Test
+    void estadoCuentaSocioResumeCuotasAdeudadasYDeudaTotal() {
+        Club club = club(1L);
+        Socio socio = socio(10L, club);
+        socio.setNumeroSocio(25);
+
+        Cuota vencida = cuota(50L, club, socio);
+        vencida.setEstado(EstadoCuota.VENCIDA);
+
+        Cuota pagada = cuota(51L, club, socio);
+        pagada.setPeriodo("2026-09");
+        pagada.setFechaEmision(LocalDate.of(2026, 9, 1));
+        pagada.setVencimiento(LocalDate.of(2026, 9, 10));
+        pagada.setEstado(EstadoCuota.PAGADA);
+
+        when(socioRepository.findByClubIdOrderByIdAsc(1L)).thenReturn(List.of(socio));
+        when(cuotaRepository.findByClubId(1L)).thenReturn(List.of(vencida, pagada));
+
+        EstadoCuentaSocioResponse estado = service().listarEstadoCuentaSocios(1L).getFirst();
+
+        assertEquals(25, estado.numeroSocio());
+        assertEquals(0, estado.cuotasPendientes());
+        assertEquals(1, estado.cuotasVencidas());
+        assertEquals(1, estado.cuotasAdeudadas());
+        assertEquals(new BigDecimal("6500.00"), estado.deudaTotal());
+        assertEquals("2026-09", estado.ultimoPeriodo());
+        assertEquals(false, estado.alDia());
+    }
+
     private CobranzaService service() {
         return new CobranzaService(clubRepository, socioRepository, cuotaRepository, pagoRepository, auditoriaService);
     }

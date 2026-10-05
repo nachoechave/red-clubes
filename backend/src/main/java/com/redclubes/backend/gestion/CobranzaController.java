@@ -46,6 +46,15 @@ public class CobranzaController {
         return cobranzaService.listarCuotas(clubId, periodo, estadoCuota, socioId);
     }
 
+    @GetMapping("/estado-socios")
+    public List<EstadoCuentaSocioResponse> estadoSocios(
+            @RequestHeader("Authorization") String authorization,
+            @PathVariable Long clubId
+    ) {
+        authService.exigirOperadorDeClub(authorization, clubId);
+        return cobranzaService.listarEstadoCuentaSocios(clubId);
+    }
+
     @PostMapping
     public CuotaResponse crear(@RequestHeader("Authorization") String authorization, @PathVariable Long clubId,
                                @Valid @RequestBody CrearCuotaRequest request) {
