@@ -55,7 +55,7 @@ public class CobranzaService {
                 .filter(cuota -> estado == null || estado == cuota.getEstado())
                 .filter(cuota -> socioId == null || socioId.equals(cuota.getSocio().getId()))
                 .sorted(Comparator.comparing(Cuota::getVencimiento).reversed())
-                .map(CuotaResponse::desde)
+                .map(this::cuotaResponseConSaldo)
                 .toList();
     }
 
@@ -245,6 +245,26 @@ public class CobranzaService {
 
     private LocalDate inicioDelPeriodo(String periodo) {
         return YearMonth.parse(periodo).atDay(1);
+    }
+
+    private CuotaResponse cuotaResponseConSaldo(Cuota cuota) {
+        BigDecimal saldo = saldoPendiente(cuota);
+        BigDecimal pagado = cuota.getImporte().subtract(saldo);
+        return new CuotaResponse(
+                cuota.getId(),
+                cuota.getClub().getId(),
+                cuota.getSocio().getId(),
+                cuota.getSocio().getNombre() + " " + cuota.getSocio().getApellido(),
+                cuota.getSocio().getDni(),
+                cuota.getPeriodo(),
+                cuota.getPeriodo(),
+                cuota.getImporte(),
+                pagado,
+                saldo,
+                cuota.getEstado(),
+                cuota.getFechaEmision(),
+                cuota.getVencimiento()
+        );
     }
 
     private BigDecimal saldoPendiente(Cuota cuota) {
