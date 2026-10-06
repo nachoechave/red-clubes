@@ -22,6 +22,10 @@ import { ApiErrorStore } from './core/errors/api-error.store';
 import { ModuloClub, NombreParticipantes, TipoGrupo } from './core/models/gestion.models';
 import { etiquetaParticipantes, moduloHabilitado, seccionHabilitada, TIPOS_GRUPO, MODULOS_LEGACY } from './core/models/club-config';
 import {
+  LucideBuilding2,
+  LucideBadgeDollarSign,
+  LucideUserCheck,
+  LucideTriangleAlert,
   LucideCalendarDays,
   LucideChartNoAxesColumnIncreasing,
   LucideCirclePercent,
@@ -43,6 +47,10 @@ import {
 } from '@lucide/angular';
 
 const lucideIcons = [
+  LucideBuilding2,
+  LucideBadgeDollarSign,
+  LucideUserCheck,
+  LucideTriangleAlert,
   LucideCalendarDays,
   LucideChartNoAxesColumnIncreasing,
   LucideCirclePercent,
@@ -367,11 +375,11 @@ export class App {
     const dashboard = this.dashboard();
     return [
       { label: 'Clubes activos', value: String(this.clubes().filter((club) => club.estado === 'ACTIVO').length), change: `${this.clubes().length} disponibles para tu rol`, tone: 'info' },
-      { section: 'socios', label: `${this.participantesLabel()} activos`, value: String(this.socios().filter((socio) => socio.estado === 'ACTIVO').length || dashboard?.sociosActivos || 0), change: `${this.socios().length || dashboard?.sociosTotales || 0} participantes totales`, tone: 'success' },
+      { section: 'socios', label: `${this.participantesLabel()} activos`, value: String(this.socios().filter((socio) => socio.estado === 'ACTIVO').length || dashboard?.sociosActivos || 0), change: `${this.socios().length || dashboard?.sociosTotales || 0} en total`, tone: 'success' },
       { section: 'actividades', label: 'Grupos', value: String(this.actividades().filter((actividad) => actividad.estado === 'ACTIVA').length || dashboard?.actividadesActivas || 0), change: `${this.actividades().length} grupos registrados`, tone: 'violet' },
-      { section: 'inscripciones', label: 'Inscripciones', value: String(this.inscriptosTotalActividades()), change: 'Asignaciones activas a grupos', tone: 'info' },
-      { section: 'asistencias', label: 'Asistencias', value: String(dashboard?.asistenciaMes ?? 0), change: 'Registros del periodo actual', tone: 'warning' },
-      { section: 'cuotas', label: 'Recaudacion', value: this.formatearImporte(dashboard?.totalCobrado ?? 0), change: 'Total cobrado en el periodo', tone: 'success' },
+      { section: 'inscripciones', label: 'Inscripciones', value: String(this.inscriptosTotalActividades()), change: 'Asignaciones a grupos', tone: 'info' },
+      { section: 'asistencias', label: 'Asistencias', value: String(dashboard?.asistenciaMes ?? 0), change: 'Del período actual', tone: 'warning' },
+      { section: 'cuotas', label: 'Recaudación', value: this.formatearImporte(dashboard?.totalCobrado ?? 0), change: 'Cobrado en el período', tone: 'success' },
     ].filter(metric => !metric.section || this.seccionDisponible(metric.section));
   });
 
