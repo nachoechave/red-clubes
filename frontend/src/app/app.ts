@@ -20,7 +20,10 @@ import { ReporteService } from './features/reportes/reporte.service';
 import { UsuarioService } from './features/usuarios/usuario.service';
 import { ApiErrorStore } from './core/errors/api-error.store';
 import {
+  LucideBadgeDollarSign,
+  LucideBuilding2,
   LucideCalendarDays,
+  LucideCircleAlert,
   LucideChartNoAxesColumnIncreasing,
   LucideCirclePercent,
   LucideClipboardCheck,
@@ -41,7 +44,10 @@ import {
 } from '@lucide/angular';
 
 const lucideIcons = [
+  LucideBadgeDollarSign,
+  LucideBuilding2,
   LucideCalendarDays,
+  LucideCircleAlert,
   LucideChartNoAxesColumnIncreasing,
   LucideCirclePercent,
   LucideClipboardCheck,
