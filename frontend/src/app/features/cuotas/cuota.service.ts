@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { API_BASE_URL } from '../../core/config/api.config';
-import { CuotaVista, EstadoCuentaSocioVista } from '../../core/models/gestion.models';
+import { CuotaVista, EstadoCuentaSocioVista, ImportacionDeudaHistoricaVista } from '../../core/models/gestion.models';
 
 @Injectable({ providedIn: 'root' })
 export class CuotaService {
@@ -16,6 +16,11 @@ export class CuotaService {
   }
   estadoSocios(clubId: number) {
     return this.http.get<EstadoCuentaSocioVista[]>(`${API_BASE_URL}/clubes/${clubId}/cuotas/estado-socios`);
+  }
+  importarHistorica(clubId: number, archivo: File) {
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+    return this.http.post<ImportacionDeudaHistoricaVista>(`${API_BASE_URL}/clubes/${clubId}/cuotas/importacion-historica`, formData);
   }
   crear(clubId: number, payload: object) { return this.http.post<CuotaVista>(`${API_BASE_URL}/clubes/${clubId}/cuotas`, payload); }
   generar(clubId: number, payload: object) { return this.http.post<{ creadas: number; omitidas: number }>(`${API_BASE_URL}/clubes/${clubId}/cuotas/generacion`, payload); }
