@@ -23,6 +23,20 @@ export interface AsignacionUsuarioForm {
   actividadIds: number[];
 }
 
+export interface ImportacionSociosErrorVista {
+  fila: number;
+  dni: string;
+  mensaje: string;
+}
+
+export interface ImportacionSociosVista {
+  valida: boolean;
+  totalFilas: number;
+  importados: number;
+  sociosImportados: { fila: number; dni: string; socioId: number; numeroSocio: number }[];
+  errores: ImportacionSociosErrorVista[];
+}
+
 export interface SocioVista {
   id: number;
   clubId: number;
