@@ -21,10 +21,10 @@ describe('feature API services', () => {
   });
 
   it('registers a payment below its club and fee', () => {
-    TestBed.inject(PagoService).registrar(7, 22, 'TRANSFERENCIA').subscribe();
+    TestBed.inject(PagoService).registrar(7, 22, 2500, 'TRANSFERENCIA').subscribe();
     const request = http.expectOne('/api/clubes/7/cuotas/22/pagos');
     expect(request.request.method).toBe('POST');
-    expect(request.request.body).toEqual({ medioPago: 'TRANSFERENCIA' });
+    expect(request.request.body).toEqual({ importe: 2500, medioPago: 'TRANSFERENCIA' });
     request.flush({});
   });
 

@@ -44,7 +44,7 @@ class GestionServiceSecurityTests {
         CobranzaService service = new CobranzaService(clubRepository, socioRepository, cuotaRepository, pagoRepository, auditoriaService);
 
         assertThrows(IllegalArgumentException.class, () -> service.registrarPago(
-                1L, 90L, new RegistrarPagoRequest(MedioPago.EFECTIVO, null), new Usuario()));
+                1L, 90L, new RegistrarPagoRequest(new java.math.BigDecimal("1000.00"), MedioPago.EFECTIVO, null), new Usuario()));
         verify(cuotaRepository).findLockedByIdAndClubId(90L, 1L);
         verify(cuotaRepository, never()).save(org.mockito.ArgumentMatchers.any());
     }

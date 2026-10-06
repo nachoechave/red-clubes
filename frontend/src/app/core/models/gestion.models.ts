@@ -65,6 +65,8 @@ export interface CuotaVista {
   mes: string;
   periodo?: string;
   importe: number;
+  pagado: number;
+  saldoPendiente: number;
   estado: EstadoCuota;
   vencimiento: string;
 }

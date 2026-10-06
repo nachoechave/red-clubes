@@ -167,6 +167,7 @@ export class App {
   protected reporteActividadId = 'TODAS';
   protected reporteEstadoSocio = 'TODOS';
   protected medioPago: MedioPago = 'EFECTIVO';
+  protected pagoImportes: Record<number, number> = {};
   protected motivoAnulacionPago = '';
   protected cuotaMensaje = signal('');
   protected dataError = signal('');
@@ -371,7 +372,7 @@ export class App {
   protected sociosRecientesDelClub = computed(() => this.dashboard()?.sociosRecientes ?? []);
   protected sociosActivosClub = computed(() => this.socios().filter((socio) => socio.estado === 'ACTIVO').length);
   protected sociosInactivosClub = computed(() => this.socios().filter((socio) => socio.estado === 'INACTIVO').length);
-  protected totalDeudaClub = computed(() => this.cuotas().filter((cuota) => cuota.estado !== 'PAGADA' && cuota.estado !== 'ANULADA').reduce((total, cuota) => total + cuota.importe, 0));
+  protected totalDeudaClub = computed(() => this.cuotas().filter((cuota) => cuota.estado !== 'PAGADA' && cuota.estado !== 'ANULADA').reduce((total, cuota) => total + cuota.saldoPendiente, 0));
   protected cantidadCuotasDeuda = computed(() => this.cuotas().filter((cuota) => cuota.estado !== 'PAGADA' && cuota.estado !== 'ANULADA').length);
   protected actividadesActivasClub = computed(() => this.actividades().filter((actividad) => actividad.estado === 'ACTIVA').length);
   protected cupoTotalActividades = computed(() => this.actividades().reduce((total, actividad) => total + actividad.cupo, 0));
@@ -389,8 +390,8 @@ export class App {
       .sort((a, b) => `${a.apellido} ${a.nombre}`.localeCompare(`${b.apellido} ${b.nombre}`));
   });
   protected deudaPorEstado = computed(() => ({
-    pendiente: this.cuotas().filter((cuota) => cuota.estado === 'PENDIENTE').reduce((total, cuota) => total + cuota.importe, 0),
-    vencida: this.cuotas().filter((cuota) => cuota.estado === 'VENCIDA').reduce((total, cuota) => total + cuota.importe, 0),
+    pendiente: this.cuotas().filter((cuota) => cuota.estado === 'PENDIENTE').reduce((total, cuota) => total + cuota.saldoPendiente, 0),
+    vencida: this.cuotas().filter((cuota) => cuota.estado === 'VENCIDA').reduce((total, cuota) => total + cuota.saldoPendiente, 0),
   }));
   protected totalDeudaPeriodo = computed(() => this.deudaPorEstado().pendiente + this.deudaPorEstado().vencida);
   protected porcentajeCobranza = computed(() => {
@@ -1042,13 +1043,26 @@ export class App {
 
   protected registrarPago(cuota: CuotaVista): void {
     const clubId = this.clubActivoId();
+    const importe = Number(this.pagoImportes[cuota.id] ?? cuota.saldoPendiente);
     if (!clubId) {
       return;
     }
+    if (!Number.isFinite(importe) || importe <= 0) {
+      this.dataError.set('Ingresa un importe de pago mayor a cero.');
+      return;
+    }
+    if (importe > cuota.saldoPendiente) {
+      this.dataError.set('El pago no puede superar el saldo pendiente.');
+      return;
+    }
+    this.dataError.set('');
     this.cuotaMensaje.set('');
-    this.pagoService.registrar(clubId, cuota.id, this.medioPago).subscribe({
+    this.pagoService.registrar(clubId, cuota.id, importe, this.medioPago).subscribe({
       next: () => {
-        this.cuotaMensaje.set('Pago registrado correctamente.');
+        this.cuotaMensaje.set(importe < cuota.saldoPendiente
+          ? 'Pago parcial registrado correctamente.'
+          : 'Pago completo registrado correctamente.');
+        delete this.pagoImportes[cuota.id];
         this.cargarDatosClub();
       },
       error: (error) => this.dataError.set(error.error?.message ?? 'No se pudo registrar el pago.'),
@@ -1404,7 +1418,7 @@ export class App {
     const pendiente = cuotasSocio.find((cuota) => cuota.estado !== 'PAGADA');
     return {
       estado: pendiente ? 'Moroso' : 'Al dia',
-      importe: pendiente?.importe ?? 0,
+      importe: pendiente?.saldoPendiente ?? 0,
     };
   }
 
@@ -1645,6 +1659,11 @@ export class App {
     this.cuotaService.listar(clubId).subscribe({
       next: (cuotas) => {
         this.cuotas.set(cuotas);
+        cuotas.forEach((cuota) => {
+          if (cuota.saldoPendiente > 0 && this.pagoImportes[cuota.id] === undefined) {
+            this.pagoImportes[cuota.id] = cuota.saldoPendiente;
+          }
+        });
         this.cuotasCargadas.set(true);
       },
       error: () => {
