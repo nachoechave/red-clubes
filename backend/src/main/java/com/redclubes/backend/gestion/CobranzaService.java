@@ -72,13 +72,15 @@ public class CobranzaService {
 
                     int pendientes = (int) cuotasSocio.stream()
                             .filter(cuota -> cuota.getEstado() == EstadoCuota.PENDIENTE)
+                            .filter(cuota -> saldoPendiente(cuota).compareTo(BigDecimal.ZERO) > 0)
                             .count();
                     int vencidas = (int) cuotasSocio.stream()
                             .filter(cuota -> cuota.getEstado() == EstadoCuota.VENCIDA)
+                            .filter(cuota -> saldoPendiente(cuota).compareTo(BigDecimal.ZERO) > 0)
                             .count();
                     BigDecimal deudaTotal = cuotasSocio.stream()
                             .filter(cuota -> cuota.getEstado() == EstadoCuota.PENDIENTE || cuota.getEstado() == EstadoCuota.VENCIDA)
-                            .map(Cuota::getImporte)
+                            .map(this::saldoPendiente)
                             .reduce(BigDecimal.ZERO, BigDecimal::add);
                     String ultimoPeriodo = cuotasSocio.stream()
                             .max(Comparator.comparing(Cuota::getVencimiento))
@@ -144,28 +146,37 @@ public class CobranzaService {
         Cuota cuota = cuotaRepository.findLockedByIdAndClubId(cuotaId, clubId)
                 .orElseThrow(() -> new IllegalArgumentException("Cuota no encontrada"));
         validarCuotaDelClub(cuota, clubId);
-        if (cuota.getEstado() == EstadoCuota.PAGADA
-                || pagoRepository.existsByClubIdAndCuotaIdAndEstado(clubId, cuotaId, EstadoPago.ACTIVO)) {
-            throw new IllegalArgumentException("La cuota ya tiene un pago activo");
-        }
         if (cuota.getEstado() == EstadoCuota.ANULADA) {
             throw new IllegalArgumentException("No se puede pagar una cuota anulada");
+        }
+
+        BigDecimal saldoAntes = saldoPendiente(cuota);
+        if (saldoAntes.compareTo(BigDecimal.ZERO) <= 0 || cuota.getEstado() == EstadoCuota.PAGADA) {
+            throw new IllegalArgumentException("La cuota ya esta pagada");
+        }
+        if (request.importe().compareTo(saldoAntes) > 0) {
+            throw new IllegalArgumentException("El importe supera el saldo pendiente de " + saldoAntes);
         }
 
         Pago pago = new Pago();
         pago.setClub(cuota.getClub());
         pago.setCuota(cuota);
-        pago.setImporte(cuota.getImporte());
+        pago.setImporte(request.importe());
         pago.setFechaPago(LocalDateTime.now(BUSINESS_ZONE));
         pago.setMedioPago(request.medioPago());
         pago.setUsuarioResponsable(responsable);
         pago.setObservaciones(request.observaciones());
         pago.setEstado(EstadoPago.ACTIVO);
         pagoRepository.save(pago);
-        cuota.setEstado(EstadoCuota.PAGADA);
+
+        BigDecimal saldoDespues = saldoAntes.subtract(request.importe());
+        cuota.setEstado(saldoDespues.compareTo(BigDecimal.ZERO) == 0
+                ? EstadoCuota.PAGADA
+                : estadoPendienteSegunVencimiento(cuota));
         cuotaRepository.save(cuota);
+
         auditoriaService.registrar(responsable, clubId, "REGISTRO", "PAGO", pago.getId(),
-                "Cuota=" + cuotaId + "; medio=" + request.medioPago());
+                "Cuota=" + cuotaId + "; importe=" + request.importe() + "; medio=" + request.medioPago());
         return PagoResponse.desde(pago);
     }
 
@@ -191,10 +202,12 @@ public class CobranzaService {
         pago.setFechaAnulacion(LocalDateTime.now(BUSINESS_ZONE));
         pago.setUsuarioAnulacion(responsable);
         pago.setObservaciones(unirObservaciones(pago.getObservaciones(), "Anulacion: " + request.motivo()));
-        cuota.setEstado(cuota.getVencimiento().isBefore(LocalDate.now(BUSINESS_ZONE))
-                ? EstadoCuota.VENCIDA : EstadoCuota.PENDIENTE);
-        cuotaRepository.save(cuota);
         Pago guardado = pagoRepository.save(pago);
+        BigDecimal saldo = saldoPendiente(cuota);
+        cuota.setEstado(saldo.compareTo(BigDecimal.ZERO) <= 0
+                ? EstadoCuota.PAGADA
+                : estadoPendienteSegunVencimiento(cuota));
+        cuotaRepository.save(cuota);
         auditoriaService.registrar(responsable, clubId, "ANULACION", "PAGO", pagoId, "Cuota=" + cuotaId);
         return PagoResponse.desde(guardado);
     }
@@ -232,6 +245,21 @@ public class CobranzaService {
 
     private LocalDate inicioDelPeriodo(String periodo) {
         return YearMonth.parse(periodo).atDay(1);
+    }
+
+    private BigDecimal saldoPendiente(Cuota cuota) {
+        BigDecimal pagadoActivo = pagoRepository.findByClubIdAndCuotaIdAndEstado(
+                        cuota.getClub().getId(), cuota.getId(), EstadoPago.ACTIVO
+                ).stream()
+                .map(Pago::getImporte)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return cuota.getImporte().subtract(pagadoActivo).max(BigDecimal.ZERO);
+    }
+
+    private EstadoCuota estadoPendienteSegunVencimiento(Cuota cuota) {
+        return cuota.getVencimiento().isBefore(LocalDate.now(BUSINESS_ZONE))
+                ? EstadoCuota.VENCIDA
+                : EstadoCuota.PENDIENTE;
     }
 
     private void validarCuotaDelClub(Cuota cuota, Long clubId) {
