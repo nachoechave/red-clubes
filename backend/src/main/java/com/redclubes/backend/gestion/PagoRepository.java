@@ -9,6 +9,7 @@ import java.util.Optional;
 public interface PagoRepository extends JpaRepository<Pago, Long> {
     boolean existsByClubIdAndCuotaIdAndEstado(Long clubId, Long cuotaId, EstadoPago estado);
     List<Pago> findByClubIdAndCuotaIdOrderByIdDesc(Long clubId, Long cuotaId);
+    List<Pago> findByClubIdAndCuotaIdAndEstado(Long clubId, Long cuotaId, EstadoPago estado);
     Optional<Pago> findByIdAndClubIdAndCuotaId(Long id, Long clubId, Long cuotaId);
     List<Pago> findByClubIdAndEstadoAndFechaPagoGreaterThanEqualAndFechaPagoLessThan(
             Long clubId, EstadoPago estado, LocalDateTime desde, LocalDateTime hasta
