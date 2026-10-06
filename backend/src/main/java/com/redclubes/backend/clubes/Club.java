@@ -33,13 +33,22 @@ public class Club {
     @Enumerated(EnumType.STRING)
     private EstadoClub estado;
 
+    @NotNull(message = "El tipo de institucion es obligatorio")
+    @Enumerated(EnumType.STRING)
+    private TipoInstitucion tipoInstitucion = TipoInstitucion.CLUB;
+
     public Club() {
     }
 
     public Club(String nombre, String direccion, EstadoClub estado) {
+        this(nombre, direccion, estado, TipoInstitucion.CLUB);
+    }
+
+    public Club(String nombre, String direccion, EstadoClub estado, TipoInstitucion tipoInstitucion) {
         this.nombre = nombre;
         this.direccion = direccion;
         this.estado = estado;
+        this.tipoInstitucion = tipoInstitucion == null ? TipoInstitucion.CLUB : tipoInstitucion;
     }
 
     public Long getId() {
@@ -62,6 +71,10 @@ public class Club {
         return logoUrl;
     }
 
+    public TipoInstitucion getTipoInstitucion() {
+        return tipoInstitucion;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -80,5 +93,9 @@ public class Club {
 
     public void setEstado(EstadoClub estado) {
         this.estado = estado;
+    }
+
+    public void setTipoInstitucion(TipoInstitucion tipoInstitucion) {
+        this.tipoInstitucion = tipoInstitucion == null ? TipoInstitucion.CLUB : tipoInstitucion;
     }
 }
