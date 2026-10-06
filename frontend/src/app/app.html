@@ -166,91 +166,7 @@
                 @case ('asistencias') {
                   <svg lucideClipboardCheck></svg>
                 }
-                @case ('deudores') {
-            <div class="page-head row">
-              <div>
-                <p class="eyebrow">Gestion de cobranza</p>
-                <h2>Deudores</h2>
-                <p>Estado de cuenta de los socios de {{ nombreClubActivo() }}.</p>
-              </div>
-              <span class="data-pill real">Actualizado desde cuotas</span>
-            </div>
-
-            <div class="metric-grid finance-kpis">
-              <article class="metric-card danger-kpi">
-                <span>Socios con deuda</span>
-                <strong>{{ deudores().length }}</strong>
-                <small>Requieren seguimiento</small>
-              </article>
-              <article class="metric-card">
-                <span>Deuda total</span>
-                <strong>{{ formatearImporte(deudaTotalDeudores()) }}</strong>
-                <small>Pendiente y vencida</small>
-              </article>
-              <article class="metric-card">
-                <span>Cuotas vencidas</span>
-                <strong>{{ cuotasVencidasEstadoCuenta() }}</strong>
-                <small>Fuera de termino</small>
-              </article>
-              <article class="metric-card">
-                <span>Socios al dia</span>
-                <strong>{{ sociosAlDiaEstadoCuenta() }}</strong>
-                <small>Sin deuda registrada</small>
-              </article>
-            </div>
-
-            <div class="filters">
-              <label class="search-field">
-                <span>Buscar socio</span>
-                <input type="search" placeholder="Nombre, DNI o numero de socio" [(ngModel)]="socioBusqueda" />
-              </label>
-            </div>
-
-            <div class="table-card">
-              <div class="table-toolbar">
-                <strong>{{ deudores().length }} socios con deuda</strong>
-                <span>Ordenados por mayor deuda.</span>
-              </div>
-              <table>
-                <thead>
-                  <tr>
-                    <th>N° socio</th>
-                    <th>Socio</th>
-                    <th>DNI</th>
-                    <th>Pendientes</th>
-                    <th>Vencidas</th>
-                    <th>Total adeudado</th>
-                    <th>Ultimo periodo</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (estado of deudores(); track estado.socioId) {
-                    <tr>
-                      <td>{{ estado.numeroSocio ?? '-' }}</td>
-                      <td><strong>{{ estado.socioNombre }}</strong></td>
-                      <td>{{ estado.socioDni }}</td>
-                      <td>{{ estado.cuotasPendientes }}</td>
-                      <td><span class="badge pending">{{ estado.cuotasVencidas }}</span></td>
-                      <td><strong>{{ formatearImporte(estado.deudaTotal) }}</strong></td>
-                      <td>{{ estado.ultimoPeriodo ?? 'Sin periodo' }}</td>
-                      <td>
-                        <button class="secondary-action compact" type="button" (click)="verDetalleCuotasSocio(estado.socioId); goTo('cuotas')">
-                          Ver cuotas
-                        </button>
-                      </td>
-                    </tr>
-                  } @empty {
-                    <tr>
-                      <td colspan="8" class="empty-cell">No hay socios con deuda para mostrar.</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          }
-
-          @case ('reportes') {
+                @case ('reportes') {
                   <svg lucideChartNoAxesColumnIncreasing></svg>
                 }
                 @case ('usuarios') {
@@ -1236,6 +1152,90 @@
                   </ul>
                 </article>
               </aside>
+            </div>
+          }
+
+          @case ('deudores') {
+            <div class="page-head row">
+              <div>
+                <p class="eyebrow">Gestion de cobranza</p>
+                <h2>Deudores</h2>
+                <p>Estado de cuenta de los socios de {{ nombreClubActivo() }}.</p>
+              </div>
+              <span class="data-pill real">Actualizado desde cuotas</span>
+            </div>
+
+            <div class="metric-grid finance-kpis">
+              <article class="metric-card danger-kpi">
+                <span>Socios con deuda</span>
+                <strong>{{ deudores().length }}</strong>
+                <small>Requieren seguimiento</small>
+              </article>
+              <article class="metric-card">
+                <span>Deuda total</span>
+                <strong>{{ formatearImporte(deudaTotalDeudores()) }}</strong>
+                <small>Pendiente y vencida</small>
+              </article>
+              <article class="metric-card">
+                <span>Cuotas vencidas</span>
+                <strong>{{ cuotasVencidasEstadoCuenta() }}</strong>
+                <small>Fuera de termino</small>
+              </article>
+              <article class="metric-card">
+                <span>Socios al dia</span>
+                <strong>{{ sociosAlDiaEstadoCuenta() }}</strong>
+                <small>Sin deuda registrada</small>
+              </article>
+            </div>
+
+            <div class="filters">
+              <label class="search-field">
+                <span>Buscar socio</span>
+                <input type="search" placeholder="Nombre, DNI o numero de socio" [(ngModel)]="socioBusqueda" />
+              </label>
+            </div>
+
+            <div class="table-card">
+              <div class="table-toolbar">
+                <strong>{{ deudores().length }} socios con deuda</strong>
+                <span>Ordenados por mayor deuda.</span>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>N° socio</th>
+                    <th>Socio</th>
+                    <th>DNI</th>
+                    <th>Pendientes</th>
+                    <th>Vencidas</th>
+                    <th>Total adeudado</th>
+                    <th>Ultimo periodo</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (estado of deudores(); track estado.socioId) {
+                    <tr>
+                      <td>{{ estado.numeroSocio ?? '-' }}</td>
+                      <td><strong>{{ estado.socioNombre }}</strong></td>
+                      <td>{{ estado.socioDni }}</td>
+                      <td>{{ estado.cuotasPendientes }}</td>
+                      <td><span class="badge pending">{{ estado.cuotasVencidas }}</span></td>
+                      <td><strong>{{ formatearImporte(estado.deudaTotal) }}</strong></td>
+                      <td>{{ estado.ultimoPeriodo ?? 'Sin periodo' }}</td>
+                      <td>
+                        <button class="secondary-action compact" type="button" (click)="verDetalleCuotasSocio(estado.socioId); goTo('cuotas')">
+                          Ver cuotas
+                        </button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="8" class="empty-cell">No hay socios con deuda para mostrar.</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
             </div>
           }
 
