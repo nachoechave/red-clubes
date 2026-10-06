@@ -5,7 +5,8 @@ public record ClubResponse(
         String nombre,
         String direccion,
         String logoUrl,
-        EstadoClub estado
+        EstadoClub estado,
+        TipoInstitucion tipoInstitucion
 ) {
     public static ClubResponse desde(Club club) {
         return new ClubResponse(
@@ -13,7 +14,8 @@ public record ClubResponse(
                 club.getNombre(),
                 club.getDireccion(),
                 club.getLogoUrl(),
-                club.getEstado()
+                club.getEstado(),
+                club.getTipoInstitucion()
         );
     }
 }
