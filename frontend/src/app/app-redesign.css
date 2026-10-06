@@ -577,67 +577,87 @@ textarea:focus {
   box-shadow: 0 12px 28px rgba(24, 33, 30, 0.055);
 }
 
-.civic-kpis {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 14px;
+/* Shared dashboard and member summaries, scoped away from other metrics. */
+.civic-kpis,
+.socios-metrics {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 16px;
   margin-bottom: 24px;
 }
 
-.civic-kpi {
-  min-height: 168px;
-  display: grid;
-  grid-template-columns: 44px 1fr;
+.metric-card.metric-summary {
+  min-width: 0;
+  min-height: 154px;
+  grid-template-columns: 52px minmax(0, 1fr);
   grid-template-rows: auto auto auto;
-  gap: 5px 12px;
-  padding: 20px;
+  align-content: center;
+  align-items: start;
+  gap: 6px 16px;
+  padding: 24px;
+  border-radius: 16px;
 }
 
-.civic-kpi .metric-icon {
+.metric-summary .metric-icon {
+  grid-column: 1;
   grid-row: 1 / 4;
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
+  align-self: start;
+  justify-self: start;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
   background: var(--color-primary-soft);
   color: var(--color-primary-dark);
 }
 
-.civic-kpi[data-tone='info'] .metric-icon {
+.metric-summary[data-tone='info'] .metric-icon,
+.metric-summary .metric-icon.add {
   background: var(--color-info-soft);
   color: var(--color-info);
 }
 
-.civic-kpi[data-tone='warning'] .metric-icon {
+.metric-summary[data-tone='warning'] .metric-icon,
+.metric-summary .metric-icon.warn {
   background: var(--color-warning-soft);
   color: var(--color-warning);
 }
 
-.civic-kpi[data-tone='violet'] .metric-icon {
+.metric-summary[data-tone='violet'] .metric-icon {
   background: #f2eeff;
   color: #7355b9;
 }
 
-.civic-kpi .metric-icon svg {
-  width: 21px;
-  height: 21px;
+.metric-summary .metric-icon svg {
+  width: 26px;
+  height: 26px;
+  stroke-width: 1.8;
 }
 
-.civic-kpi .kpi-label {
+.metric-summary .kpi-label {
+  grid-column: 2;
   color: var(--color-text-muted);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
-.civic-kpi > strong {
-  font-size: clamp(23px, 2vw, 32px);
+.metric-summary > strong {
+  min-width: 0;
+  margin: 0;
+  color: var(--color-text);
+  font-size: clamp(28px, 2.4vw, 36px);
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
   line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
-.civic-kpi small {
+.metric-summary > small {
   color: var(--color-text-muted);
-  font-size: 11px;
-  line-height: 1.35;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .control-grid {
@@ -1279,9 +1299,6 @@ tbody tr:hover {
 }
 
 @media (max-width: 1360px) {
-  .civic-kpis {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 
   .management-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1454,6 +1471,7 @@ tbody tr:hover {
   }
 
   .civic-kpis,
+  .socios-metrics,
   .finance-kpis,
   .management-grid,
   .socios-filter-panel {
@@ -1464,8 +1482,10 @@ tbody tr:hover {
     grid-column: auto;
   }
 
-  .civic-kpi {
-    min-height: 124px;
+  .metric-card.metric-summary {
+    min-height: 132px;
+    padding: 20px;
+    gap: 5px 14px;
   }
 
   .analytics-card,
@@ -1512,57 +1532,4 @@ tbody tr:hover {
   .attendance-table-card table {
     min-width: 720px;
   }
-}
-
-
-/* Dashboard icon polish */
-.civic-kpi .metric-icon,
-.socios-metrics .metric-icon {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
-  border-radius: 14px;
-  box-shadow: 0 8px 20px rgba(20, 42, 34, 0.06);
-}
-
-.civic-kpi .metric-icon {
-  width: 46px;
-  height: 46px;
-}
-
-.civic-kpi .metric-icon svg,
-.socios-metrics .metric-icon svg {
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.75;
-}
-
-.civic-kpi .metric-icon svg {
-  width: 23px;
-  height: 23px;
-}
-
-.socios-metrics .metric-icon {
-  width: 48px;
-  height: 48px;
-  background: var(--color-primary-soft);
-  color: var(--color-primary-dark);
-}
-
-.socios-metrics .metric-icon.warn {
-  background: var(--color-danger-soft);
-  color: var(--color-danger);
-}
-
-.socios-metrics .metric-icon.add {
-  background: var(--color-info-soft);
-  color: var(--color-info);
-}
-
-.socios-metrics .metric-icon svg {
-  width: 24px;
-  height: 24px;
 }

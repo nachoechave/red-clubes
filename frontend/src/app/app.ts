@@ -22,8 +22,9 @@ import { ApiErrorStore } from './core/errors/api-error.store';
 import {
   LucideBadgeDollarSign,
   LucideBuilding2,
+  LucideUserCheck,
+  LucideTriangleAlert,
   LucideCalendarDays,
-  LucideCircleAlert,
   LucideChartNoAxesColumnIncreasing,
   LucideCirclePercent,
   LucideClipboardCheck,
@@ -46,8 +47,9 @@ import {
 const lucideIcons = [
   LucideBadgeDollarSign,
   LucideBuilding2,
+  LucideUserCheck,
+  LucideTriangleAlert,
   LucideCalendarDays,
-  LucideCircleAlert,
   LucideChartNoAxesColumnIncreasing,
   LucideCirclePercent,
   LucideClipboardCheck,
@@ -363,19 +365,19 @@ export class App {
     const dashboard = this.dashboard();
     if (this.esBomberos()) {
       return [
-        { label: 'Socios activos', value: String(this.socios().filter((socio) => socio.estado === 'ACTIVO').length || dashboard?.sociosActivos || 0), change: `${this.socios().length || dashboard?.sociosTotales || 0} socios totales`, tone: 'success' },
+        { label: 'Socios activos', value: String(this.socios().filter((socio) => socio.estado === 'ACTIVO').length || dashboard?.sociosActivos || 0), change: `${this.socios().length || dashboard?.sociosTotales || 0} en total`, tone: 'success' },
         { label: 'Deudores', value: String(this.deudores().length), change: this.formatearImporte(this.deudaTotalDeudores()), tone: 'warning' },
         { label: 'Cuotas vencidas', value: String(this.cuotasVencidasEstadoCuenta()), change: 'Cuotas que requieren seguimiento', tone: 'warning' },
-        { label: 'Recaudacion', value: this.formatearImporte(dashboard?.totalCobrado ?? 0), change: 'Total cobrado en el periodo', tone: 'success' },
+        { label: 'Recaudación', value: this.formatearImporte(dashboard?.totalCobrado ?? 0), change: 'Cobrado en el período', tone: 'success' },
       ];
     }
     return [
       { label: 'Clubes activos', value: String(this.clubes().filter((club) => club.estado === 'ACTIVO').length), change: `${this.clubes().length} disponibles para tu rol`, tone: 'info' },
-      { label: 'Socios activos', value: String(this.socios().filter((socio) => socio.estado === 'ACTIVO').length || dashboard?.sociosActivos || 0), change: `${this.socios().length || dashboard?.sociosTotales || 0} socios totales`, tone: 'success' },
+      { label: 'Socios activos', value: String(this.socios().filter((socio) => socio.estado === 'ACTIVO').length || dashboard?.sociosActivos || 0), change: `${this.socios().length || dashboard?.sociosTotales || 0} en total`, tone: 'success' },
       { label: 'Actividades', value: String(this.actividades().filter((actividad) => actividad.estado === 'ACTIVA').length || dashboard?.actividadesActivas || 0), change: `${this.actividades().length} actividades registradas`, tone: 'violet' },
-      { label: 'Inscripciones', value: String(this.inscriptosTotalActividades()), change: 'Asignaciones activas a talleres', tone: 'info' },
-      { label: 'Asistencias', value: String(dashboard?.asistenciaMes ?? 0), change: 'Registros del periodo actual', tone: 'warning' },
-      { label: 'Recaudacion', value: this.formatearImporte(dashboard?.totalCobrado ?? 0), change: 'Total cobrado en el periodo', tone: 'success' },
+      { label: 'Inscripciones', value: String(this.inscriptosTotalActividades()), change: 'Asignaciones a talleres', tone: 'info' },
+      { label: 'Asistencias', value: String(dashboard?.asistenciaMes ?? 0), change: 'Del período actual', tone: 'warning' },
+      { label: 'Recaudación', value: this.formatearImporte(dashboard?.totalCobrado ?? 0), change: 'Cobrado en el período', tone: 'success' },
     ];
   });
 

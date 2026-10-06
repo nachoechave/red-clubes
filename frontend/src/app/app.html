@@ -212,13 +212,13 @@
               <span class="period-chip"><svg lucideCalendarDays aria-hidden="true"></svg> Actualizado con datos del sistema</span>
             </div>
 
-            <div class="metric-grid hero-metrics civic-kpis">
+            <div class="metric-grid civic-kpis">
               @for (metric of metrics(); track metric.label) {
-                <article class="metric-card civic-kpi" [attr.data-tone]="metric.tone">
+                <article class="metric-card metric-summary civic-kpi" [attr.data-tone]="metric.tone">
                   <span class="metric-icon">
                     @switch (metric.label) {
                       @case ('Clubes activos') { <svg lucideBuilding2 aria-hidden="true"></svg> }
-                      @case ('Socios activos') { <svg lucideUserRoundCheck aria-hidden="true"></svg> }
+                      @case ('Socios activos') { <svg lucideUserCheck aria-hidden="true"></svg> }
                       @case ('Actividades') { <svg lucideCalendarDays aria-hidden="true"></svg> }
                       @case ('Inscripciones') { <svg lucideUserPlus aria-hidden="true"></svg> }
                       @case ('Asistencias') { <svg lucideClipboardCheck aria-hidden="true"></svg> }
@@ -326,21 +326,21 @@
             <div class="socios-layout">
               <div class="socios-main">
                 <div class="metric-grid socios-metrics">
-                  <article class="metric-card">
-                    <span class="metric-icon members"><svg lucideUserRoundCheck aria-hidden="true"></svg></span>
-                    <span>Socios activos</span>
+                  <article class="metric-card metric-summary">
+                    <span class="metric-icon members"><svg lucideUserCheck aria-hidden="true"></svg></span>
+                    <span class="kpi-label">Socios activos</span>
                     <strong>{{ dashboard()?.sociosActivos ?? socios().length }}</strong>
                     <small>{{ socios().length }} socios totales</small>
                   </article>
-                  <article class="metric-card">
-                    <span class="metric-icon warn"><svg lucideCircleAlert aria-hidden="true"></svg></span>
-                    <span>Morosos</span>
+                  <article class="metric-card metric-summary">
+                    <span class="metric-icon warn"><svg lucideTriangleAlert aria-hidden="true"></svg></span>
+                    <span class="kpi-label">Morosos</span>
                     <strong>{{ sociosMorosos() }}</strong>
-                    <small class="danger">{{ sociosMorosos() }} requieren revision</small>
+                    <small>Con cuotas pendientes</small>
                   </article>
-                  <article class="metric-card">
+                  <article class="metric-card metric-summary">
                     <span class="metric-icon add"><svg lucideUserPlus aria-hidden="true"></svg></span>
-                    <span>Nuevos este mes</span>
+                    <span class="kpi-label">Nuevos este mes</span>
                     <strong>{{ sociosRecientesDelClub().length }}</strong>
                     <small>En {{ nombreClubActivo() }}</small>
                   </article>
