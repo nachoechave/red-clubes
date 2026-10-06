@@ -20,6 +20,7 @@
 
     <properties>
         <java.version>21</java.version>
+        <jackson-bom.version>2.21.7</jackson-bom.version>
         <!-- Spring Boot 3.5.16 manages vulnerable Tomcat 10.1.55; use the fixed stable release
              until a compatible Spring Boot BOM manages Tomcat 10.1.58 or newer. -->
         <tomcat.version>10.1.60</tomcat.version>

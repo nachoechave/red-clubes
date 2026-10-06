@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.ZoneId;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -55,6 +56,49 @@ public class CobranzaService {
                 .filter(cuota -> socioId == null || socioId.equals(cuota.getSocio().getId()))
                 .sorted(Comparator.comparing(Cuota::getVencimiento).reversed())
                 .map(CuotaResponse::desde)
+                .toList();
+    }
+
+    @Transactional
+    public List<EstadoCuentaSocioResponse> listarEstadoCuentaSocios(Long clubId) {
+        actualizarVencidas(clubId, LocalDate.now(BUSINESS_ZONE));
+        List<Cuota> cuotasClub = cuotaRepository.findByClubId(clubId);
+
+        return socioRepository.findByClubIdOrderByIdAsc(clubId).stream()
+                .map(socio -> {
+                    List<Cuota> cuotasSocio = cuotasClub.stream()
+                            .filter(cuota -> cuota.getSocio() != null && socio.getId().equals(cuota.getSocio().getId()))
+                            .toList();
+
+                    int pendientes = (int) cuotasSocio.stream()
+                            .filter(cuota -> cuota.getEstado() == EstadoCuota.PENDIENTE)
+                            .count();
+                    int vencidas = (int) cuotasSocio.stream()
+                            .filter(cuota -> cuota.getEstado() == EstadoCuota.VENCIDA)
+                            .count();
+                    BigDecimal deudaTotal = cuotasSocio.stream()
+                            .filter(cuota -> cuota.getEstado() == EstadoCuota.PENDIENTE || cuota.getEstado() == EstadoCuota.VENCIDA)
+                            .map(Cuota::getImporte)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    String ultimoPeriodo = cuotasSocio.stream()
+                            .max(Comparator.comparing(Cuota::getVencimiento))
+                            .map(Cuota::getPeriodo)
+                            .orElse(null);
+
+                    return new EstadoCuentaSocioResponse(
+                            socio.getId(),
+                            socio.getNumeroSocio(),
+                            socio.getNombre() + " " + socio.getApellido(),
+                            socio.getDni(),
+                            socio.getEstado(),
+                            pendientes,
+                            vencidas,
+                            pendientes + vencidas,
+                            deudaTotal,
+                            ultimoPeriodo,
+                            pendientes + vencidas == 0
+                    );
+                })
                 .toList();
     }
 
