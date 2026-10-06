@@ -7,7 +7,7 @@ import { filter, finalize } from 'rxjs';
 import { AuthSessionStore } from './core/auth/auth-session.store';
 import { AuthService } from './core/auth/auth.service';
 import { ClubAsignado, RolClub, RolUsuario, UsuarioApp } from './core/auth/auth.models';
-import { ActividadVista, AsignacionUsuarioForm, AsistenciaVista, ClubVista, CuotaResumenSocio, CuotaVista, DashboardData, EstadoActividad, EstadoAsistencia, EstadoCuentaSocioVista, EstadoSocio, MedioPago, PagoVista, ReportesData, SocioVista } from './core/models/gestion.models';
+import { ActividadVista, AsignacionUsuarioForm, AsistenciaVista, ClubVista, CuotaResumenSocio, CuotaVista, DashboardData, EstadoActividad, EstadoAsistencia, EstadoCuentaSocioVista, EstadoSocio, ImportacionDeudaHistoricaVista, MedioPago, PagoVista, ReportesData, SocioVista } from './core/models/gestion.models';
 import { ClubService } from './features/clubes/club.service';
 import { SocioService } from './features/socios/socio.service';
 import { ActividadService } from './features/actividades/actividad.service';
@@ -170,6 +170,9 @@ export class App {
   protected pagoImportes: Record<number, number> = {};
   protected motivoAnulacionPago = '';
   protected cuotaMensaje = signal('');
+  protected archivoDeudaHistorica = signal<File | null>(null);
+  protected importacionDeudaHistorica = signal<ImportacionDeudaHistoricaVista | null>(null);
+  protected importacionDeudaCargando = signal(false);
   protected dataError = signal('');
   protected nuevaActividad = {
     nombre: '',
@@ -1067,6 +1070,66 @@ export class App {
       },
       error: (error) => this.dataError.set(error.error?.message ?? 'No se pudo registrar el pago.'),
     });
+  }
+
+  protected seleccionarArchivoDeudaHistorica(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0] ?? null;
+    this.importacionDeudaHistorica.set(null);
+    if (!archivo) {
+      this.archivoDeudaHistorica.set(null);
+      return;
+    }
+    if (!archivo.name.toLowerCase().endsWith('.csv')) {
+      this.archivoDeudaHistorica.set(null);
+      this.dataError.set('Selecciona un archivo CSV.');
+      input.value = '';
+      return;
+    }
+    if (archivo.size > 1_000_000) {
+      this.archivoDeudaHistorica.set(null);
+      this.dataError.set('El archivo no puede superar 1 MB.');
+      input.value = '';
+      return;
+    }
+    this.dataError.set('');
+    this.archivoDeudaHistorica.set(archivo);
+  }
+
+  protected importarDeudaHistorica(): void {
+    const clubId = this.clubActivoId();
+    const archivo = this.archivoDeudaHistorica();
+    if (!clubId || !archivo || this.importacionDeudaCargando()) {
+      return;
+    }
+    this.dataError.set('');
+    this.cuotaMensaje.set('');
+    this.importacionDeudaHistorica.set(null);
+    this.importacionDeudaCargando.set(true);
+    this.cuotaService.importarHistorica(clubId, archivo)
+      .pipe(finalize(() => this.importacionDeudaCargando.set(false)))
+      .subscribe({
+        next: (resultado) => {
+          this.importacionDeudaHistorica.set(resultado);
+          if (resultado.valida) {
+            this.cuotaMensaje.set(`Importacion completa: ${resultado.importadas} cuotas historicas cargadas.`);
+            this.archivoDeudaHistorica.set(null);
+            this.cargarDatosClub();
+          }
+        },
+        error: (error) => this.dataError.set(error.error?.message ?? 'No se pudo importar la deuda historica.'),
+      });
+  }
+
+  protected descargarPlantillaDeudaHistorica(): void {
+    const contenido = '\uFEFFdni;periodo;importe;vencimiento\r\n12345678;2026-01;6500,00;2026-01-10\r\n';
+    const blob = new Blob([contenido], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = 'plantilla-deuda-historica.csv';
+    enlace.click();
+    URL.revokeObjectURL(url);
   }
 
   protected generarCuotasMensuales(): void {

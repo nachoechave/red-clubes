@@ -92,6 +92,20 @@ export interface CuotaResumenSocio {
   ultimoMes: string;
 }
 
+export interface ImportacionDeudaHistoricaErrorVista {
+  fila: number;
+  dni: string;
+  mensaje: string;
+}
+
+export interface ImportacionDeudaHistoricaVista {
+  valida: boolean;
+  totalFilas: number;
+  importadas: number;
+  cuotasImportadas: { fila: number; dni: string; periodo: string; cuotaId: number }[];
+  errores: ImportacionDeudaHistoricaErrorVista[];
+}
+
 export interface EstadoCuentaSocioVista {
   socioId: number;
   numeroSocio?: number | null;

@@ -10,6 +10,8 @@ public interface SocioRepository extends JpaRepository<Socio, Long> {
 
     java.util.Optional<Socio> findByIdAndClubId(Long id, Long clubId);
 
+    java.util.Optional<Socio> findByClubIdAndDni(Long clubId, String dni);
+
     boolean existsByClubIdAndDni(Long clubId, String dni);
 
     boolean existsByClubIdAndDniAndIdNot(Long clubId, String dni, Long id);
