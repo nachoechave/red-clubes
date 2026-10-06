@@ -333,6 +333,8 @@ export class App {
   });
 
   protected deudaTotalDeudores = computed(() => this.deudores().reduce((total, socio) => total + socio.deudaTotal, 0));
+  protected cuotasVencidasEstadoCuenta = computed(() => this.estadoCuentaSocios().reduce((total, socio) => total + socio.cuotasVencidas, 0));
+  protected sociosAlDiaEstadoCuenta = computed(() => this.estadoCuentaSocios().filter((socio) => socio.alDia).length);
 
   protected sociosMorosos = computed(() => {
     if (!this.cuotasCargadas()) {
@@ -350,7 +352,7 @@ export class App {
       return [
         { label: 'Socios activos', value: String(this.socios().filter((socio) => socio.estado === 'ACTIVO').length || dashboard?.sociosActivos || 0), change: `${this.socios().length || dashboard?.sociosTotales || 0} socios totales`, tone: 'success' },
         { label: 'Deudores', value: String(this.deudores().length), change: this.formatearImporte(this.deudaTotalDeudores()), tone: 'warning' },
-        { label: 'Cuotas vencidas', value: String(this.estadoCuentaSocios().reduce((total, socio) => total + socio.cuotasVencidas, 0)), change: 'Cuotas que requieren seguimiento', tone: 'warning' },
+        { label: 'Cuotas vencidas', value: String(this.cuotasVencidasEstadoCuenta()), change: 'Cuotas que requieren seguimiento', tone: 'warning' },
         { label: 'Recaudacion', value: this.formatearImporte(dashboard?.totalCobrado ?? 0), change: 'Total cobrado en el periodo', tone: 'success' },
       ];
     }
