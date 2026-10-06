@@ -17,6 +17,8 @@ public record ActualizarClubRequest(
         String logoUrl,
 
         @NotNull(message = "El estado es obligatorio")
-        EstadoClub estado
+        EstadoClub estado,
+
+        TipoInstitucion tipoInstitucion
 ) {
 }

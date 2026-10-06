@@ -12,6 +12,7 @@ const protectedSections = [
   'actividades/:id',
   'inscripciones',
   'cuotas',
+  'deudores',
   'asistencias',
   'reportes',
   'usuarios',

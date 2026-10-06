@@ -1,0 +1,2 @@
+ALTER TABLE club
+    ADD COLUMN tipo_institucion VARCHAR(30) NOT NULL DEFAULT 'CLUB';
