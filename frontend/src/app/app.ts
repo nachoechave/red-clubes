@@ -7,7 +7,7 @@ import { filter, finalize } from 'rxjs';
 import { AuthSessionStore } from './core/auth/auth-session.store';
 import { AuthService } from './core/auth/auth.service';
 import { ClubAsignado, RolClub, RolUsuario, UsuarioApp } from './core/auth/auth.models';
-import { ActividadVista, AsignacionUsuarioForm, AsistenciaVista, ClubVista, CuotaResumenSocio, CuotaVista, DashboardData, EstadoActividad, EstadoAsistencia, EstadoSocio, MedioPago, PagoVista, ReportesData, SocioVista } from './core/models/gestion.models';
+import { ActividadVista, AsignacionUsuarioForm, AsistenciaVista, ClubVista, CuotaResumenSocio, CuotaVista, DashboardData, EstadoActividad, EstadoAsistencia, EstadoCuentaSocioVista, EstadoSocio, MedioPago, PagoVista, ReportesData, SocioVista } from './core/models/gestion.models';
 import { ClubService } from './features/clubes/club.service';
 import { SocioService } from './features/socios/socio.service';
 import { ActividadService } from './features/actividades/actividad.service';
@@ -128,6 +128,7 @@ export class App {
   protected actividades = signal<ActividadVista[]>([]);
   protected socioActividades = signal<Record<number, ActividadVista[]>>({});
   protected cuotas = signal<CuotaVista[]>([]);
+  protected estadoCuentaSocios = signal<EstadoCuentaSocioVista[]>([]);
   protected pagosPorCuota = signal<Partial<Record<number, PagoVista[]>>>({});
   protected cuotaPagosAbiertaId = signal<number | null>(null);
   protected cuotasCargadas = signal(false);
@@ -208,6 +209,7 @@ export class App {
     { id: 'inscripciones', label: 'Inscripciones', icon: 'add' },
     { id: 'asistencias', label: 'Asistencias', icon: 'check' },
     { id: 'cuotas', label: 'Cuotas y pagos', icon: 'receipt' },
+    { id: 'deudores', label: 'Deudores', icon: 'receipt' },
     { id: 'reportes', label: 'Reportes', icon: 'chart' },
     { id: 'usuarios', label: 'Usuarios y roles', icon: 'key' },
     { id: 'configuracion', label: 'Configuracion', icon: 'settings' },
@@ -237,7 +239,16 @@ export class App {
     }
   }
 
+  protected clubActivo = computed(() => this.clubes().find((club) => club.id === this.clubActivoId()) ?? null);
+  protected esBomberos = computed(() => this.clubActivo()?.tipoInstitucion === 'BOMBEROS');
+
   protected navItems = computed(() => this.baseNavItems.filter((item) => {
+    if (this.esBomberos() && ['actividades', 'inscripciones', 'asistencias'].includes(item.id)) {
+      return false;
+    }
+    if (!this.esBomberos() && item.id === 'deudores') {
+      return false;
+    }
     if (item.id === 'usuarios') {
       return this.puedeAdministrarUsuarios();
     }
@@ -245,7 +256,9 @@ export class App {
       return item.id !== 'clubes';
     }
     if (this.currentUser()?.rol === 'PROFESOR') {
-      return ['actividades', 'asistencias', 'configuracion'].includes(item.id);
+      return this.esBomberos()
+        ? item.id === 'configuracion'
+        : ['actividades', 'asistencias', 'configuracion'].includes(item.id);
     }
 
     return true;
@@ -308,6 +321,19 @@ export class App {
       });
   });
 
+  protected deudores = computed(() => {
+    const busqueda = this.socioBusqueda().trim().toLowerCase();
+    return this.estadoCuentaSocios()
+      .filter((estado) => !estado.alDia)
+      .filter((estado) => {
+        const texto = `${estado.socioNombre} ${estado.socioDni} ${estado.numeroSocio ?? ''}`.toLowerCase();
+        return !busqueda || texto.includes(busqueda);
+      })
+      .sort((a, b) => b.deudaTotal - a.deudaTotal);
+  });
+
+  protected deudaTotalDeudores = computed(() => this.deudores().reduce((total, socio) => total + socio.deudaTotal, 0));
+
   protected sociosMorosos = computed(() => {
     if (!this.cuotasCargadas()) {
       return this.dashboard()?.morosos ?? 0;
@@ -320,6 +346,14 @@ export class App {
 
   protected metrics = computed(() => {
     const dashboard = this.dashboard();
+    if (this.esBomberos()) {
+      return [
+        { label: 'Socios activos', value: String(this.socios().filter((socio) => socio.estado === 'ACTIVO').length || dashboard?.sociosActivos || 0), change: `${this.socios().length || dashboard?.sociosTotales || 0} socios totales`, tone: 'success' },
+        { label: 'Deudores', value: String(this.deudores().length), change: this.formatearImporte(this.deudaTotalDeudores()), tone: 'warning' },
+        { label: 'Cuotas vencidas', value: String(this.estadoCuentaSocios().reduce((total, socio) => total + socio.cuotasVencidas, 0)), change: 'Cuotas que requieren seguimiento', tone: 'warning' },
+        { label: 'Recaudacion', value: this.formatearImporte(dashboard?.totalCobrado ?? 0), change: 'Total cobrado en el periodo', tone: 'success' },
+      ];
+    }
     return [
       { label: 'Clubes activos', value: String(this.clubes().filter((club) => club.estado === 'ACTIVO').length), change: `${this.clubes().length} disponibles para tu rol`, tone: 'info' },
       { label: 'Socios activos', value: String(this.socios().filter((socio) => socio.estado === 'ACTIVO').length || dashboard?.sociosActivos || 0), change: `${this.socios().length || dashboard?.sociosTotales || 0} socios totales`, tone: 'success' },
@@ -493,6 +527,9 @@ export class App {
     this.selectedMember.set('TODOS');
     this.cerrarPanelSocio();
     this.cerrarPanelClub();
+    if (!this.navItems().some((item) => item.id === this.activeSection()) && this.activeSection() !== 'nuevo-socio') {
+      this.goTo('dashboard');
+    }
     this.cargarDatosClub();
   }
 
@@ -571,6 +608,7 @@ export class App {
     this.socios.set([]);
     this.actividades.set([]);
     this.cuotas.set([]);
+    this.estadoCuentaSocios.set([]);
     this.cuotasCargadas.set(false);
     this.asistencia.set([]);
     this.dashboard.set(null);
@@ -850,6 +888,7 @@ export class App {
       direccion: this.clubForm.direccion,
       logoUrl: this.clubForm.logoUrl ?? null,
       estado: this.clubForm.estado,
+      tipoInstitucion: this.clubForm.tipoInstitucion,
     };
     const request = editando
       ? this.clubService.actualizar(editando.id, payload)
@@ -1503,7 +1542,9 @@ export class App {
     this.asistencia.set([]);
     this.dashboard.set(null);
     this.socioSeleccionado.set(null);
-    this.cargarActividades();
+    if (!this.esBomberos()) {
+      this.cargarActividades();
+    }
     if (this.currentUser()?.rol === 'PROFESOR') {
       return;
     }
@@ -1528,7 +1569,9 @@ export class App {
         if (!this.socioSeleccionado() && socioParaSeleccionar) {
           this.prepararInscripcionesSocio(socioParaSeleccionar);
         }
-        this.cargarActividadesDeSocios(socios);
+        if (!this.esBomberos()) {
+          this.cargarActividadesDeSocios(socios);
+        }
       },
       error: () => this.dataError.set('No se pudieron cargar los socios.'),
     });
@@ -1607,6 +1650,10 @@ export class App {
         this.dataError.set('No se pudieron cargar las cuotas.');
       },
     });
+    this.cuotaService.estadoSocios(clubId).subscribe({
+      next: (estadoCuenta) => this.estadoCuentaSocios.set(estadoCuenta),
+      error: () => this.dataError.set('No se pudo cargar el estado de cuenta de los socios.'),
+    });
   }
 
   private cargarDashboard(): void {
@@ -1672,6 +1719,7 @@ export class App {
       direccion: '',
       logoUrl: null,
       estado: 'ACTIVO',
+      tipoInstitucion: 'CLUB',
     };
   }
 
