@@ -13,6 +13,8 @@ public record CrearClubRequest(
         String direccion,
 
         @Size(max = 1_500_000, message = "El logo es demasiado grande")
-        String logoUrl
+        String logoUrl,
+
+        TipoInstitucion tipoInstitucion
 ) {
 }
