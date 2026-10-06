@@ -3,6 +3,7 @@ import { RolClub } from '../auth/auth.models';
 export type EstadoSocio = 'ACTIVO' | 'INACTIVO';
 export type EstadoCuota = 'PENDIENTE' | 'PAGADA' | 'VENCIDA' | 'ANULADA';
 export type EstadoClub = 'ACTIVO' | 'INACTIVO';
+export type TipoInstitucion = 'CLUB' | 'CENTRO_JUBILADOS' | 'BOMBEROS';
 export type EstadoActividad = 'ACTIVA' | 'INACTIVA';
 export type EstadoAsistencia = 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADO';
 export type MedioPago = 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA' | 'OTRO';
@@ -13,6 +14,7 @@ export interface ClubVista {
   direccion: string;
   logoUrl?: string | null;
   estado: EstadoClub;
+  tipoInstitucion: TipoInstitucion;
 }
 
 export interface AsignacionUsuarioForm {
