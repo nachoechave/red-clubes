@@ -222,7 +222,10 @@ public class CobranzaService {
 
             BigDecimal importe;
             try {
-                importe = new BigDecimal(importeTexto.replace(".", "").replace(",", "."));
+                String importeNormalizado = importeTexto.contains(",")
+                        ? importeTexto.replace(".", "").replace(",", ".")
+                        : importeTexto;
+                importe = new BigDecimal(importeNormalizado);
                 if (importe.compareTo(BigDecimal.ZERO) <= 0) {
                     throw new NumberFormatException();
                 }
