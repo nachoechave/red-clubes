@@ -956,23 +956,38 @@
                 </table>
               } @else {
                 <table>
-                  <thead><tr><th>Socio</th><th>Mes</th><th>Importe</th><th>Estado</th><th>Vencimiento</th><th>Acciones</th></tr></thead>
+                  <thead><tr><th>Socio</th><th>Mes</th><th>Importe</th><th>Pagado</th><th>Saldo</th><th>Estado</th><th>Vencimiento</th><th>Acciones</th></tr></thead>
                   <tbody>
                     @for (cuota of cuotasFiltradas(); track cuota.id) {
                       <tr>
                         <td><strong>{{ cuota.socioNombre }}</strong><small class="muted-cell">{{ cuota.socioDni }}</small></td>
                         <td>{{ cuota.mes }}</td>
                         <td>{{ formatearImporte(cuota.importe) }}</td>
+                        <td>{{ formatearImporte(cuota.pagado) }}</td>
+                        <td><strong>{{ formatearImporte(cuota.saldoPendiente) }}</strong></td>
                         <td><span class="badge" [class.pending]="cuota.estado !== 'PAGADA'">{{ estadoCuotaVisible(cuota) }}</span></td>
                         <td>{{ cuota.vencimiento }}</td>
                         <td>
-                          <button type="button" [disabled]="cuota.estado === 'PAGADA' || cuota.estado === 'ANULADA'" [class.primary-action]="cuota.estado !== 'PAGADA' && cuota.estado !== 'ANULADA'" class="mini-action" (click)="registrarPago(cuota)">{{ cuota.estado === 'PAGADA' ? 'Pagada' : (cuota.estado === 'ANULADA' ? 'Anulada' : 'Registrar pago') }}</button>
+                          @if (cuota.estado !== 'PAGADA' && cuota.estado !== 'ANULADA') {
+                            <input
+                              type="number"
+                              min="0.01"
+                              [max]="cuota.saldoPendiente"
+                              step="0.01"
+                              class="payment-amount-input"
+                              aria-label="Importe a registrar"
+                              [(ngModel)]="pagoImportes[cuota.id]"
+                            />
+                            <button type="button" class="mini-action primary-action" (click)="registrarPago(cuota)">Registrar pago</button>
+                          } @else {
+                            <span class="badge">{{ cuota.estado === 'PAGADA' ? 'Pagada' : 'Anulada' }}</span>
+                          }
                           <button type="button" class="mini-action" (click)="verHistorialPagos(cuota)">Historial</button>
                         </td>
                       </tr>
                       @if (cuotaPagosAbiertaId() === cuota.id) {
                         <tr>
-                          <td colspan="6">
+                          <td colspan="8">
                             <div class="detail-stack">
                               @for (pago of pagosPorCuota()[cuota.id] ?? []; track pago.id) {
                                 <div class="detail-row">
@@ -994,7 +1009,7 @@
                       }
                     } @empty {
                       <tr>
-                        <td colspan="6" class="empty-cell">No hay cuotas para el socio seleccionado.</td>
+                        <td colspan="8" class="empty-cell">No hay cuotas para el socio seleccionado.</td>
                       </tr>
                     }
                   </tbody>
