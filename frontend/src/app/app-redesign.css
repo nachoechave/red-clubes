@@ -1513,3 +1513,56 @@ tbody tr:hover {
     min-width: 720px;
   }
 }
+
+
+/* Dashboard icon polish */
+.civic-kpi .metric-icon,
+.socios-metrics .metric-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(20, 42, 34, 0.06);
+}
+
+.civic-kpi .metric-icon {
+  width: 46px;
+  height: 46px;
+}
+
+.civic-kpi .metric-icon svg,
+.socios-metrics .metric-icon svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.75;
+}
+
+.civic-kpi .metric-icon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.socios-metrics .metric-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-dark);
+}
+
+.socios-metrics .metric-icon.warn {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.socios-metrics .metric-icon.add {
+  background: var(--color-info-soft);
+  color: var(--color-info);
+}
+
+.socios-metrics .metric-icon svg {
+  width: 24px;
+  height: 24px;
+}
