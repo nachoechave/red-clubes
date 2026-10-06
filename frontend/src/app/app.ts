@@ -7,7 +7,7 @@ import { filter, finalize } from 'rxjs';
 import { AuthSessionStore } from './core/auth/auth-session.store';
 import { AuthService } from './core/auth/auth.service';
 import { ClubAsignado, RolClub, RolUsuario, UsuarioApp } from './core/auth/auth.models';
-import { ActividadVista, AsignacionUsuarioForm, AsistenciaVista, ClubVista, CuotaResumenSocio, CuotaVista, DashboardData, EstadoActividad, EstadoAsistencia, EstadoCuentaSocioVista, EstadoSocio, ImportacionDeudaHistoricaVista, MedioPago, PagoVista, ReportesData, SocioVista } from './core/models/gestion.models';
+import { ActividadVista, AsignacionUsuarioForm, AsistenciaVista, ClubVista, CuotaResumenSocio, CuotaVista, DashboardData, EstadoActividad, EstadoAsistencia, EstadoCuentaSocioVista, EstadoSocio, ImportacionDeudaHistoricaVista, ImportacionSociosVista, MedioPago, PagoVista, ReportesData, SocioVista } from './core/models/gestion.models';
 import { ClubService } from './features/clubes/club.service';
 import { SocioService } from './features/socios/socio.service';
 import { ActividadService } from './features/actividades/actividad.service';
@@ -147,6 +147,9 @@ export class App {
   protected socioEditando = signal<SocioVista | null>(null);
   protected socioForm: SocioVista = this.crearSocioVacio();
   protected nuevoSocioForm: SocioVista = this.crearSocioVacio();
+  protected archivoSociosImportacion = signal<File | null>(null);
+  protected importacionSocios = signal<ImportacionSociosVista | null>(null);
+  protected importacionSociosCargando = signal(false);
   protected clubPanelAbierto = signal(false);
   protected clubEditando = signal<ClubVista | null>(null);
   protected clubForm: ClubVista = this.crearClubVacio();
@@ -1030,6 +1033,66 @@ export class App {
       },
       error: (error) => this.dataError.set(error.error?.message ?? 'No se pudo crear el socio. Revisa los datos y permisos.'),
     });
+  }
+
+  protected seleccionarArchivoSocios(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0] ?? null;
+    this.importacionSocios.set(null);
+    if (!archivo) {
+      this.archivoSociosImportacion.set(null);
+      return;
+    }
+    if (!archivo.name.toLowerCase().endsWith('.csv')) {
+      this.archivoSociosImportacion.set(null);
+      this.dataError.set('Selecciona un archivo CSV.');
+      input.value = '';
+      return;
+    }
+    if (archivo.size > 1_000_000) {
+      this.archivoSociosImportacion.set(null);
+      this.dataError.set('El archivo no puede superar 1 MB.');
+      input.value = '';
+      return;
+    }
+    this.dataError.set('');
+    this.archivoSociosImportacion.set(archivo);
+  }
+
+  protected importarSociosMasivamente(): void {
+    const clubId = this.clubActivoId();
+    const archivo = this.archivoSociosImportacion();
+    if (!clubId || !archivo || this.importacionSociosCargando()) {
+      return;
+    }
+
+    this.dataError.set('');
+    this.importacionSocios.set(null);
+    this.importacionSociosCargando.set(true);
+    this.socioService.importar(clubId, archivo)
+      .pipe(finalize(() => this.importacionSociosCargando.set(false)))
+      .subscribe({
+        next: (resultado) => {
+          this.importacionSocios.set(resultado);
+          if (resultado.valida) {
+            this.archivoSociosImportacion.set(null);
+            this.cargarDatosClub();
+          }
+        },
+        error: (error) => this.dataError.set(error.error?.message ?? 'No se pudieron importar los socios.'),
+      });
+  }
+
+  protected descargarPlantillaSocios(): void {
+    const contenido = '\uFEFFnombre;apellido;dni;numero_socio;telefono;email;fecha_nacimiento;fecha_alta;direccion;estado\r\n'
+      + 'Ana;Perez;12345678;25;2215551234;ana@example.com;1980-05-10;2020-01-15;Calle 1 123;ACTIVO\r\n';
+    const blob = new Blob([contenido], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = 'plantilla-importacion-socios.csv';
+    enlace.click();
+    URL.revokeObjectURL(url);
   }
 
   protected alternarEstadoSocio(socio: SocioVista): void {
