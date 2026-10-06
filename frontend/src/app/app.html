@@ -217,12 +217,12 @@
                 <article class="metric-card civic-kpi" [attr.data-tone]="metric.tone">
                   <span class="metric-icon">
                     @switch (metric.label) {
-                      @case ('Clubes activos') { <svg lucideHeartHandshake aria-hidden="true"></svg> }
-                      @case ('Socios activos') { <svg lucideUsers aria-hidden="true"></svg> }
+                      @case ('Clubes activos') { <svg lucideBuilding2 aria-hidden="true"></svg> }
+                      @case ('Socios activos') { <svg lucideUserRoundCheck aria-hidden="true"></svg> }
                       @case ('Actividades') { <svg lucideCalendarDays aria-hidden="true"></svg> }
                       @case ('Inscripciones') { <svg lucideUserPlus aria-hidden="true"></svg> }
                       @case ('Asistencias') { <svg lucideClipboardCheck aria-hidden="true"></svg> }
-                      @default { <svg lucideWalletCards aria-hidden="true"></svg> }
+                      @default { <svg lucideBadgeDollarSign aria-hidden="true"></svg> }
                     }
                   </span>
                   <span class="kpi-label">{{ metric.label }}</span>
@@ -333,7 +333,7 @@
                     <small>{{ socios().length }} socios totales</small>
                   </article>
                   <article class="metric-card">
-                    <span class="metric-icon warn"><svg lucideWalletCards aria-hidden="true"></svg></span>
+                    <span class="metric-icon warn"><svg lucideCircleAlert aria-hidden="true"></svg></span>
                     <span>Morosos</span>
                     <strong>{{ sociosMorosos() }}</strong>
                     <small class="danger">{{ sociosMorosos() }} requieren revision</small>
