@@ -189,12 +189,12 @@
               </article>
               <article class="metric-card">
                 <span>Cuotas vencidas</span>
-                <strong>{{ estadoCuentaSocios().reduce((total, socio) => total + socio.cuotasVencidas, 0) }}</strong>
+                <strong>{{ cuotasVencidasEstadoCuenta() }}</strong>
                 <small>Fuera de termino</small>
               </article>
               <article class="metric-card">
                 <span>Socios al dia</span>
-                <strong>{{ estadoCuentaSocios().filter(socio => socio.alDia).length }}</strong>
+                <strong>{{ sociosAlDiaEstadoCuenta() }}</strong>
                 <small>Sin deuda registrada</small>
               </article>
             </div>
