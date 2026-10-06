@@ -57,6 +57,7 @@ class CobranzaServiceTests {
     void pagoParcialMantieneLaCuotaPendienteYRegistraElImporte() {
         Club club = club(1L);
         Cuota cuota = cuota(50L, club, socio(10L, club));
+        cuota.setVencimiento(LocalDate.now().plusDays(5));
         Usuario usuario = new Usuario();
         usuario.setId(30L);
         when(cuotaRepository.findLockedByIdAndClubId(50L, 1L)).thenReturn(Optional.of(cuota));
@@ -182,10 +183,15 @@ class CobranzaServiceTests {
         pagada.setVencimiento(LocalDate.of(2026, 9, 10));
         pagada.setEstado(EstadoCuota.PAGADA);
 
+        Pago parcial = new Pago();
+        parcial.setClub(club);
+        parcial.setCuota(vencida);
+        parcial.setImporte(new BigDecimal("2500.00"));
+        parcial.setEstado(EstadoPago.ACTIVO);
+
         when(socioRepository.findByClubIdOrderByIdAsc(1L)).thenReturn(List.of(socio));
         when(cuotaRepository.findByClubId(1L)).thenReturn(List.of(vencida, pagada));
-        when(pagoRepository.findByClubIdAndCuotaIdAndEstado(1L, 50L, EstadoPago.ACTIVO)).thenReturn(List.of());
-        when(pagoRepository.findByClubIdAndCuotaIdAndEstado(1L, 51L, EstadoPago.ACTIVO)).thenReturn(List.of());
+        when(pagoRepository.findByClubIdAndCuotaIdAndEstado(1L, 50L, EstadoPago.ACTIVO)).thenReturn(List.of(parcial));
 
         EstadoCuentaSocioResponse estado = service().listarEstadoCuentaSocios(1L).getFirst();
 
@@ -193,7 +199,7 @@ class CobranzaServiceTests {
         assertEquals(0, estado.cuotasPendientes());
         assertEquals(1, estado.cuotasVencidas());
         assertEquals(1, estado.cuotasAdeudadas());
-        assertEquals(new BigDecimal("6500.00"), estado.deudaTotal());
+        assertEquals(new BigDecimal("4000.00"), estado.deudaTotal());
         assertEquals("2026-09", estado.ultimoPeriodo());
         assertEquals(false, estado.alDia());
     }
