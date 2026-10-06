@@ -346,6 +346,63 @@
                   </article>
                 </div>
 
+                @if (puedeOperarClubActual()) {
+                  <article class="panel">
+                    <div class="panel-title row-title">
+                      <div>
+                        <span class="panel-kicker">Carga inicial</span>
+                        <h3>Importar socios por CSV</h3>
+                      </div>
+                      <button class="secondary-action compact" type="button" (click)="descargarPlantillaSocios()">Descargar plantilla CSV</button>
+                    </div>
+                    <p class="help-text">
+                      Obligatorios: nombre, apellido y DNI. Opcionales: numero de socio, telefono, email, fecha de nacimiento, fecha de alta, direccion y estado.
+                      Si dejas el numero de socio vacio, el sistema lo asigna automaticamente.
+                    </p>
+                    <div class="filters">
+                      <label>
+                        <span>Archivo CSV</span>
+                        <input type="file" accept=".csv,text/csv" (change)="seleccionarArchivoSocios($event)" />
+                      </label>
+                      <button
+                        class="primary-action compact"
+                        type="button"
+                        [disabled]="!archivoSociosImportacion() || importacionSociosCargando()"
+                        (click)="importarSociosMasivamente()"
+                      >
+                        {{ importacionSociosCargando() ? 'Validando...' : 'Importar socios' }}
+                      </button>
+                    </div>
+
+                    @if (importacionSocios(); as resultado) {
+                      @if (resultado.valida) {
+                        <p class="success-message" role="status">
+                          {{ resultado.importados }} de {{ resultado.totalFilas }} socios importados correctamente.
+                        </p>
+                      } @else {
+                        <div class="form-error panel-error" role="alert">
+                          <strong>No se importo ningun socio.</strong>
+                          <span>Corregi los errores del archivo y volve a intentarlo.</span>
+                        </div>
+                        <div class="table-card compact-table">
+                          <table>
+                            <thead><tr><th>Fila</th><th>DNI</th><th>Error</th></tr></thead>
+                            <tbody>
+                              @for (error of resultado.errores; track $index) {
+                                <tr>
+                                  <td>{{ error.fila || '-' }}</td>
+                                  <td>{{ error.dni || '-' }}</td>
+                                  <td>{{ error.mensaje }}</td>
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
+                        </div>
+                      }
+                    }
+                  </article>
+                }
+
                 <div class="socios-filter-panel">
                   <label>
                     <span>Busqueda general</span>
