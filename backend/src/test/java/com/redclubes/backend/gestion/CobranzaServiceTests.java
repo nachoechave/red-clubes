@@ -54,6 +54,55 @@ class CobranzaServiceTests {
     }
 
     @Test
+    void importaDeudaHistoricaValidaDeFormaAtomica() {
+        Club club = club(1L);
+        Socio socio = socio(10L, club);
+        when(clubRepository.findById(1L)).thenReturn(Optional.of(club));
+        when(socioRepository.findByClubIdAndDni(1L, "12345678")).thenReturn(Optional.of(socio));
+        when(cuotaRepository.existsByClubIdAndSocioIdAndPeriodo(1L, 10L, "2025-01")).thenReturn(false);
+        when(cuotaRepository.save(any(Cuota.class))).thenAnswer(invocation -> {
+            Cuota cuota = invocation.getArgument(0);
+            cuota.setId(90L);
+            return cuota;
+        });
+
+        String csv = "dni;periodo;importe;vencimiento\n12345678;2025-01;6.500,50;2025-01-10\n";
+        ImportacionDeudaHistoricaResponse resultado = service().importarDeudaHistorica(1L, csv, new Usuario());
+
+        assertEquals(true, resultado.valida());
+        assertEquals(1, resultado.totalFilas());
+        assertEquals(1, resultado.importadas());
+        assertEquals(90L, resultado.cuotasImportadas().getFirst().cuotaId());
+
+        org.mockito.ArgumentCaptor<Cuota> captor = org.mockito.ArgumentCaptor.forClass(Cuota.class);
+        verify(cuotaRepository).save(captor.capture());
+        assertEquals(new BigDecimal("6500.50"), captor.getValue().getImporte());
+        assertEquals(EstadoCuota.VENCIDA, captor.getValue().getEstado());
+    }
+
+    @Test
+    void importacionHistoricaNoGuardaNadaSiAlgunaFilaTieneError() {
+        Club club = club(1L);
+        Socio socio = socio(10L, club);
+        when(clubRepository.findById(1L)).thenReturn(Optional.of(club));
+        when(socioRepository.findByClubIdAndDni(1L, "12345678")).thenReturn(Optional.of(socio));
+        when(socioRepository.findByClubIdAndDni(1L, "99999999")).thenReturn(Optional.empty());
+        when(cuotaRepository.existsByClubIdAndSocioIdAndPeriodo(1L, 10L, "2025-01")).thenReturn(false);
+
+        String csv = "dni;periodo;importe;vencimiento\n"
+                + "12345678;2025-01;6500;2025-01-10\n"
+                + "99999999;2025-02;6500;2025-02-10\n";
+
+        ImportacionDeudaHistoricaResponse resultado = service().importarDeudaHistorica(1L, csv, new Usuario());
+
+        assertEquals(false, resultado.valida());
+        assertEquals(2, resultado.totalFilas());
+        assertEquals(0, resultado.importadas());
+        assertEquals(1, resultado.errores().size());
+        verify(cuotaRepository, never()).save(any());
+    }
+
+    @Test
     void pagoParcialMantieneLaCuotaPendienteYRegistraElImporte() {
         Club club = club(1L);
         Cuota cuota = cuota(50L, club, socio(10L, club));
