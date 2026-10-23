@@ -23,8 +23,6 @@ import { ModuloClub, NombreParticipantes, TipoGrupo } from './core/models/gestio
 import { etiquetaParticipantes, moduloHabilitado, seccionHabilitada, TIPOS_GRUPO, MODULOS_LEGACY } from './core/models/club-config';
 import {
   LucideBuilding2,
-  LucideBadgeDollarSign,
-  LucideUserCheck,
   LucideTriangleAlert,
   LucideCalendarDays,
   LucideChartNoAxesColumnIncreasing,
@@ -48,8 +46,6 @@ import {
 
 const lucideIcons = [
   LucideBuilding2,
-  LucideBadgeDollarSign,
-  LucideUserCheck,
   LucideTriangleAlert,
   LucideCalendarDays,
   LucideChartNoAxesColumnIncreasing,
@@ -301,10 +297,11 @@ export class App {
     }
 
     return true;
-  }).map(item => ({ ...item, label: item.id === 'socios' ? this.participantesLabel()
+  }).map(item => ({ ...item, label: item.id === 'clubes' ? this.institucionesLabel() : item.id === 'socios' ? this.participantesLabel()
     : item.id === 'actividades' ? (this.tiposGrupo().length === 1 ? ({ ACTIVIDAD: 'Actividades', TALLER: 'Talleres', CATEGORIA_DEPORTIVA: 'Categorías' }[this.tiposGrupo()[0].tipo]) : 'Grupos') : item.label })));
 
   protected sectionTitle = computed(() => this.navItems().find((item) => item.id === this.activeSection())?.label ?? 'Inicio');
+  protected institucionesLabel = computed(() => this.esSuperusuario() ? 'Clubes' : this.clubes().length > 1 ? 'Mis instituciones' : 'Mi institución');
 
   protected sociosFiltrados = computed(() => {
     const busqueda = this.socioBusqueda().trim().toLowerCase();
@@ -374,7 +371,7 @@ export class App {
   protected metrics = computed(() => {
     const dashboard = this.dashboard();
     return [
-      { label: 'Clubes activos', value: String(this.clubes().filter((club) => club.estado === 'ACTIVO').length), change: `${this.clubes().length} disponibles para tu rol`, tone: 'info' },
+      ...(this.esSuperusuario() ? [{ label: 'Clubes activos', value: String(this.clubes().filter((club) => club.estado === 'ACTIVO').length), change: `${this.clubes().length} instituciones en total`, tone: 'info' }] : []),
       { section: 'socios', label: `${this.participantesLabel()} activos`, value: String(this.socios().filter((socio) => socio.estado === 'ACTIVO').length || dashboard?.sociosActivos || 0), change: `${this.socios().length || dashboard?.sociosTotales || 0} en total`, tone: 'success' },
       { section: 'actividades', label: 'Grupos', value: String(this.actividades().filter((actividad) => actividad.estado === 'ACTIVA').length || dashboard?.actividadesActivas || 0), change: `${this.actividades().length} grupos registrados`, tone: 'violet' },
       { section: 'inscripciones', label: 'Inscripciones', value: String(this.inscriptosTotalActividades()), change: 'Asignaciones a grupos', tone: 'info' },
@@ -536,7 +533,7 @@ export class App {
         }
       },
       error: (error) => {
-        this.loginError.set(error.status === 0 ? 'El backend no esta levantado. Inicia el backend y volve a intentar.' : 'DNI o contrasena incorrectos.');
+        this.loginError.set(error.status === 0 ? 'No se pudo conectar. Volvé a intentar en unos momentos.' : 'DNI o contrasena incorrectos.');
       },
     });
   }
@@ -656,7 +653,7 @@ export class App {
           this.cargarUsuarios();
         }
       },
-      error: (error) => this.passwordError.set(error.status === 0 ? 'El backend no esta disponible.' : 'No se pudo cambiar la contrasena. Usa al menos 8 caracteres y revisa la actual.'),
+      error: (error) => this.passwordError.set(error.status === 0 ? 'No se pudo conectar. Volvé a intentar en unos momentos.' : 'No se pudo cambiar la contrasena. Usa al menos 8 caracteres y revisa la actual.'),
     });
   }
 
@@ -675,7 +672,7 @@ export class App {
         this.configConfirmarNuevaPassword = '';
         this.configMensaje.set('Contrasena actualizada correctamente.');
       },
-      error: (error) => this.configError.set(error.status === 0 ? 'El backend no esta disponible.' : 'No se pudo cambiar la contrasena. Revisa la actual y usa al menos 8 caracteres.'),
+      error: (error) => this.configError.set(error.status === 0 ? 'No se pudo conectar. Volvé a intentar en unos momentos.' : 'No se pudo cambiar la contrasena. Revisa la actual y usa al menos 8 caracteres.'),
     });
   }
 
@@ -688,7 +685,7 @@ export class App {
         this.cargarFormularioPerfil(usuario);
         this.perfilMensaje.set('Datos actualizados correctamente.');
       },
-      error: (error) => this.perfilError.set(error.status === 0 ? 'El backend no esta disponible.' : 'No se pudieron actualizar los datos.'),
+      error: (error) => this.perfilError.set(error.status === 0 ? 'No se pudo conectar. Volvé a intentar en unos momentos.' : 'No se pudieron actualizar los datos.'),
     });
   }
 
@@ -748,7 +745,7 @@ export class App {
         this.usuarios.set(usuarios);
         usuarios.flatMap((usuario) => usuario.clubes).forEach((club) => this.cargarActividadesParaAsignacion(club.clubId));
       },
-      error: () => this.usuarioError.set('No se pudieron cargar los usuarios. Revisa que el backend este levantado.'),
+      error: () => this.usuarioError.set('No se pudieron cargar los usuarios. Volvé a intentar en unos momentos.'),
     });
   }
 

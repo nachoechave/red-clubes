@@ -15,7 +15,7 @@ Corte: 2026-09-16. Base exclusiva: `origin/main` en `994134d04582ba581ec6fe73fa6
 | Restore | Doble confirmación y backup previo existentes. Checksum era opcional; hacerlo obligatorio antes de detener servicios. Restore aislado presupone historial Flyway, por eso no sirve sin adaptación para una base pre-Flyway. |
 | Smoke | 200/401/404 existentes, auth opcional. Agregar timeout, headers, JSON escapado, credenciales por archivo temporal privado y logout/revocación. |
 | Logs | Único logger de aplicación encontrado: fallo de health genérico. Prod oculta SQL/stacktrace HTTP; logs de librerías/errores de DB aún pueden incluir datos. Nginx por defecto registra request con query: usar formato sin query/body/Authorization. No habilitar DEBUG/TRACE para diagnosticar IP. |
-| Demo | No crea usuarios. Usa números y contactos de apariencia real; conservar código y mantener `DEMO_DATA_ENABLED=false` para este piloto. Crear datos manuales con prefijos `PILOTO-` y correos `.invalid`. |
+| Demo | No crea usuarios. Usa números y contactos de apariencia real; mantener `DEMO_DATA_ENABLED=false`. Usar nombres PILOTO y correos .invalid; identificadores sintéticos de diez dígitos 9900000000+ para respetar validación numérica de login/socios y VARCHAR(10), sin DNIs de personas. |
 | CI | Mantener todos los scanners, umbrales y tests. Agregar validaciones de scripts y configuraciones nuevas. |
 | Documentos | README aún describía la rama previa como pendiente. Guías confundían gateway privado con proxy real; faltaban emisión TLS inicial, timers y prueba de reboot. Se conservan documentos históricos y se enlaza runbook específico. |
 

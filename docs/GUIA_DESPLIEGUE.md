@@ -1,5 +1,7 @@
 # Guía de despliegue
 
+Para el primer servidor usar [PILOTO_SERVIDOR.md](PILOTO_SERVIDOR.md), [CHECKLIST_PILOTO.md](CHECKLIST_PILOTO.md) y [RESTORE_PRODUCCION.md](RESTORE_PRODUCCION.md). Esta guía conserva la referencia general del baseline; su checklist sigue pendiente de ejecución en destino.
+
 Runbook para un piloto de una sola instancia en Linux, inicialmente en un Cloud Server y portable luego a infraestructura municipal. La aplicación no depende de un proveedor: Docker Compose, variables, imágenes etiquetadas y dumps MySQL son la unidad de traslado.
 
 ## Arquitectura objetivo
@@ -8,7 +10,7 @@ Runbook para un piloto de una sola instancia en Linux, inicialmente en un Cloud 
 Internet :443/:80
         -> reverse proxy del host (TLS y redirect)
         -> 127.0.0.1:APP_PORT
-        -> Nginx frontend (red Docker interna)
+        -> Nginx frontend (edge + private)
         -> Spring backend:8080 (sin puerto host)
         -> MySQL:3306 + volumen (sin puerto host)
 ```
@@ -25,7 +27,7 @@ Capacidad inicial: 2 vCPU, 4 GB RAM, 30 GB SSD y espacio externo para backups. C
 | `MYSQL_ROOT_PASSWORD` | Sí | Sí | Bootstrap/operación MySQL; Spring no la recibe. |
 | `PUBLIC_ORIGIN` | Sí | No | Origen HTTPS exacto permitido por CORS. |
 | `APP_PORT` | No | No | Puerto local; default `8080`, siempre ligado a loopback. |
-| `TRUSTED_PROXY_CIDR` | Sí/revisar | No | IP/CIDR exacto del gateway/proxy; default `172.30.0.1/32`. |
+| `TRUSTED_PROXY_CIDR` | Sí/revisar | No | IP exacta del peer del proxy observado; comprobar en destino. |
 | `DOCKER_SUBNET` / `DOCKER_GATEWAY` | No | No | Red interna coordinada; evitar colisiones. |
 | `IMAGE_TAG` | Sí en release | No | Tag SemVer inmutable, igual para ambas imágenes. |
 | `BACKEND_IMAGE` / `FRONTEND_IMAGE` | No | No | Nombre local o registry. |
@@ -100,7 +102,7 @@ Generar valores aleatorios distintos para `MYSQL_PASSWORD` y `MYSQL_ROOT_PASSWOR
 
 ### 8. Fijar red y proxy confiable
 
-Los defaults coordinados son `DOCKER_SUBNET=172.30.0.0/24`, `DOCKER_GATEWAY=172.30.0.1` y `TRUSTED_PROXY_CIDR=172.30.0.1/32`. Verificar que no colisionen con redes VPN/host. Si se cambian, actualizar los tres. Nunca usar `0.0.0.0/0` como proxy confiable.
+`DOCKER_SUBNET=172.30.0.0/24` y `DOCKER_GATEWAY=172.30.0.1` definen private; comprobar colisiones. Frontend también usa edge. `TRUSTED_PROXY_CIDR` debe ser el peer observado del host: seguir [PROXY_Y_RATE_LIMIT.md](PROXY_Y_RATE_LIMIT.md). Nunca usar `0.0.0.0/0` ni rangos amplios.
 
 ### 9. Fijar imágenes inmutables
 

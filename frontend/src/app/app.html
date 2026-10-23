@@ -202,11 +202,10 @@
           @case ('dashboard') {
             <div class="page-head dashboard-head row">
               <div>
-                <p class="eyebrow">Centro de control municipal</p>
-                <h2>Estado general de la red</h2>
+                <p class="eyebrow">{{ esSuperusuario() ? 'Centro de control municipal' : nombreClubActivo() }}</p>
+                <h2>{{ esSuperusuario() ? 'Estado general de la red' : 'Resumen de la institución' }}</h2>
                 <p>Indicadores operativos de {{ nombreClubActivo() }} para el periodo actual.</p>
               </div>
-              <span class="period-chip"><svg lucideCalendarDays aria-hidden="true"></svg> Actualizado con datos del sistema</span>
             </div>
 
             <div class="metric-grid civic-kpis">
@@ -215,11 +214,11 @@
                   <span class="metric-icon">
                     @switch (metric.label) {
                       @case ('Clubes activos') { <svg lucideBuilding2 aria-hidden="true"></svg> }
-                      @case (participantesLabel() + ' activos') { <svg lucideUserCheck aria-hidden="true"></svg> }
-                      @case ('Grupos') { <svg lucideCalendarDays aria-hidden="true"></svg> }
+                      @case (participantesLabel() + ' activos') { <svg lucideUsers aria-hidden="true"></svg> }
+                      @case ('Grupos') { <svg lucideDumbbell aria-hidden="true"></svg> }
                       @case ('Inscripciones') { <svg lucideUserPlus aria-hidden="true"></svg> }
                       @case ('Asistencias') { <svg lucideClipboardCheck aria-hidden="true"></svg> }
-                      @default { <svg lucideBadgeDollarSign aria-hidden="true"></svg> }
+                      @default { <svg lucideWalletCards aria-hidden="true"></svg> }
                     }
                   </span>
                   <span class="kpi-label">{{ metric.label }}</span>
@@ -234,7 +233,6 @@
 <article class="panel analytics-card analytics-wide">
                 <div class="panel-title row-title">
                   <div><span class="panel-kicker">Analitica</span><h3>Asistencia mensual</h3></div>
-                  <span class="data-pill real">Datos reales</span>
                 </div>
                 @if ((dashboard()?.asistenciaMensual?.length ?? 0) > 0) {
                   <div class="analytics-bars" role="img" aria-label="Evolucion mensual de asistencias">
@@ -332,7 +330,7 @@
               <div class="socios-main">
                 <div class="metric-grid socios-metrics">
                   <article class="metric-card metric-summary">
-                    <span class="metric-icon members"><svg lucideUserCheck aria-hidden="true"></svg></span>
+                    <span class="metric-icon members"><svg lucideUsers aria-hidden="true"></svg></span>
                     <span class="kpi-label">{{ participantesLabel() }} activos</span>
                     <strong>{{ dashboard()?.sociosActivos ?? socios().length }}</strong>
                     <small>{{ socios().length }} {{ participantesLabel().toLowerCase() }} totales</small>
@@ -340,16 +338,16 @@
                   @if (moduloActivo('CUOTAS')) {
                   <article class="metric-card metric-summary">
                     <span class="metric-icon warn"><svg lucideTriangleAlert aria-hidden="true"></svg></span>
-                    <span class="kpi-label">Morosos</span>
+                    <span class="kpi-label">Con deuda</span>
                     <strong>{{ sociosMorosos() }}</strong>
                     <small>Con cuotas pendientes</small>
                   </article>
                   }
                   <article class="metric-card metric-summary">
                     <span class="metric-icon add"><svg lucideUserPlus aria-hidden="true"></svg></span>
-                    <span class="kpi-label">Nuevos este mes</span>
+                    <span class="kpi-label">Altas recientes</span>
                     <strong>{{ sociosRecientesDelClub().length }}</strong>
-                    <small>En {{ nombreClubActivo() }}</small>
+                    <small>Últimos registros</small>
                   </article>
                 </div>
 
@@ -582,13 +580,11 @@
           @case ('clubes') {
             <div class="page-head row">
               <div>
-                <h2>Clubes</h2>
-                <p>Gestiona los clubes y centros</p>
+                <h2>{{ institucionesLabel() }}</h2>
+                <p>{{ esSuperusuario() ? 'Gestioná los clubes y centros' : 'Información de tu institución' }}</p>
               </div>
               @if (esSuperusuario()) {
                 <button class="primary-action compact" type="button" (click)="nuevoClub()">+ Nuevo club</button>
-              } @else {
-                <span class="data-pill real">Datos del backend</span>
               }
             </div>
             @if (clubError()) {
@@ -598,7 +594,9 @@
               <p class="form-success panel-error">{{ clubMensaje() }}</p>
             }
             <div class="table-card clubs-table">
-              <div class="table-toolbar"><div><strong>{{ clubes().length }} instituciones</strong><span>Clubes visibles segun tu alcance</span></div></div>
+              @if (esSuperusuario() || clubes().length > 1) {
+                <div class="table-toolbar"><div><strong>{{ clubes().length }} {{ clubes().length === 1 ? 'institución' : 'instituciones' }}</strong></div></div>
+              }
               <table>
                 <thead><tr><th>Institucion</th><th>Direccion</th><th>Estado</th><th>Situacion</th><th>Acciones</th></tr></thead>
                 <tbody>
@@ -611,7 +609,7 @@
                       <td class="actions"><button type="button" (click)="cambiarClub(club.id); goTo('dashboard')">Ver dashboard</button>@if (esSuperusuario()) { <button class="primary-action compact" type="button" (click)="editarClub(club)">Editar</button> }</td>
                     </tr>
                   } @empty {
-                    <tr><td colspan="5"><div class="empty-state compact"><img src="/ui/empty-state.svg" alt="" /><strong>No hay clubes cargados</strong><span>Comenza creando la primera institucion.</span></div></td></tr>
+                    <tr><td colspan="5"><div class="empty-state compact"><img src="/ui/empty-state.svg" alt="" /><strong>{{ esSuperusuario() ? 'No hay instituciones cargadas' : 'No tenés instituciones asignadas' }}</strong>@if (esSuperusuario()) { <span>Comenzá creando la primera institución.</span> }</div></td></tr>
                   }
                 </tbody>
               </table>
@@ -665,7 +663,6 @@
                 <h2>{{ sectionTitle() }}</h2>
                 <p>Gestiona los grupos de este club</p>
               </div>
-              <span class="data-pill real">Datos del backend</span>
             </div>
             @if (dataError()) {
               <p class="form-error panel-error">{{ dataError() }}</p>
@@ -904,13 +901,12 @@
                 <h2>Cuotas y pagos</h2>
                 <p>Seguimiento de cobranza de {{ nombreClubActivo() }}.</p>
               </div>
-              <span class="data-pill real">Datos del backend</span>
             </div>
             <div class="metric-grid finance-kpis">
-              <article class="metric-card"><span>Recaudado</span><strong>{{ formatearImporte(dashboard()?.totalCobrado ?? 0) }}</strong><small>Pagos activos del periodo</small></article>
-              <article class="metric-card"><span>Pendiente</span><strong>{{ formatearImporte(deudaPorEstado().pendiente) }}</strong><small>Cuotas por cobrar</small></article>
-              <article class="metric-card danger-kpi"><span>Vencido</span><strong>{{ formatearImporte(deudaPorEstado().vencida) }}</strong><small>Requiere seguimiento</small></article>
-              <article class="metric-card"><span>Cobranza</span><strong>{{ porcentajeCobranza() }}%</strong><small>Sobre deuda y recaudacion</small></article>
+              <article class="metric-card metric-summary"><span class="metric-icon"><svg lucideWalletCards aria-hidden="true"></svg></span><span class="kpi-label">Recaudado</span><strong>{{ formatearImporte(dashboard()?.totalCobrado ?? 0) }}</strong><small>Cobrado en el período</small></article>
+              <article class="metric-card metric-summary"><span class="metric-icon"><svg lucideCalendarDays aria-hidden="true"></svg></span><span class="kpi-label">Por cobrar</span><strong>{{ formatearImporte(deudaPorEstado().pendiente) }}</strong><small>Cuotas pendientes</small></article>
+              <article class="metric-card metric-summary danger-kpi"><span class="metric-icon warn"><svg lucideTriangleAlert aria-hidden="true"></svg></span><span class="kpi-label">Deuda vencida</span><strong>{{ formatearImporte(deudaPorEstado().vencida) }}</strong><small>Cuotas fuera de término</small></article>
+              <article class="metric-card metric-summary"><span class="metric-icon"><svg lucideCirclePercent aria-hidden="true"></svg></span><span class="kpi-label">Cobranza</span><strong>{{ porcentajeCobranza() }}%</strong><small>Cobrado sobre el total del período</small></article>
             </div>
             <div class="filters">
               <label class="search-field"><input type="search" placeholder="Buscar socio..." [(ngModel)]="socioBusqueda" /></label>
@@ -1467,7 +1463,6 @@
                 <strong>Configuracion</strong>
                 <a href="#datos-personales" class="active">General</a>
                 <a href="#seguridad">Seguridad</a>
-                <span>Las demas categorias requieren soporte funcional.</span>
               </aside>
               <div class="settings-grid">
               <article class="panel settings-profile">

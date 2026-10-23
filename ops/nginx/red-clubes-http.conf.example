@@ -1,0 +1,13 @@
+# HOST: fase previa a emitir certificado. Reemplazar dominio; incluir en http{}.
+server {
+    listen 80;
+    # listen [::]:80; # Habilitar solo con IPv6 funcional y AAAA correcto.
+    server_name redclubes.example.com;
+    server_tokens off;
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/letsencrypt;
+        default_type text/plain;
+        try_files $uri =404;
+    }
+    location / { return 503; }
+}

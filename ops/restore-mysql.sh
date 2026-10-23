@@ -19,6 +19,7 @@ if [ ! -f "$backup_file" ]; then
 fi
 
 gzip -t "$backup_file"
+[ -f "$backup_file.sha256" ] || { printf '%s\n' 'Falta checksum; abortado antes de detener servicios.' >&2; exit 1; }
 if [ -f "$backup_file.sha256" ]; then
   backup_dir=$(dirname -- "$backup_file")
   checksum_name=$(basename -- "$backup_file.sha256")

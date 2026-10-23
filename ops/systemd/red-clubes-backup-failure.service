@@ -1,0 +1,6 @@
+[Unit]
+Description=Registrar fallo de backup Red Clubes para el operador
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/logger -p daemon.err -t red-clubes BACKUP_FAILED_consultar_journalctl_-u_red-clubes-backup

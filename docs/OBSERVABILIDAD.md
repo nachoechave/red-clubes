@@ -14,7 +14,7 @@ El piloto no necesita una plataforma distribuida, pero sí señales simples, acc
 
 ## Opción de bajo costo
 
-Usar Uptime Kuma o el monitor HTTP del proveedor para `/healthz` y `/api/health`, más Netdata o las métricas básicas del Cloud Server para host/contenedores. Enviar alertas a un canal con guardia real (correo y un segundo medio). Esto no requiere modificar la aplicación.
+Para este piloto usar `ops/check-pilot.sh`, journal/systemd y el monitor HTTP del proveedor para `/healthz` y `/api/health`. No se instala una plataforma adicional. Asignar operador/canal para avisos; los scripts retornan error y registran eventos, pero no entregan notificaciones por sí solos. Ver `PILOTO_SERVIDOR.md` y `BACKUP_PILOTO.md`.
 
 ## Umbrales iniciales
 

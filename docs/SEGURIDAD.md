@@ -19,13 +19,13 @@ El contador del backend vive en memoria. Es correcto para el despliegue de una s
 
 ## IP real y reverse proxy
 
-Compose publica el frontend exclusivamente en loopback. Nginx confía `X-Forwarded-For` solo si la conexión llega desde `TRUSTED_PROXY_CIDR`, cuyo valor por defecto es el gateway exacto de la red Docker (`172.30.0.1/32`). `real_ip_recursive` selecciona el último salto no confiable, el rate limit usa esa IP y Nginx normaliza los headers antes de enviarlos a Spring.
+Compose publica frontend en loopback. Nginx confía `X-Forwarded-For` solo desde `TRUSTED_PROXY_CIDR`. El default histórico `172.30.0.1/32` corresponde a private y NO prueba el peer del host a través de edge. Medirlo según [PROXY_Y_RATE_LIMIT.md](PROXY_Y_RATE_LIMIT.md). `real_ip_recursive` selecciona el último salto no confiable y Nginx normaliza los headers antes de enviarlos a Spring.
 
 Condiciones del modelo:
 
 - El reverse proxy público debe ejecutarse en el mismo host y conectarse a `127.0.0.1:APP_PORT`.
-- Debe **sobrescribir o anexar correctamente** `X-Forwarded-For` y fijar `X-Forwarded-Proto`.
-- `DOCKER_SUBNET`, `DOCKER_GATEWAY` y `TRUSTED_PROXY_CIDR` deben permanecer coherentes.
+- El ejemplo del host **sobrescribe** `X-Forwarded-For` con `$remote_addr`, fija `X-Forwarded-Proto` y elimina `Forwarded`.
+- `DOCKER_SUBNET`/`DOCKER_GATEWAY` definen private; `TRUSTED_PROXY_CIDR` se verifica separadamente en la topología real.
 - No se debe ampliar la confianza a rangos privados completos ni publicar `APP_PORT` a Internet.
 - Si el proxy se mueve a otro contenedor/red, se debe confiar su IP/CIDR exacto y volver a probar spoofing y rate limit.
 
@@ -46,7 +46,7 @@ CSRF permanece desactivado porque el bearer se envía explícitamente en `Author
 ## Contenedores y red
 
 - Backend y frontend corren como usuarios no root, sin privilegios nuevos y con filesystem de solo lectura salvo `/tmp` acotado.
-- MySQL y backend no publican puertos. La red Compose es `internal`.
+- MySQL y backend no publican puertos. private es internal; solo frontend conecta además a edge para publicar loopback.
 - Hay límites de CPU, memoria y procesos compatibles con un host inicial de 2 vCPU/4 GB.
 - Java limita heap por porcentaje de memoria y termina ante OOM.
 - El driver `json-file` rota por tamaño y cantidad; no se permiten logs ilimitados.

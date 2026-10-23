@@ -51,12 +51,6 @@ printf '%s  %s\n' "$checksum" "$(basename "$backup_file")" > "$checksum_file.tmp
 mv -- "$temporary_gzip" "$backup_file"
 mv -- "$checksum_file.tmp" "$checksum_file"
 
-printf '%s\n' "$(basename "$backup_file")" > "$backup_dir/.last-success.tmp"
-mv -- "$backup_dir/.last-success.tmp" "$backup_dir/.last-success"
-
-find "$backup_dir" -maxdepth 1 -type f \( -name 'red-clubes-*.sql.gz' -o -name 'red-clubes-*.sql.gz.sha256' \) \
-  -mtime "+$retention_days" -delete
-
 if [ -n "${BACKUP_EXPORT_HOOK:-}" ]; then
   if [ ! -f "$BACKUP_EXPORT_HOOK" ]; then
     printf '%s\n' "No existe BACKUP_EXPORT_HOOK: $BACKUP_EXPORT_HOOK" >&2
@@ -64,6 +58,14 @@ if [ -n "${BACKUP_EXPORT_HOOK:-}" ]; then
   fi
   sh "$BACKUP_EXPORT_HOOK" "$backup_file"
 fi
+
+# Exito significa tambien exportacion exitosa cuando se configuro un hook.
+# Si falla, conservar el backup local y el marcador exitoso anterior.
+printf '%s\n' "$(basename "$backup_file")" > "$backup_dir/.last-success.tmp"
+mv -- "$backup_dir/.last-success.tmp" "$backup_dir/.last-success"
+
+find "$backup_dir" -maxdepth 1 -type f \( -name 'red-clubes-*.sql.gz' -o -name 'red-clubes-*.sql.gz.sha256' -o -name 'red-clubes-*.sql.gz.age' -o -name 'red-clubes-*.sql.gz.age.sha256' \) \
+  -mtime "+$retention_days" -delete
 
 rm -f -- "$temporary_sql"
 trap - EXIT HUP INT TERM
