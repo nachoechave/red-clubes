@@ -12,7 +12,7 @@ export function moduloHabilitado(club: ClubVista | undefined, modulo: ModuloClub
 export function seccionHabilitada(club: ClubVista | undefined, seccion: string): boolean {
   const grupos = TIPOS_GRUPO.some(tipo => moduloHabilitado(club, tipo.modulo));
   switch (seccion.split('/')[0]) {
-    case 'socios': case 'nuevo-socio': return moduloHabilitado(club, 'PARTICIPANTES');
+    case 'socios': case 'nuevo-socio': case 'solicitudes': return moduloHabilitado(club, 'PARTICIPANTES');
     case 'categorias': return moduloHabilitado(club, 'CATEGORIAS');
     case 'talleres': return moduloHabilitado(club, 'TALLERES');
     case 'actividades': return grupos;

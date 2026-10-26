@@ -49,7 +49,12 @@ public class ClubService {
             throw new IllegalArgumentException("Ya existe un club con ese nombre");
         }
 
-        Club club = new Club(request.nombre(), request.direccion(), EstadoClub.ACTIVO);
+        Club club = new Club(
+                request.nombre(),
+                request.direccion(),
+                EstadoClub.ACTIVO,
+                request.tipoInstitucion() == null ? TipoInstitucion.CLUB : request.tipoInstitucion()
+        );
         club.setLogoUrl(normalizarLogo(request.logoUrl()));
         return ClubResponse.desde(clubRepository.save(club));
     }
@@ -71,6 +76,9 @@ public class ClubService {
         club.setDireccion(request.direccion());
         club.setLogoUrl(normalizarLogo(request.logoUrl()));
         club.setEstado(request.estado());
+        if (request.tipoInstitucion() != null) {
+            club.setTipoInstitucion(request.tipoInstitucion());
+        }
 
         return ClubResponse.desde(clubRepository.save(club));
     }

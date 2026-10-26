@@ -1,0 +1,26 @@
+CREATE TABLE solicitud_inscripcion (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    referencia VARCHAR(36) NOT NULL UNIQUE,
+    club_id BIGINT NOT NULL,
+    clave_envio VARCHAR(36) NOT NULL,
+    huella VARCHAR(64) NOT NULL,
+    nombre VARCHAR(50) NOT NULL,
+    apellido VARCHAR(50) NOT NULL,
+    dni VARCHAR(10) NOT NULL,
+    dni_pendiente VARCHAR(10) NULL,
+    email VARCHAR(120) NOT NULL,
+    telefono VARCHAR(30) NOT NULL,
+    estado VARCHAR(20) NOT NULL,
+    consentimiento_version VARCHAR(30) NOT NULL,
+    fecha_creacion TIMESTAMP NOT NULL,
+    fecha_revision TIMESTAMP NULL,
+    usuario_revision_id BIGINT NULL,
+    socio_id BIGINT NULL,
+    motivo VARCHAR(500) NULL,
+    CONSTRAINT fk_solicitud_club FOREIGN KEY (club_id) REFERENCES club(id),
+    CONSTRAINT fk_solicitud_revisor FOREIGN KEY (usuario_revision_id) REFERENCES usuario(id),
+    CONSTRAINT fk_solicitud_socio FOREIGN KEY (socio_id) REFERENCES socio(id),
+    CONSTRAINT uk_solicitud_envio UNIQUE (club_id, clave_envio),
+    CONSTRAINT uk_solicitud_pendiente UNIQUE (club_id, dni_pendiente)
+);
+CREATE INDEX idx_solicitud_revision ON solicitud_inscripcion(club_id, estado, fecha_creacion);

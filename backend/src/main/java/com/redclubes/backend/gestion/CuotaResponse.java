@@ -12,6 +12,8 @@ public record CuotaResponse(
         String mes,
         String periodo,
         BigDecimal importe,
+        BigDecimal pagado,
+        BigDecimal saldoPendiente,
         EstadoCuota estado,
         LocalDate fechaEmision,
         LocalDate vencimiento
@@ -25,6 +27,8 @@ public record CuotaResponse(
                 cuota.getSocio().getDni(),
                 cuota.getPeriodo(),
                 cuota.getPeriodo(),
+                cuota.getImporte(),
+                BigDecimal.ZERO,
                 cuota.getImporte(),
                 cuota.getEstado(),
                 cuota.getFechaEmision(),

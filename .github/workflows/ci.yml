@@ -41,7 +41,7 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
@@ -63,8 +63,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies
         run: npm ci
-      - name: Audit high and critical npm vulnerabilities
-        run: npm audit --audit-level=high
+      - name: Audit production npm vulnerabilities
+        run: node scripts/audit-production.cjs
       - name: Test frontend
         run: npm test -- --watch=false
       - name: Build frontend
@@ -77,7 +77,7 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"

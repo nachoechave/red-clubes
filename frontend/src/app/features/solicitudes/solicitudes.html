@@ -1,0 +1,42 @@
+<div class="heading"><div><h2>Solicitudes de inscripción</h2><p>Revisá los datos antes de dar de alta a un socio.</p></div><button type="button" (click)="cargar(0)" [disabled]="cargando() || guardando()">Actualizar</button></div>
+<div class="filters" role="group" aria-label="Estado de las solicitudes">
+  @for (filtro of estados; track filtro.valor) {
+    <button type="button" [attr.aria-pressed]="estado() === filtro.valor" (click)="filtrar(filtro.valor)" [disabled]="guardando()">{{ filtro.texto }}</button>
+  }
+</div>
+@if (error()) { <p role="alert" class="error">{{ error() }}</p> }
+@if (mensaje()) { <p role="status" class="success">{{ mensaje() }}</p> }
+<div class="layout">
+  <section class="list" aria-label="Solicitudes recibidas" [attr.aria-busy]="cargando()">
+    @if (cargando()) { <p role="status">Cargando solicitudes…</p> }
+    @for (s of pagina().contenido; track s.id) {
+      <button type="button" class="item" [class.selected]="seleccion()?.id === s.id" (click)="revisar(s)" [disabled]="guardando()">
+        <strong>{{ s.datos.apellido }}, {{ s.datos.nombre }}</strong>
+        <span>DNI {{ s.datos.dni }}</span><small>{{ s.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</small>
+      </button>
+    } @empty { @if (!cargando() && !error()) { <p>No hay solicitudes {{ estado().toLowerCase() === 'pendiente' ? 'pendientes' : estado() === 'APROBADA' ? 'aprobadas' : 'rechazadas' }}.</p> } }
+    @if (pagina().totalPaginas > 1) {
+      <div class="pagination"><button type="button" (click)="cargar(pagina().pagina - 1)" [disabled]="pagina().pagina === 0 || guardando()">Anterior</button><span>{{ pagina().pagina + 1 }} / {{ pagina().totalPaginas }}</span><button type="button" (click)="cargar(pagina().pagina + 1)" [disabled]="pagina().pagina + 1 >= pagina().totalPaginas || guardando()">Siguiente</button></div>
+    }
+  </section>
+  @if (seleccion(); as s) {
+    <section class="review"><h3>{{ s.estado === 'PENDIENTE' ? 'Revisar solicitud' : 'Detalle de la solicitud' }}</h3>
+      <p>Recibida el {{ s.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</p>
+      @if (s.fechaRevision) { <p>{{ s.estado === 'APROBADA' ? 'Aprobada' : 'Rechazada' }} el {{ s.fechaRevision | date:'dd/MM/yyyy HH:mm' }}</p> }
+      <form #revision="ngForm" (ngSubmit)="resolver('aprobar')">
+        <fieldset [disabled]="guardando() || s.estado !== 'PENDIENTE'">
+          <label>Nombre<input name="nombre" [(ngModel)]="datos.nombre" required minlength="2" maxlength="50"></label>
+          <label>Apellido<input name="apellido" [(ngModel)]="datos.apellido" required minlength="2" maxlength="50"></label>
+          <label>DNI<input name="dni" [(ngModel)]="datos.dni" required pattern="[0-9]{7,10}" maxlength="10" inputmode="numeric"></label>
+          <label>Correo electrónico<input name="email" [(ngModel)]="datos.email" type="email" email required maxlength="120"></label>
+          <label>Teléfono<input name="telefono" [(ngModel)]="datos.telefono" type="tel" required minlength="6" maxlength="30" pattern="[+0-9() .-]+"></label>
+        </fieldset>
+        @if (s.estado === 'PENDIENTE') {
+          <p class="hint">Podés corregir estos datos antes de aprobar. La aprobación crea al socio activo, sin generar cuotas.</p>
+          <label>Motivo, si rechazás<textarea name="motivo" [(ngModel)]="motivo" maxlength="500" [disabled]="guardando()"></textarea></label>
+          <div class="actions"><button type="submit" class="approve" [disabled]="revision.invalid || guardando()">{{ guardando() ? 'Guardando…' : 'Aprobar y crear socio' }}</button><button type="button" (click)="resolver('rechazar')" [disabled]="guardando() || !motivo.trim()">Rechazar</button></div>
+        } @else { @if (s.motivo) { <p>Motivo: {{ s.motivo }}</p> } @if (s.socioId) { <p>Socio creado: {{ s.socioId }}</p> } }
+      </form>
+    </section>
+  } @else { <section class="review"><p>Elegí una solicitud para revisar sus datos.</p></section> }
+</div>

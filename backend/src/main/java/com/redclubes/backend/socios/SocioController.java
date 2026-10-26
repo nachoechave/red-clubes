@@ -1,7 +1,10 @@
 package com.redclubes.backend.socios;
 
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.Valid;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import com.redclubes.backend.usuarios.AuthService;
 import com.redclubes.backend.usuarios.Usuario;
@@ -24,6 +27,28 @@ public class SocioController {
     ) {
         authService.exigirOperadorDeClub(authorizationHeader, clubId);
         return socioService.listarSociosPorClub(clubId);
+    }
+
+    @PostMapping(value = "/api/clubes/{clubId}/socios/importacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ImportacionSociosResponse importarSocios(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @PathVariable Long clubId,
+            @RequestParam("archivo") MultipartFile archivo
+    ) {
+        Usuario actor = authService.obtenerUsuarioAutenticado(authorizationHeader);
+        authService.exigirOperadorDeClub(authorizationHeader, clubId);
+        if (archivo == null || archivo.isEmpty()) {
+            throw new IllegalArgumentException("Selecciona un archivo CSV");
+        }
+        if (archivo.getSize() > 1_000_000) {
+            throw new IllegalArgumentException("El archivo no puede superar 1 MB");
+        }
+        try {
+            String contenido = new String(archivo.getBytes(), StandardCharsets.UTF_8);
+            return socioService.importarSocios(clubId, contenido, actor);
+        } catch (java.io.IOException exception) {
+            throw new IllegalArgumentException("No se pudo leer el archivo CSV");
+        }
     }
 
     @PostMapping("/api/clubes/{clubId}/socios")

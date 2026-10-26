@@ -16,9 +16,16 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.ZoneId;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 @Service
 public class CobranzaService {
@@ -54,7 +61,52 @@ public class CobranzaService {
                 .filter(cuota -> estado == null || estado == cuota.getEstado())
                 .filter(cuota -> socioId == null || socioId.equals(cuota.getSocio().getId()))
                 .sorted(Comparator.comparing(Cuota::getVencimiento).reversed())
-                .map(CuotaResponse::desde)
+                .map(this::cuotaResponseConSaldo)
+                .toList();
+    }
+
+    @Transactional
+    public List<EstadoCuentaSocioResponse> listarEstadoCuentaSocios(Long clubId) {
+        actualizarVencidas(clubId, LocalDate.now(BUSINESS_ZONE));
+        List<Cuota> cuotasClub = cuotaRepository.findByClubId(clubId);
+
+        return socioRepository.findByClubIdOrderByIdAsc(clubId).stream()
+                .map(socio -> {
+                    List<Cuota> cuotasSocio = cuotasClub.stream()
+                            .filter(cuota -> cuota.getSocio() != null && socio.getId().equals(cuota.getSocio().getId()))
+                            .toList();
+
+                    int pendientes = (int) cuotasSocio.stream()
+                            .filter(cuota -> cuota.getEstado() == EstadoCuota.PENDIENTE)
+                            .filter(cuota -> saldoPendiente(cuota).compareTo(BigDecimal.ZERO) > 0)
+                            .count();
+                    int vencidas = (int) cuotasSocio.stream()
+                            .filter(cuota -> cuota.getEstado() == EstadoCuota.VENCIDA)
+                            .filter(cuota -> saldoPendiente(cuota).compareTo(BigDecimal.ZERO) > 0)
+                            .count();
+                    BigDecimal deudaTotal = cuotasSocio.stream()
+                            .filter(cuota -> cuota.getEstado() == EstadoCuota.PENDIENTE || cuota.getEstado() == EstadoCuota.VENCIDA)
+                            .map(this::saldoPendiente)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    String ultimoPeriodo = cuotasSocio.stream()
+                            .max(Comparator.comparing(Cuota::getVencimiento))
+                            .map(Cuota::getPeriodo)
+                            .orElse(null);
+
+                    return new EstadoCuentaSocioResponse(
+                            socio.getId(),
+                            socio.getNumeroSocio(),
+                            socio.getNombre() + " " + socio.getApellido(),
+                            socio.getDni(),
+                            socio.getEstado(),
+                            pendientes,
+                            vencidas,
+                            pendientes + vencidas,
+                            deudaTotal,
+                            ultimoPeriodo,
+                            pendientes + vencidas == 0
+                    );
+                })
                 .toList();
     }
 
@@ -96,32 +148,201 @@ public class CobranzaService {
     }
 
     @Transactional
+    public ImportacionDeudaHistoricaResponse importarDeudaHistorica(Long clubId, String contenidoCsv, Usuario actor) {
+        Club club = clubRepository.findById(clubId).orElseThrow(() -> new ClubNoEncontradoException(clubId));
+        if (contenidoCsv == null || contenidoCsv.isBlank()) {
+            return new ImportacionDeudaHistoricaResponse(
+                    false, 0, 0, List.of(),
+                    List.of(new ImportacionDeudaHistoricaError(1, "", "El archivo esta vacio"))
+            );
+        }
+
+        String normalizado = contenidoCsv.replace("\r\n", "\n").replace('\r', '\n');
+        String[] lineas = normalizado.split("\n");
+        int cabeceraIndex = -1;
+        for (int i = 0; i < lineas.length; i++) {
+            if (!lineas[i].isBlank()) {
+                cabeceraIndex = i;
+                break;
+            }
+        }
+        if (cabeceraIndex < 0) {
+            return new ImportacionDeudaHistoricaResponse(
+                    false, 0, 0, List.of(),
+                    List.of(new ImportacionDeudaHistoricaError(1, "", "El archivo no contiene datos"))
+            );
+        }
+
+        String cabecera = quitarBom(lineas[cabeceraIndex]).trim();
+        String separador = cabecera.contains(";") ? ";" : ",";
+        String[] columnas = separarLinea(cabecera, separador);
+        Map<String, Integer> indices = new HashMap<>();
+        for (int i = 0; i < columnas.length; i++) {
+            indices.put(columnas[i].trim().toLowerCase(Locale.ROOT), i);
+        }
+
+        List<ImportacionDeudaHistoricaError> errores = new ArrayList<>();
+        for (String requerida : List.of("dni", "periodo", "importe", "vencimiento")) {
+            if (!indices.containsKey(requerida)) {
+                errores.add(new ImportacionDeudaHistoricaError(
+                        cabeceraIndex + 1, "", "Falta la columna obligatoria: " + requerida
+                ));
+            }
+        }
+        if (!errores.isEmpty()) {
+            return new ImportacionDeudaHistoricaResponse(false, 0, 0, List.of(), errores);
+        }
+
+        List<FilaDeudaHistorica> filasValidas = new ArrayList<>();
+        Set<String> clavesArchivo = new HashSet<>();
+        int totalFilas = 0;
+
+        for (int i = cabeceraIndex + 1; i < lineas.length; i++) {
+            String linea = lineas[i].trim();
+            if (linea.isBlank()) {
+                continue;
+            }
+            totalFilas++;
+            int numeroFila = i + 1;
+            String[] valores = separarLinea(linea, separador);
+            String dniOriginal = valorColumna(valores, indices.get("dni"));
+            String dni = dniOriginal.replaceAll("\\D", "");
+            String periodo = valorColumna(valores, indices.get("periodo"));
+            String importeTexto = valorColumna(valores, indices.get("importe"));
+            String vencimientoTexto = valorColumna(valores, indices.get("vencimiento"));
+
+            if (!dni.matches("\\d{7,11}")) {
+                errores.add(new ImportacionDeudaHistoricaError(numeroFila, dniOriginal, "DNI invalido"));
+                continue;
+            }
+            if (!periodo.matches("\\d{4}-(0[1-9]|1[0-2])")) {
+                errores.add(new ImportacionDeudaHistoricaError(numeroFila, dni, "Periodo invalido; usa YYYY-MM"));
+                continue;
+            }
+
+            BigDecimal importe;
+            try {
+                String importeNormalizado = importeTexto.contains(",")
+                        ? importeTexto.replace(".", "").replace(",", ".")
+                        : importeTexto;
+                importe = new BigDecimal(importeNormalizado);
+                if (importe.compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new NumberFormatException();
+                }
+            } catch (NumberFormatException exception) {
+                errores.add(new ImportacionDeudaHistoricaError(numeroFila, dni, "Importe invalido"));
+                continue;
+            }
+
+            LocalDate vencimiento;
+            try {
+                vencimiento = LocalDate.parse(vencimientoTexto);
+            } catch (Exception exception) {
+                errores.add(new ImportacionDeudaHistoricaError(numeroFila, dni, "Vencimiento invalido; usa YYYY-MM-DD"));
+                continue;
+            }
+
+            LocalDate fechaEmision = inicioDelPeriodo(periodo);
+            if (vencimiento.isBefore(fechaEmision)) {
+                errores.add(new ImportacionDeudaHistoricaError(numeroFila, dni, "El vencimiento no puede ser anterior al periodo"));
+                continue;
+            }
+
+            Socio socio = socioRepository.findByClubIdAndDni(clubId, dni).orElse(null);
+            if (socio == null) {
+                errores.add(new ImportacionDeudaHistoricaError(numeroFila, dni, "No existe un socio con ese DNI en la institucion"));
+                continue;
+            }
+
+            String clave = socio.getId() + "|" + periodo;
+            if (!clavesArchivo.add(clave)) {
+                errores.add(new ImportacionDeudaHistoricaError(numeroFila, dni, "El socio y periodo estan duplicados dentro del archivo"));
+                continue;
+            }
+            if (cuotaRepository.existsByClubIdAndSocioIdAndPeriodo(clubId, socio.getId(), periodo)) {
+                errores.add(new ImportacionDeudaHistoricaError(numeroFila, dni, "Ya existe una cuota para ese socio y periodo"));
+                continue;
+            }
+
+            filasValidas.add(new FilaDeudaHistorica(numeroFila, dni, socio, periodo, importe, vencimiento));
+        }
+
+        if (totalFilas > 5000) {
+            errores.add(new ImportacionDeudaHistoricaError(0, "", "El archivo supera el maximo de 5000 filas"));
+        }
+        if (totalFilas == 0 && errores.isEmpty()) {
+            errores.add(new ImportacionDeudaHistoricaError(0, "", "El archivo no contiene filas de deuda"));
+        }
+        if (!errores.isEmpty()) {
+            return new ImportacionDeudaHistoricaResponse(false, totalFilas, 0, List.of(), errores);
+        }
+
+        List<ImportacionDeudaHistoricaItemResponse> importadas = new ArrayList<>();
+        for (FilaDeudaHistorica fila : filasValidas) {
+            Cuota cuota = nuevaCuota(
+                    club,
+                    fila.socio(),
+                    fila.periodo(),
+                    fila.importe(),
+                    inicioDelPeriodo(fila.periodo()),
+                    fila.vencimiento()
+            );
+            cuota.setEstado(estadoPendienteSegunVencimiento(cuota));
+            Cuota guardada = cuotaRepository.save(cuota);
+            importadas.add(new ImportacionDeudaHistoricaItemResponse(
+                    fila.numeroFila(), fila.dni(), fila.periodo(), guardada.getId()
+            ));
+        }
+
+        auditoriaService.registrar(
+                actor,
+                clubId,
+                "IMPORTACION",
+                "DEUDA_HISTORICA",
+                null,
+                "Filas=" + importadas.size()
+        );
+        return new ImportacionDeudaHistoricaResponse(
+                true, totalFilas, importadas.size(), importadas, List.of()
+        );
+    }
+
+    @Transactional
     public PagoResponse registrarPago(Long clubId, Long cuotaId, RegistrarPagoRequest request, Usuario responsable) {
         Cuota cuota = cuotaRepository.findLockedByIdAndClubId(cuotaId, clubId)
                 .orElseThrow(() -> new IllegalArgumentException("Cuota no encontrada"));
         validarCuotaDelClub(cuota, clubId);
-        if (cuota.getEstado() == EstadoCuota.PAGADA
-                || pagoRepository.existsByClubIdAndCuotaIdAndEstado(clubId, cuotaId, EstadoPago.ACTIVO)) {
-            throw new IllegalArgumentException("La cuota ya tiene un pago activo");
-        }
         if (cuota.getEstado() == EstadoCuota.ANULADA) {
             throw new IllegalArgumentException("No se puede pagar una cuota anulada");
+        }
+
+        BigDecimal saldoAntes = saldoPendiente(cuota);
+        if (saldoAntes.compareTo(BigDecimal.ZERO) <= 0 || cuota.getEstado() == EstadoCuota.PAGADA) {
+            throw new IllegalArgumentException("La cuota ya esta pagada");
+        }
+        if (request.importe().compareTo(saldoAntes) > 0) {
+            throw new IllegalArgumentException("El importe supera el saldo pendiente de " + saldoAntes);
         }
 
         Pago pago = new Pago();
         pago.setClub(cuota.getClub());
         pago.setCuota(cuota);
-        pago.setImporte(cuota.getImporte());
+        pago.setImporte(request.importe());
         pago.setFechaPago(LocalDateTime.now(BUSINESS_ZONE));
         pago.setMedioPago(request.medioPago());
         pago.setUsuarioResponsable(responsable);
         pago.setObservaciones(request.observaciones());
         pago.setEstado(EstadoPago.ACTIVO);
         pagoRepository.save(pago);
-        cuota.setEstado(EstadoCuota.PAGADA);
+
+        BigDecimal saldoDespues = saldoAntes.subtract(request.importe());
+        cuota.setEstado(saldoDespues.compareTo(BigDecimal.ZERO) == 0
+                ? EstadoCuota.PAGADA
+                : estadoPendienteSegunVencimiento(cuota));
         cuotaRepository.save(cuota);
+
         auditoriaService.registrar(responsable, clubId, "REGISTRO", "PAGO", pago.getId(),
-                "Cuota=" + cuotaId + "; medio=" + request.medioPago());
+                "Cuota=" + cuotaId + "; importe=" + request.importe() + "; medio=" + request.medioPago());
         return PagoResponse.desde(pago);
     }
 
@@ -147,10 +368,12 @@ public class CobranzaService {
         pago.setFechaAnulacion(LocalDateTime.now(BUSINESS_ZONE));
         pago.setUsuarioAnulacion(responsable);
         pago.setObservaciones(unirObservaciones(pago.getObservaciones(), "Anulacion: " + request.motivo()));
-        cuota.setEstado(cuota.getVencimiento().isBefore(LocalDate.now(BUSINESS_ZONE))
-                ? EstadoCuota.VENCIDA : EstadoCuota.PENDIENTE);
-        cuotaRepository.save(cuota);
         Pago guardado = pagoRepository.save(pago);
+        BigDecimal saldo = saldoPendiente(cuota);
+        cuota.setEstado(saldo.compareTo(BigDecimal.ZERO) <= 0
+                ? EstadoCuota.PAGADA
+                : estadoPendienteSegunVencimiento(cuota));
+        cuotaRepository.save(cuota);
         auditoriaService.registrar(responsable, clubId, "ANULACION", "PAGO", pagoId, "Cuota=" + cuotaId);
         return PagoResponse.desde(guardado);
     }
@@ -190,6 +413,41 @@ public class CobranzaService {
         return YearMonth.parse(periodo).atDay(1);
     }
 
+    private CuotaResponse cuotaResponseConSaldo(Cuota cuota) {
+        BigDecimal saldo = saldoPendiente(cuota);
+        BigDecimal pagado = cuota.getImporte().subtract(saldo);
+        return new CuotaResponse(
+                cuota.getId(),
+                cuota.getClub().getId(),
+                cuota.getSocio().getId(),
+                cuota.getSocio().getNombre() + " " + cuota.getSocio().getApellido(),
+                cuota.getSocio().getDni(),
+                cuota.getPeriodo(),
+                cuota.getPeriodo(),
+                cuota.getImporte(),
+                pagado,
+                saldo,
+                cuota.getEstado(),
+                cuota.getFechaEmision(),
+                cuota.getVencimiento()
+        );
+    }
+
+    private BigDecimal saldoPendiente(Cuota cuota) {
+        BigDecimal pagadoActivo = pagoRepository.findByClubIdAndCuotaIdAndEstado(
+                        cuota.getClub().getId(), cuota.getId(), EstadoPago.ACTIVO
+                ).stream()
+                .map(Pago::getImporte)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return cuota.getImporte().subtract(pagadoActivo).max(BigDecimal.ZERO);
+    }
+
+    private EstadoCuota estadoPendienteSegunVencimiento(Cuota cuota) {
+        return cuota.getVencimiento().isBefore(LocalDate.now(BUSINESS_ZONE))
+                ? EstadoCuota.VENCIDA
+                : EstadoCuota.PENDIENTE;
+    }
+
     private void validarCuotaDelClub(Cuota cuota, Long clubId) {
         if (cuota.getSocio() == null || cuota.getSocio().getClub() == null
                 || !cuota.getSocio().getClub().getId().equals(clubId)) {
@@ -197,7 +455,36 @@ public class CobranzaService {
         }
     }
 
+    private String quitarBom(String texto) {
+        return texto.startsWith("\uFEFF") ? texto.substring(1) : texto;
+    }
+
+    private String[] separarLinea(String linea, String separador) {
+        return linea.split(Pattern.quote(separador), -1);
+    }
+
+    private String valorColumna(String[] valores, int indice) {
+        if (indice < 0 || indice >= valores.length) {
+            return "";
+        }
+        String valor = valores[indice].trim();
+        if (valor.length() >= 2 && valor.startsWith("\"") && valor.endsWith("\"")) {
+            valor = valor.substring(1, valor.length() - 1).trim();
+        }
+        return valor;
+    }
+
     private String unirObservaciones(String original, String agregado) {
         return original == null || original.isBlank() ? agregado : original + " | " + agregado;
+    }
+
+    private record FilaDeudaHistorica(
+            int numeroFila,
+            String dni,
+            Socio socio,
+            String periodo,
+            BigDecimal importe,
+            LocalDate vencimiento
+    ) {
     }
 }

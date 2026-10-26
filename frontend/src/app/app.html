@@ -145,6 +145,7 @@
                 @case ('socios') {
                   <svg lucideUsers></svg>
                 }
+                @case ('solicitudes') { <svg lucideUserPlus></svg> }
                 @case ('nuevo-socio') {
                   <svg lucideUserPlus></svg>
                 }
@@ -159,6 +160,9 @@
                 }
                 @case ('cuotas') {
                   <svg lucideWalletCards></svg>
+                }
+                @case ('deudores') {
+                  <svg lucideCirclePercent></svg>
                 }
                 @case ('asistencias') {
                   <svg lucideClipboardCheck></svg>
@@ -199,6 +203,11 @@
           </div>
         }
         @switch (activeSection()) {
+          @case ('solicitudes') {
+            @if (esAdministradorClubActual() && moduloActivo('PARTICIPANTES')) {
+              <app-solicitudes [clubId]="clubActivoId()" (aprobada)="actualizarTrasSolicitud()" />
+            } @else { <p>No tenés permiso para revisar solicitudes de esta institución.</p> }
+          }
           @case ('dashboard') {
             <div class="page-head dashboard-head row">
               <div>
@@ -350,6 +359,63 @@
                     <small>Últimos registros</small>
                   </article>
                 </div>
+
+                @if (puedeOperarClubActual()) {
+                  <article class="panel">
+                    <div class="panel-title row-title">
+                      <div>
+                        <span class="panel-kicker">Carga inicial</span>
+                        <h3>Importar socios por CSV</h3>
+                      </div>
+                      <button class="secondary-action compact" type="button" (click)="descargarPlantillaSocios()">Descargar plantilla CSV</button>
+                    </div>
+                    <p class="help-text">
+                      Obligatorios: nombre, apellido y DNI. Opcionales: numero de socio, telefono, email, fecha de nacimiento, fecha de alta, direccion y estado.
+                      Si dejas el numero de socio vacio, el sistema lo asigna automaticamente.
+                    </p>
+                    <div class="filters">
+                      <label>
+                        <span>Archivo CSV</span>
+                        <input type="file" accept=".csv,text/csv" (change)="seleccionarArchivoSocios($event)" />
+                      </label>
+                      <button
+                        class="primary-action compact"
+                        type="button"
+                        [disabled]="!archivoSociosImportacion() || importacionSociosCargando()"
+                        (click)="importarSociosMasivamente()"
+                      >
+                        {{ importacionSociosCargando() ? 'Validando...' : 'Importar socios' }}
+                      </button>
+                    </div>
+
+                    @if (importacionSocios(); as resultado) {
+                      @if (resultado.valida) {
+                        <p class="success-message" role="status">
+                          {{ resultado.importados }} de {{ resultado.totalFilas }} socios importados correctamente.
+                        </p>
+                      } @else {
+                        <div class="form-error panel-error" role="alert">
+                          <strong>No se importo ningun socio.</strong>
+                          <span>Corregi los errores del archivo y volve a intentarlo.</span>
+                        </div>
+                        <div class="table-card compact-table">
+                          <table>
+                            <thead><tr><th>Fila</th><th>DNI</th><th>Error</th></tr></thead>
+                            <tbody>
+                              @for (error of resultado.errores; track $index) {
+                                <tr>
+                                  <td>{{ error.fila || '-' }}</td>
+                                  <td>{{ error.dni || '-' }}</td>
+                                  <td>{{ error.mensaje }}</td>
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
+                        </div>
+                      }
+                    }
+                  </article>
+                }
 
                 <div class="socios-filter-panel">
                   <label>
@@ -640,6 +706,14 @@
                         <div class="club-logo large placeholder"><svg lucideHeartHandshake aria-hidden="true"></svg></div>
                       }
                     </div>
+                    <label>
+                      <span>Tipo de institucion</span>
+                      <select name="clubTipoInstitucion" [(ngModel)]="clubForm.tipoInstitucion">
+                        <option value="CLUB">Club</option>
+                        <option value="CENTRO_JUBILADOS">Centro de jubilados</option>
+                        <option value="BOMBEROS">Bomberos</option>
+                      </select>
+                    </label>
                     <label>
                       <span>Estado</span>
                       <select name="clubEstado" [(ngModel)]="clubForm.estado">
@@ -972,23 +1046,38 @@
                 </table>
               } @else {
                 <table>
-                  <thead><tr><th>Participante</th><th>Mes</th><th>Importe</th><th>Estado</th><th>Vencimiento</th><th>Acciones</th></tr></thead>
+                  <thead><tr><th>Participante</th><th>Mes</th><th>Importe</th><th>Pagado</th><th>Saldo</th><th>Estado</th><th>Vencimiento</th><th>Acciones</th></tr></thead>
                   <tbody>
                     @for (cuota of cuotasFiltradas(); track cuota.id) {
                       <tr>
                         <td><strong>{{ cuota.socioNombre }}</strong><small class="muted-cell">{{ cuota.socioDni }}</small></td>
                         <td>{{ cuota.mes }}</td>
                         <td>{{ formatearImporte(cuota.importe) }}</td>
+                        <td>{{ formatearImporte(cuota.pagado) }}</td>
+                        <td><strong>{{ formatearImporte(cuota.saldoPendiente) }}</strong></td>
                         <td><span class="badge" [class.pending]="cuota.estado !== 'PAGADA'">{{ estadoCuotaVisible(cuota) }}</span></td>
                         <td>{{ cuota.vencimiento }}</td>
                         <td>
-                          <button type="button" [disabled]="cuota.estado === 'PAGADA' || cuota.estado === 'ANULADA'" [class.primary-action]="cuota.estado !== 'PAGADA' && cuota.estado !== 'ANULADA'" class="mini-action" (click)="registrarPago(cuota)">{{ cuota.estado === 'PAGADA' ? 'Pagada' : (cuota.estado === 'ANULADA' ? 'Anulada' : 'Registrar pago') }}</button>
+                          @if (cuota.estado !== 'PAGADA' && cuota.estado !== 'ANULADA') {
+                            <input
+                              type="number"
+                              min="0.01"
+                              [max]="cuota.saldoPendiente"
+                              step="0.01"
+                              class="payment-amount-input"
+                              aria-label="Importe a registrar"
+                              [(ngModel)]="pagoImportes[cuota.id]"
+                            />
+                            <button type="button" class="mini-action primary-action" (click)="registrarPago(cuota)">Registrar pago</button>
+                          } @else {
+                            <span class="badge">{{ cuota.estado === 'PAGADA' ? 'Pagada' : 'Anulada' }}</span>
+                          }
                           <button type="button" class="mini-action" (click)="verHistorialPagos(cuota)">Historial</button>
                         </td>
                       </tr>
                       @if (cuotaPagosAbiertaId() === cuota.id) {
                         <tr>
-                          <td colspan="6">
+                          <td colspan="8">
                             <div class="detail-stack">
                               @for (pago of pagosPorCuota()[cuota.id] ?? []; track pago.id) {
                                 <div class="detail-row">
@@ -1010,7 +1099,7 @@
                       }
                     } @empty {
                       <tr>
-                        <td colspan="6" class="empty-cell">No hay cuotas para el participante seleccionado.</td>
+                        <td colspan="8" class="empty-cell">No hay cuotas para el participante seleccionado.</td>
                       </tr>
                     }
                   </tbody>
@@ -1168,6 +1257,142 @@
                   </ul>
                 </article>
               </aside>
+            </div>
+          }
+
+          @case ('deudores') {
+            <div class="page-head row">
+              <div>
+                <p class="eyebrow">Gestion de cobranza</p>
+                <h2>Deudores</h2>
+                <p>Estado de cuenta de los socios de {{ nombreClubActivo() }}.</p>
+              </div>
+              <span class="data-pill real">Actualizado desde cuotas</span>
+            </div>
+
+            <div class="metric-grid finance-kpis">
+              <article class="metric-card danger-kpi">
+                <span>Socios con deuda</span>
+                <strong>{{ deudores().length }}</strong>
+                <small>Requieren seguimiento</small>
+              </article>
+              <article class="metric-card">
+                <span>Deuda total</span>
+                <strong>{{ formatearImporte(deudaTotalDeudores()) }}</strong>
+                <small>Pendiente y vencida</small>
+              </article>
+              <article class="metric-card">
+                <span>Cuotas vencidas</span>
+                <strong>{{ cuotasVencidasEstadoCuenta() }}</strong>
+                <small>Fuera de termino</small>
+              </article>
+              <article class="metric-card">
+                <span>Socios al dia</span>
+                <strong>{{ sociosAlDiaEstadoCuenta() }}</strong>
+                <small>Sin deuda registrada</small>
+              </article>
+            </div>
+
+            <article class="panel">
+              <div class="panel-title row-title">
+                <div>
+                  <span class="panel-kicker">Carga inicial</span>
+                  <h3>Importar deuda historica</h3>
+                </div>
+                <button class="secondary-action compact" type="button" (click)="descargarPlantillaDeudaHistorica()">Descargar plantilla CSV</button>
+              </div>
+              <p class="help-text">Usa las columnas DNI, periodo, importe y vencimiento. Formatos: periodo YYYY-MM y vencimiento YYYY-MM-DD. El archivo se valida completo antes de guardar.</p>
+              <div class="filters">
+                <label>
+                  <span>Archivo CSV</span>
+                  <input type="file" accept=".csv,text/csv" (change)="seleccionarArchivoDeudaHistorica($event)" />
+                </label>
+                <button
+                  class="primary-action compact"
+                  type="button"
+                  [disabled]="!archivoDeudaHistorica() || importacionDeudaCargando()"
+                  (click)="importarDeudaHistorica()"
+                >
+                  {{ importacionDeudaCargando() ? 'Validando...' : 'Importar deuda' }}
+                </button>
+              </div>
+
+              @if (importacionDeudaHistorica(); as resultado) {
+                @if (resultado.valida) {
+                  <p class="success-message" role="status">
+                    {{ resultado.importadas }} de {{ resultado.totalFilas }} filas importadas correctamente.
+                  </p>
+                } @else {
+                  <div class="form-error panel-error" role="alert">
+                    <strong>No se importo ninguna fila.</strong>
+                    <span>Corregi los errores del archivo y volve a intentarlo.</span>
+                  </div>
+                  <div class="table-card compact-table">
+                    <table>
+                      <thead><tr><th>Fila</th><th>DNI</th><th>Error</th></tr></thead>
+                      <tbody>
+                        @for (error of resultado.errores; track $index) {
+                          <tr>
+                            <td>{{ error.fila || '-' }}</td>
+                            <td>{{ error.dni || '-' }}</td>
+                            <td>{{ error.mensaje }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              }
+            </article>
+
+            <div class="filters">
+              <label class="search-field">
+                <span>Buscar socio</span>
+                <input type="search" placeholder="Nombre, DNI o numero de socio" [(ngModel)]="socioBusqueda" />
+              </label>
+            </div>
+
+            <div class="table-card">
+              <div class="table-toolbar">
+                <strong>{{ deudores().length }} socios con deuda</strong>
+                <span>Ordenados por mayor deuda.</span>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>N° socio</th>
+                    <th>Socio</th>
+                    <th>DNI</th>
+                    <th>Pendientes</th>
+                    <th>Vencidas</th>
+                    <th>Total adeudado</th>
+                    <th>Ultimo periodo</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (estado of deudores(); track estado.socioId) {
+                    <tr>
+                      <td>{{ estado.numeroSocio ?? '-' }}</td>
+                      <td><strong>{{ estado.socioNombre }}</strong></td>
+                      <td>{{ estado.socioDni }}</td>
+                      <td>{{ estado.cuotasPendientes }}</td>
+                      <td><span class="badge pending">{{ estado.cuotasVencidas }}</span></td>
+                      <td><strong>{{ formatearImporte(estado.deudaTotal) }}</strong></td>
+                      <td>{{ estado.ultimoPeriodo ?? 'Sin periodo' }}</td>
+                      <td>
+                        <button class="secondary-action compact" type="button" (click)="verDetalleCuotasSocio(estado.socioId); goTo('cuotas')">
+                          Ver cuotas
+                        </button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="8" class="empty-cell">No hay socios con deuda para mostrar.</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
             </div>
           }
 

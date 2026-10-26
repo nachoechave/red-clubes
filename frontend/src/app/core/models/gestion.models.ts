@@ -3,6 +3,7 @@ import { RolClub } from '../auth/auth.models';
 export type EstadoSocio = 'ACTIVO' | 'INACTIVO';
 export type EstadoCuota = 'PENDIENTE' | 'PAGADA' | 'VENCIDA' | 'ANULADA';
 export type EstadoClub = 'ACTIVO' | 'INACTIVO';
+export type TipoInstitucion = 'CLUB' | 'CENTRO_JUBILADOS' | 'BOMBEROS';
 export type EstadoActividad = 'ACTIVA' | 'INACTIVA';
 export type EstadoAsistencia = 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADO';
 export type MedioPago = 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA' | 'OTRO';
@@ -18,12 +19,27 @@ export interface ClubVista {
   direccion: string;
   logoUrl?: string | null;
   estado: EstadoClub;
+  tipoInstitucion: TipoInstitucion;
 }
 
 export interface AsignacionUsuarioForm {
   clubId: number | null;
   rolClub: RolClub;
   actividadIds: number[];
+}
+
+export interface ImportacionSociosErrorVista {
+  fila: number;
+  dni: string;
+  mensaje: string;
+}
+
+export interface ImportacionSociosVista {
+  valida: boolean;
+  totalFilas: number;
+  importados: number;
+  sociosImportados: { fila: number; dni: string; socioId: number; numeroSocio: number }[];
+  errores: ImportacionSociosErrorVista[];
 }
 
 export interface SocioVista {
@@ -72,6 +88,8 @@ export interface CuotaVista {
   mes: string;
   periodo?: string;
   importe: number;
+  pagado: number;
+  saldoPendiente: number;
   estado: EstadoCuota;
   vencimiento: string;
 }
@@ -95,6 +113,34 @@ export interface CuotaResumenSocio {
   estado: 'AL_DIA' | 'NO_AL_DIA';
   pendientes: number;
   ultimoMes: string;
+}
+
+export interface ImportacionDeudaHistoricaErrorVista {
+  fila: number;
+  dni: string;
+  mensaje: string;
+}
+
+export interface ImportacionDeudaHistoricaVista {
+  valida: boolean;
+  totalFilas: number;
+  importadas: number;
+  cuotasImportadas: { fila: number; dni: string; periodo: string; cuotaId: number }[];
+  errores: ImportacionDeudaHistoricaErrorVista[];
+}
+
+export interface EstadoCuentaSocioVista {
+  socioId: number;
+  numeroSocio?: number | null;
+  socioNombre: string;
+  socioDni: string;
+  estadoSocio: EstadoSocio;
+  cuotasPendientes: number;
+  cuotasVencidas: number;
+  cuotasAdeudadas: number;
+  deudaTotal: number;
+  ultimoPeriodo?: string | null;
+  alDia: boolean;
 }
 
 export interface AsistenciaVista {

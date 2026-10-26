@@ -5,6 +5,7 @@ const emptyRoute = () => import('./core/routing/empty-route.component').then((mo
 const protectedSections = [
   'dashboard',
   'socios',
+  'solicitudes',
   'socios/nuevo',
   'socios/:id',
   'clubes',
@@ -12,6 +13,7 @@ const protectedSections = [
   'actividades/:id',
   'inscripciones',
   'cuotas',
+  'deudores',
   'asistencias',
   'reportes',
   'usuarios',

@@ -7,7 +7,8 @@ public record ClubResponse(
         String logoUrl,
         EstadoClub estado,
         java.util.Set<ModuloClub> modulos,
-        NombreParticipantes nombreParticipantes
+        NombreParticipantes nombreParticipantes,
+        TipoInstitucion tipoInstitucion
 ) {
     public static ClubResponse desde(Club club) {
         return new ClubResponse(
@@ -17,7 +18,8 @@ public record ClubResponse(
                 club.getLogoUrl(),
                 club.getEstado(),
                 club.getModulos(),
-                club.getNombreParticipantes()
+                club.getNombreParticipantes(),
+                club.getTipoInstitucion()
         );
     }
 }

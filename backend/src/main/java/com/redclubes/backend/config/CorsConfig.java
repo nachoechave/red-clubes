@@ -10,9 +10,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class CorsConfig {
 
     private final String[] allowedOrigins;
+    private final String[] publicOrigins;
 
-    public CorsConfig(@Value("${redclubes.cors.allowed-origins}") String allowedOrigins) {
+    public CorsConfig(@Value("${redclubes.cors.allowed-origins}") String allowedOrigins,
+            @Value("${redclubes.solicitudes.publicas.origins:}") String publicOrigins) {
         this.allowedOrigins = allowedOrigins.split("\\s*,\\s*");
+        this.publicOrigins = java.util.Arrays.stream(publicOrigins.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toArray(String[]::new);
     }
 
     @Bean
@@ -20,6 +23,9 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/api/public/instituciones/*/solicitudes")
+                        .allowedOrigins(publicOrigins).allowedMethods("POST", "OPTIONS")
+                        .allowedHeaders("Content-Type").maxAge(600);
                 registry.addMapping("/api/**")
                         .allowedOrigins(allowedOrigins)
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")

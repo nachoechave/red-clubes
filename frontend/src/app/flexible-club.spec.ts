@@ -9,7 +9,7 @@ import { etiquetaParticipantes, seccionHabilitada } from './core/models/club-con
 import { ActividadService } from './features/actividades/actividad.service';
 import { InscripcionService } from './features/inscripciones/inscripcion.service';
 
-const futbol: ClubVista = { id: 1, nombre: 'Club barrial', direccion: 'Calle 1', estado: 'ACTIVO',
+const futbol: ClubVista = { id: 1, nombre: 'Club barrial', direccion: 'Calle 1', estado: 'ACTIVO', tipoInstitucion: 'CLUB',
   modulos: ['PARTICIPANTES', 'CATEGORIAS'], nombreParticipantes: 'JUGADORES' };
 
 describe('Configuración flexible', () => {

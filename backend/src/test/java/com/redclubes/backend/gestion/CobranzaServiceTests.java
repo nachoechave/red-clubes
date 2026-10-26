@@ -54,14 +54,116 @@ class CobranzaServiceTests {
     }
 
     @Test
-    void noRegistraDosPagosActivosParaLaMismaCuota() {
-        Cuota cuota = cuota(50L, club(1L), socio(10L, club(1L)));
+    void importaDeudaHistoricaValidaDeFormaAtomica() {
+        Club club = club(1L);
+        Socio socio = socio(10L, club);
+        when(clubRepository.findById(1L)).thenReturn(Optional.of(club));
+        when(socioRepository.findByClubIdAndDni(1L, "12345678")).thenReturn(Optional.of(socio));
+        when(cuotaRepository.existsByClubIdAndSocioIdAndPeriodo(1L, 10L, "2025-01")).thenReturn(false);
+        when(cuotaRepository.save(any(Cuota.class))).thenAnswer(invocation -> {
+            Cuota cuota = invocation.getArgument(0);
+            cuota.setId(90L);
+            return cuota;
+        });
+
+        String csv = "dni;periodo;importe;vencimiento\n12345678;2025-01;6.500,50;2025-01-10\n";
+        ImportacionDeudaHistoricaResponse resultado = service().importarDeudaHistorica(1L, csv, new Usuario());
+
+        assertEquals(true, resultado.valida());
+        assertEquals(1, resultado.totalFilas());
+        assertEquals(1, resultado.importadas());
+        assertEquals(90L, resultado.cuotasImportadas().getFirst().cuotaId());
+
+        org.mockito.ArgumentCaptor<Cuota> captor = org.mockito.ArgumentCaptor.forClass(Cuota.class);
+        verify(cuotaRepository).save(captor.capture());
+        assertEquals(new BigDecimal("6500.50"), captor.getValue().getImporte());
+        assertEquals(EstadoCuota.VENCIDA, captor.getValue().getEstado());
+    }
+
+    @Test
+    void importacionHistoricaNoGuardaNadaSiAlgunaFilaTieneError() {
+        Club club = club(1L);
+        Socio socio = socio(10L, club);
+        when(clubRepository.findById(1L)).thenReturn(Optional.of(club));
+        when(socioRepository.findByClubIdAndDni(1L, "12345678")).thenReturn(Optional.of(socio));
+        when(socioRepository.findByClubIdAndDni(1L, "99999999")).thenReturn(Optional.empty());
+        when(cuotaRepository.existsByClubIdAndSocioIdAndPeriodo(1L, 10L, "2025-01")).thenReturn(false);
+
+        String csv = "dni;periodo;importe;vencimiento\n"
+                + "12345678;2025-01;6500;2025-01-10\n"
+                + "99999999;2025-02;6500;2025-02-10\n";
+
+        ImportacionDeudaHistoricaResponse resultado = service().importarDeudaHistorica(1L, csv, new Usuario());
+
+        assertEquals(false, resultado.valida());
+        assertEquals(2, resultado.totalFilas());
+        assertEquals(0, resultado.importadas());
+        assertEquals(1, resultado.errores().size());
+        verify(cuotaRepository, never()).save(any());
+    }
+
+    @Test
+    void pagoParcialMantieneLaCuotaPendienteYRegistraElImporte() {
+        Club club = club(1L);
+        Cuota cuota = cuota(50L, club, socio(10L, club));
+        cuota.setVencimiento(LocalDate.now().plusDays(5));
+        Usuario usuario = new Usuario();
+        usuario.setId(30L);
         when(cuotaRepository.findLockedByIdAndClubId(50L, 1L)).thenReturn(Optional.of(cuota));
-        when(pagoRepository.existsByClubIdAndCuotaIdAndEstado(1L, 50L, EstadoPago.ACTIVO)).thenReturn(true);
+        when(pagoRepository.findByClubIdAndCuotaIdAndEstado(1L, 50L, EstadoPago.ACTIVO)).thenReturn(List.of());
+        when(pagoRepository.save(any(Pago.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        PagoResponse pago = service().registrarPago(
+                1L, 50L,
+                new RegistrarPagoRequest(new BigDecimal("2500.00"), MedioPago.TRANSFERENCIA, "Pago parcial"),
+                usuario
+        );
+
+        assertEquals(new BigDecimal("2500.00"), pago.importe());
+        assertEquals(EstadoCuota.PENDIENTE, cuota.getEstado());
+        verify(cuotaRepository).save(cuota);
+    }
+
+    @Test
+    void completarSaldoConSegundoPagoMarcaLaCuotaPagada() {
+        Club club = club(1L);
+        Cuota cuota = cuota(50L, club, socio(10L, club));
+        Pago previo = new Pago();
+        previo.setClub(club);
+        previo.setCuota(cuota);
+        previo.setImporte(new BigDecimal("2500.00"));
+        previo.setEstado(EstadoPago.ACTIVO);
+        when(cuotaRepository.findLockedByIdAndClubId(50L, 1L)).thenReturn(Optional.of(cuota));
+        when(pagoRepository.findByClubIdAndCuotaIdAndEstado(1L, 50L, EstadoPago.ACTIVO)).thenReturn(List.of(previo));
+        when(pagoRepository.save(any(Pago.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        service().registrarPago(
+                1L, 50L,
+                new RegistrarPagoRequest(new BigDecimal("4000.00"), MedioPago.EFECTIVO, null),
+                new Usuario()
+        );
+
+        assertEquals(EstadoCuota.PAGADA, cuota.getEstado());
+    }
+
+    @Test
+    void noPermitePagarMasQueElSaldoPendiente() {
+        Club club = club(1L);
+        Cuota cuota = cuota(50L, club, socio(10L, club));
+        Pago previo = new Pago();
+        previo.setClub(club);
+        previo.setCuota(cuota);
+        previo.setImporte(new BigDecimal("6000.00"));
+        previo.setEstado(EstadoPago.ACTIVO);
+        when(cuotaRepository.findLockedByIdAndClubId(50L, 1L)).thenReturn(Optional.of(cuota));
+        when(pagoRepository.findByClubIdAndCuotaIdAndEstado(1L, 50L, EstadoPago.ACTIVO)).thenReturn(List.of(previo));
 
         assertThrows(IllegalArgumentException.class, () -> service().registrarPago(
-                1L, 50L, new RegistrarPagoRequest(MedioPago.EFECTIVO, null), new Usuario()
+                1L, 50L,
+                new RegistrarPagoRequest(new BigDecimal("1000.00"), MedioPago.EFECTIVO, null),
+                new Usuario()
         ));
+
         verify(pagoRepository, never()).save(any());
     }
 
@@ -72,11 +174,13 @@ class CobranzaServiceTests {
         Usuario usuario = new Usuario();
         usuario.setId(30L);
         when(cuotaRepository.findLockedByIdAndClubId(50L, 1L)).thenReturn(Optional.of(cuota));
-        when(pagoRepository.existsByClubIdAndCuotaIdAndEstado(1L, 50L, EstadoPago.ACTIVO)).thenReturn(false);
+        when(pagoRepository.findByClubIdAndCuotaIdAndEstado(1L, 50L, EstadoPago.ACTIVO)).thenReturn(List.of());
         when(pagoRepository.save(any(Pago.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         PagoResponse pago = service().registrarPago(
-                1L, 50L, new RegistrarPagoRequest(MedioPago.TRANSFERENCIA, "Comprobante validado"), usuario
+                1L, 50L,
+                new RegistrarPagoRequest(new BigDecimal("6500.00"), MedioPago.TRANSFERENCIA, "Comprobante validado"),
+                usuario
         );
 
         assertEquals(EstadoCuota.PAGADA, cuota.getEstado());
@@ -111,6 +215,42 @@ class CobranzaServiceTests {
         assertEquals(EstadoCuota.PENDIENTE, cuota.getEstado());
         assertEquals(30L, response.usuarioAnulacionId());
         verify(pagoRepository).save(pago);
+    }
+
+    @Test
+    void estadoCuentaSocioResumeCuotasAdeudadasYDeudaTotal() {
+        Club club = club(1L);
+        Socio socio = socio(10L, club);
+        socio.setNumeroSocio(25);
+
+        Cuota vencida = cuota(50L, club, socio);
+        vencida.setEstado(EstadoCuota.VENCIDA);
+
+        Cuota pagada = cuota(51L, club, socio);
+        pagada.setPeriodo("2026-09");
+        pagada.setFechaEmision(LocalDate.of(2026, 9, 1));
+        pagada.setVencimiento(LocalDate.of(2026, 9, 10));
+        pagada.setEstado(EstadoCuota.PAGADA);
+
+        Pago parcial = new Pago();
+        parcial.setClub(club);
+        parcial.setCuota(vencida);
+        parcial.setImporte(new BigDecimal("2500.00"));
+        parcial.setEstado(EstadoPago.ACTIVO);
+
+        when(socioRepository.findByClubIdOrderByIdAsc(1L)).thenReturn(List.of(socio));
+        when(cuotaRepository.findByClubId(1L)).thenReturn(List.of(vencida, pagada));
+        when(pagoRepository.findByClubIdAndCuotaIdAndEstado(1L, 50L, EstadoPago.ACTIVO)).thenReturn(List.of(parcial));
+
+        EstadoCuentaSocioResponse estado = service().listarEstadoCuentaSocios(1L).getFirst();
+
+        assertEquals(25, estado.numeroSocio());
+        assertEquals(0, estado.cuotasPendientes());
+        assertEquals(1, estado.cuotasVencidas());
+        assertEquals(1, estado.cuotasAdeudadas());
+        assertEquals(new BigDecimal("4000.00"), estado.deudaTotal());
+        assertEquals("2026-09", estado.ultimoPeriodo());
+        assertEquals(false, estado.alDia());
     }
 
     private CobranzaService service() {

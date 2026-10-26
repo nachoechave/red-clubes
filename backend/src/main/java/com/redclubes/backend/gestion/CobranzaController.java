@@ -11,7 +11,10 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @RestController
@@ -46,6 +49,15 @@ public class CobranzaController {
         return cobranzaService.listarCuotas(clubId, periodo, estadoCuota, socioId);
     }
 
+    @GetMapping("/estado-socios")
+    public List<EstadoCuentaSocioResponse> estadoSocios(
+            @RequestHeader("Authorization") String authorization,
+            @PathVariable Long clubId
+    ) {
+        authService.exigirOperadorDeClub(authorization, clubId);
+        return cobranzaService.listarEstadoCuentaSocios(clubId);
+    }
+
     @PostMapping
     public CuotaResponse crear(@RequestHeader("Authorization") String authorization, @PathVariable Long clubId,
                                @Valid @RequestBody CrearCuotaRequest request) {
@@ -60,6 +72,28 @@ public class CobranzaController {
         Usuario actor = authService.obtenerUsuarioAutenticado(authorization);
         authService.exigirOperadorDeClub(authorization, clubId);
         return cobranzaService.generarCuotas(clubId, request, actor);
+    }
+
+    @PostMapping(value = "/importacion-historica", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ImportacionDeudaHistoricaResponse importarHistorica(
+            @RequestHeader("Authorization") String authorization,
+            @PathVariable Long clubId,
+            @RequestParam("archivo") MultipartFile archivo
+    ) {
+        Usuario usuario = authService.obtenerUsuarioAutenticado(authorization);
+        authService.exigirOperadorDeClub(authorization, clubId);
+        if (archivo == null || archivo.isEmpty()) {
+            throw new IllegalArgumentException("Selecciona un archivo CSV");
+        }
+        if (archivo.getSize() > 1_000_000) {
+            throw new IllegalArgumentException("El archivo no puede superar 1 MB");
+        }
+        try {
+            String contenido = new String(archivo.getBytes(), StandardCharsets.UTF_8);
+            return cobranzaService.importarDeudaHistorica(clubId, contenido, usuario);
+        } catch (java.io.IOException exception) {
+            throw new IllegalArgumentException("No se pudo leer el archivo CSV");
+        }
     }
 
     @PostMapping("/{cuotaId}/pagos")
