@@ -413,9 +413,17 @@ public class CobranzaService {
         return YearMonth.parse(periodo).atDay(1);
     }
 
-    private CuotaResponse cuotaResponseConSaldo(Cuota cuota) {
+    public record SaldoCuota(BigDecimal pagado, BigDecimal pendiente) {}
+
+    /** Shared calculation for administrative and portal reads of an already scoped cuota. */
+    @Transactional(readOnly = true)
+    public SaldoCuota consultarSaldo(Cuota cuota) {
         BigDecimal saldo = saldoPendiente(cuota);
-        BigDecimal pagado = cuota.getImporte().subtract(saldo);
+        return new SaldoCuota(cuota.getImporte().subtract(saldo), saldo);
+    }
+
+    private CuotaResponse cuotaResponseConSaldo(Cuota cuota) {
+        SaldoCuota saldo = consultarSaldo(cuota);
         return new CuotaResponse(
                 cuota.getId(),
                 cuota.getClub().getId(),
@@ -425,8 +433,8 @@ public class CobranzaService {
                 cuota.getPeriodo(),
                 cuota.getPeriodo(),
                 cuota.getImporte(),
-                pagado,
-                saldo,
+                saldo.pagado(),
+                saldo.pendiente(),
                 cuota.getEstado(),
                 cuota.getFechaEmision(),
                 cuota.getVencimiento()

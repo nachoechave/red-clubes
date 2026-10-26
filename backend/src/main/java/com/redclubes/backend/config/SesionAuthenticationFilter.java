@@ -34,6 +34,7 @@ public class SesionAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         return HttpMethod.OPTIONS.matches(request.getMethod())
                 || com.redclubes.backend.solicitudes.PublicSolicitudController.esRutaPublica(request.getMethod(), path)
+                || path.startsWith("/api/portal-bomberos/")
                 || "/api/health".equals(path)
                 || "/api/auth/login".equals(path);
     }

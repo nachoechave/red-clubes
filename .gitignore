@@ -1,4 +1,6 @@
 # Sistema operativo
+.tools/
+.worktrees/
 .DS_Store
 Thumbs.db
 
