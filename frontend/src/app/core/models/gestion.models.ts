@@ -99,7 +99,7 @@ export interface PagoVista {
   cuotaId: number;
   importe: number;
   fechaPago?: string | null;
-  medioPago: MedioPago | 'MIGRACION';
+  medioPago: MedioPago | 'MIGRACION' | 'NET_PAGOS';
   usuarioResponsableId?: number | null;
   observaciones?: string | null;
   estado: 'ACTIVO' | 'ANULADO';

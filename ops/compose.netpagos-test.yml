@@ -1,0 +1,9 @@
+# Overlay para ops/compose.portal-test.yml. Solo datos ficticios y proveedor simulado.
+services:
+  backend:
+    environment:
+      SPRING_PROFILES_ACTIVE: netpagos-sandbox
+      NETPAGOS_MODE: SIMULATED
+      NETPAGOS_WEBHOOK_ENABLED: "true"
+      NETPAGOS_SETTLEMENT_ENABLED: "true"
+      NETPAGOS_ACTOR_ID: "1"

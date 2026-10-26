@@ -1,6 +1,7 @@
 param(
     [string]$BaseUrl = 'http://127.0.0.1:18080',
-    [string]$MailUrl = 'http://127.0.0.1:18025'
+    [string]$MailUrl = 'http://127.0.0.1:18025',
+    [switch]$NetPagos
 )
 $ErrorActionPreference = 'Stop'
 # A previous disposable run must not supply a stale OTP before the new mail arrives.
@@ -88,6 +89,34 @@ if ($paid.pagado -ne 1500.75 -or $paid.saldoPendiente -ne 0) { throw 'Saldo de c
 ExpectStatus 400 { Api GET "/api/portal-bomberos/cuotas?socioId=$($berta.id)" $null $session.token }
 ExpectStatus 401 { Api GET '/api/clubes' $null $session.token }
 ExpectStatus 401 { Api POST '/api/portal-bomberos/auth/verificar-codigo' @{ solicitudId=$request.solicitudId; codigo=$code } }
+if ($NetPagos) {
+    $pending = @($cuotas | Where-Object estado -ne 'PAGADA' | Sort-Object id)
+    foreach ($cuota in $pending) {
+        $null = Api POST "/api/netpagos-administracion/cuotas/$($cuota.id)/barra" @{
+            barcode=('900000000000'+$cuota.id); service='BOMBEROS_TEST'
+            validoHasta=$today.AddDays(10).ToString('yyyy-MM-dd'); referenciaConvenio='Barra ficticia, solo simulador'
+        } $admin.token
+    }
+    $clientKey=[guid]::NewGuid().ToString()
+    $order=Api POST '/api/portal-bomberos/pagos' @{
+        cuotaIds=@($pending | ForEach-Object { $_.id }); claveSolicitud=$clientKey; generoDocumento='3'
+    } $session.token
+    if (!$order.simulado -or $order.estado -ne 'READY' -or $order.total -ne 2501.25) { throw 'Intencion simulada incorrecta' }
+    ExpectStatus 400 { Api POST "/api/clubes/1/cuotas/$($pending[0].id)/pagos" @{ importe=1; medioPago='EFECTIVO' } $admin.token }
+    $null=Api POST "/api/netpagos-administracion/intenciones/$($order.id)/simular" @{ estado='Parcial'; paid=@($true,$false) } $admin.token
+    $settled=Api POST "/api/portal-bomberos/pagos/$($order.id)/actualizar" $null $session.token
+    if ($settled.estado -ne 'APPLIED' -or @($settled.cuotas | Where-Object acreditado -eq $true).Count -ne 1) { throw 'Conciliacion parcial incorrecta' }
+    $again=Api POST '/api/portal-bomberos/pagos' @{
+        cuotaIds=@($pending | ForEach-Object { $_.id }); claveSolicitud=$clientKey; generoDocumento='3'
+    } $session.token
+    if ($again.id -ne $order.id) { throw 'Reintento duplicado' }
+    $updated=@(Api GET '/api/portal-bomberos/cuotas' $null $session.token)
+    $failed=$updated | Where-Object id -eq $pending[1].id
+    if ($failed.saldoPendiente -ne 1000.50) { throw 'Se acredito un item fallido' }
+    $paidItems=@(Api GET "/api/clubes/1/cuotas/$($pending[0].id)/pagos" $null $admin.token)
+    if (@($paidItems | Where-Object medioPago -eq 'NET_PAGOS').Count -ne 1) { throw 'Pago externo ausente o duplicado' }
+    Write-Output 'OK NET Pagos: simulador sin red externa, barras ficticias, carrito, reserva, parcial por item e idempotencia.'
+}
 $null = Api POST '/api/portal-bomberos/auth/cerrar-sesion' $null $session.token
 ExpectStatus 401 { Api GET '/api/portal-bomberos/me' $null $session.token }
 Write-Output 'OK: MySQL, Flyway, activacion auditada, SMTP, OTP, cuotas propias, saldos parciales, aislamiento y logout.'

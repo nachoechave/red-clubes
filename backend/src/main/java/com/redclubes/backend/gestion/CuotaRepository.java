@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CuotaRepository extends JpaRepository<Cuota, Long> {
+    @Query(value = "select count(*) from net_payment_reservation where cuota_id = :id", nativeQuery = true)
+    long contarReservasNetPagos(Long id);
     List<Cuota> findByClubIdAndSocioIdOrderByVencimientoDesc(Long clubId, Long socioId);
     List<Cuota> findByClubId(Long clubId);
 
