@@ -35,6 +35,7 @@ public class SesionAuthenticationFilter extends OncePerRequestFilter {
         return HttpMethod.OPTIONS.matches(request.getMethod())
                 || com.redclubes.backend.solicitudes.PublicSolicitudController.esRutaPublica(request.getMethod(), path)
                 || path.startsWith("/api/portal-bomberos/")
+                || ("POST".equals(request.getMethod()) && "/api/integraciones/netpagos/webhook".equals(path))
                 || "/api/health".equals(path)
                 || "/api/auth/login".equals(path);
     }

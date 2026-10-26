@@ -90,7 +90,7 @@ Diseño previsto, pendiente de contrato técnico real:
 - La vuelta del navegador desde el proveedor nunca basta para marcar una cuota como pagada.
 - Definir paginación, límites, pruebas de contrato, ambiente de pruebas y versionado `/api/integraciones/v1`.
 
-No se implementa ni habilita un endpoint de Provincia NET hasta conocer su documentación, autenticación y datos requeridos. No se asume que el proveedor soporte un mecanismo particular.
+La preparación de Fase 2 ya cuenta con cliente de staging, intenciones, recepción de avisos y conciliación simulada, deshabilitados por defecto. Ver [NET Pagos: preparación y pendientes del contrato](NETPAGOS_FASE2_PREPARACION.md). No se habilita producción ni se supone un mecanismo de autenticación de webhook que el proveedor no haya confirmado.
 
 ## Verificación local del 23 de octubre de 2026
 

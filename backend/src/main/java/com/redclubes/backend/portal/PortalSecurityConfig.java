@@ -32,6 +32,8 @@ public class PortalSecurityConfig {
                                 "/api/portal-bomberos/auth/verificar-codigo").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/portal-bomberos/me", "/api/portal-bomberos/cuotas").hasRole("PORTAL_SOCIO")
                         .requestMatchers(HttpMethod.POST, "/api/portal-bomberos/auth/cerrar-sesion").hasRole("PORTAL_SOCIO")
+                        .requestMatchers(HttpMethod.POST, "/api/portal-bomberos/pagos", "/api/portal-bomberos/pagos/*/actualizar").hasRole("PORTAL_SOCIO")
+                        .requestMatchers(HttpMethod.GET, "/api/portal-bomberos/pagos/*").hasRole("PORTAL_SOCIO")
                         .anyRequest().denyAll())
                 .exceptionHandling(e -> e.authenticationEntryPoint((req, res, ex) -> errors.unauthorized(res, req.getRequestURI()))
                         .accessDeniedHandler((req, res, ex) -> errors.forbidden(res, req.getRequestURI())))

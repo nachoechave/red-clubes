@@ -5,5 +5,6 @@ public enum MedioPago {
     TRANSFERENCIA,
     TARJETA,
     OTRO,
-    MIGRACION
+    MIGRACION,
+    NET_PAGOS
 }
