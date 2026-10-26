@@ -113,6 +113,8 @@ Usar SemVer (`vMAJOR.MINOR.PATCH`) y el mismo tag inmutable para Git, `IMAGE_TAG
 
 ## Documentación
 
+- [Portal de Bomberos: identidad y cuotas, Fase 1](docs/PORTAL_BOMBEROS_FASE1.md)
+
 - [Auditoría del baseline de hardening](docs/AUDITORIA_TECNICA.md)
 - [Auditoría y alcance de preparación del piloto](docs/AUDITORIA_PILOTO.md)
 - [Primer despliegue Linux, DNS, HTTPS y operación](docs/PILOTO_SERVIDOR.md)

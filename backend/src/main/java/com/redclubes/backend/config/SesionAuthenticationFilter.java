@@ -33,6 +33,7 @@ public class SesionAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
         return HttpMethod.OPTIONS.matches(request.getMethod())
+                || path.startsWith("/api/portal-bomberos/")
                 || "/api/health".equals(path)
                 || "/api/auth/login".equals(path);
     }

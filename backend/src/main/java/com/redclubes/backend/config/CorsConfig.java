@@ -10,9 +10,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class CorsConfig {
 
     private final String[] allowedOrigins;
+    private final String[] portalOrigins;
 
-    public CorsConfig(@Value("${redclubes.cors.allowed-origins}") String allowedOrigins) {
+    public CorsConfig(@Value("${redclubes.cors.allowed-origins}") String allowedOrigins,
+                      @Value("${portal.allowed-origins:http://localhost:4300}") String portalOrigins) {
         this.allowedOrigins = allowedOrigins.split("\\s*,\\s*");
+        this.portalOrigins = portalOrigins.split("\\s*,\\s*");
     }
 
     @Bean
@@ -20,6 +23,11 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/api/portal-bomberos/**")
+                        .allowedOrigins(portalOrigins)
+                        .allowedMethods("GET", "POST", "OPTIONS")
+                        .allowedHeaders("Authorization", "Content-Type")
+                        .allowCredentials(false);
                 registry.addMapping("/api/**")
                         .allowedOrigins(allowedOrigins)
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")

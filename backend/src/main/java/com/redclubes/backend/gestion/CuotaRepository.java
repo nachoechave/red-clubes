@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CuotaRepository extends JpaRepository<Cuota, Long> {
+    List<Cuota> findByClubIdAndSocioIdOrderByVencimientoDesc(Long clubId, Long socioId);
     List<Cuota> findByClubId(Long clubId);
 
     Optional<Cuota> findByIdAndClubId(Long id, Long clubId);
