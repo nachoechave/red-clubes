@@ -1,4 +1,4 @@
-export type RolUsuario = 'SUPERUSUARIO' | 'ADMINISTRADOR' | 'OPERADOR' | 'PROFESOR';
+export type RolUsuario = 'SUPERUSUARIO' | 'ADMINISTRADOR' | 'OPERADOR' | 'PROFESOR' | 'CONSULTOR_GLOBAL';
 export type EstadoUsuario = 'ACTIVO' | 'INACTIVO';
 export type RolClub = 'ADMINISTRADOR' | 'OPERADOR' | 'PROFESOR';
 

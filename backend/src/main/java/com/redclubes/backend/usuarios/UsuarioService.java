@@ -59,12 +59,16 @@ public class UsuarioService {
         if (usuarioRepository.existsByDni(request.dni())) {
             throw new IllegalArgumentException("Ya existe un usuario con ese DNI");
         }
-        if (request.rol() == RolUsuario.SUPERUSUARIO && usuarioAutenticado.getRol() != RolUsuario.SUPERUSUARIO) {
+        if ((request.rol() == RolUsuario.SUPERUSUARIO || request.rol() == RolUsuario.CONSULTOR_GLOBAL) && usuarioAutenticado.getRol() != RolUsuario.SUPERUSUARIO) {
             throw new AccesoDenegadoException();
         }
 
-        List<AsignacionUsuarioRequest> asignaciones = normalizarAsignaciones(request.asignaciones(), request.clubId(), request.rolClub());
-        if (request.rol() != RolUsuario.SUPERUSUARIO && asignaciones.isEmpty()) {
+        boolean rolGlobal = request.rol() == RolUsuario.SUPERUSUARIO || request.rol() == RolUsuario.CONSULTOR_GLOBAL;
+        // No inferir una asignación a partir del club por defecto para roles globales.
+        List<AsignacionUsuarioRequest> asignaciones = rolGlobal
+                ? (request.asignaciones() == null ? List.of() : request.asignaciones())
+                : normalizarAsignaciones(request.asignaciones(), request.clubId(), request.rolClub());
+        if (request.rol() != RolUsuario.SUPERUSUARIO && request.rol() != RolUsuario.CONSULTOR_GLOBAL && asignaciones.isEmpty()) {
             throw new IllegalArgumentException("Los usuarios no superusuarios deben tener club y rol por club");
         }
         if (asignaciones.stream().anyMatch(asignacion -> asignacion == null
@@ -90,7 +94,7 @@ public class UsuarioService {
                 true
         ));
 
-        if (request.rol() != RolUsuario.SUPERUSUARIO) {
+        if (request.rol() != RolUsuario.SUPERUSUARIO && request.rol() != RolUsuario.CONSULTOR_GLOBAL) {
             guardarAsignaciones(usuario, asignaciones, usuarioAutenticado);
         }
 
@@ -131,8 +135,8 @@ public class UsuarioService {
     public UsuarioResponse actualizarAsignaciones(Long id, ActualizarAsignacionesUsuarioRequest request, Usuario usuarioAutenticado) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new UsuarioNoEncontradoException(id));
-        if (usuario.getRol() == RolUsuario.SUPERUSUARIO) {
-            throw new IllegalArgumentException("El superusuario no requiere asignaciones");
+        if (usuario.getRol() == RolUsuario.SUPERUSUARIO || usuario.getRol() == RolUsuario.CONSULTOR_GLOBAL) {
+            throw new IllegalArgumentException("Este rol global no admite asignaciones por club");
         }
 
         Set<Long> clubesAuditados = new HashSet<>(clubesDeUsuario(usuario));
@@ -211,9 +215,9 @@ public class UsuarioService {
     }
 
     private void validarCoherenciaRol(RolUsuario rolUsuario, List<AsignacionUsuarioRequest> asignaciones) {
-        if (rolUsuario == RolUsuario.SUPERUSUARIO) {
+        if (rolUsuario == RolUsuario.SUPERUSUARIO || rolUsuario == RolUsuario.CONSULTOR_GLOBAL) {
             if (!asignaciones.isEmpty()) {
-                throw new IllegalArgumentException("El superusuario no requiere asignaciones por club");
+                throw new IllegalArgumentException("El rol global no requiere asignaciones por club");
             }
             return;
         }
@@ -222,7 +226,7 @@ public class UsuarioService {
             case ADMINISTRADOR -> RolClub.ADMINISTRADOR;
             case OPERADOR -> RolClub.OPERADOR;
             case PROFESOR -> RolClub.PROFESOR;
-            case SUPERUSUARIO -> throw new IllegalStateException("Rol no esperado");
+            case SUPERUSUARIO, CONSULTOR_GLOBAL -> throw new IllegalStateException("Rol no esperado");
         };
         boolean inconsistente = asignaciones.stream()
                 .anyMatch(asignacion -> asignacion != null && asignacion.rolClub() != rolEsperado);

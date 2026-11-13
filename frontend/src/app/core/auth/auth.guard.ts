@@ -2,6 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthSessionStore } from './auth-session.store';
 
+const SECCIONES_CONSULTOR = new Set(['consulta-global', 'configuracion']);
 const SECCIONES_PROFESOR = new Set(['actividades', 'asistencias', 'configuracion']);
 const SECCIONES_OPERADOR = new Set([
   'dashboard', 'socios', 'socios/nuevo', 'actividades', 'inscripciones',
@@ -25,6 +26,9 @@ export const authGuard: CanActivateFn = (route) => {
 
   const usuario = session.usuario();
   const seccion = route.routeConfig?.path ?? '';
+  if (usuario?.rol === 'CONSULTOR_GLOBAL' && !SECCIONES_CONSULTOR.has(seccion)) {
+    return router.createUrlTree(['/consulta-global']);
+  }
   if (usuario?.rol === 'PROFESOR' && !professorCanAccess(seccion)) {
     return router.createUrlTree(['/actividades']);
   }
@@ -37,5 +41,5 @@ export const authGuard: CanActivateFn = (route) => {
 export const guestGuard: CanActivateFn = () => {
   const session = inject(AuthSessionStore);
   const router = inject(Router);
-  return session.token() ? router.createUrlTree(['/dashboard']) : true;
+  return session.token() ? router.createUrlTree([session.usuario()?.rol === 'CONSULTOR_GLOBAL' ? '/consulta-global' : '/dashboard']) : true;
 };

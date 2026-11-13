@@ -9,6 +9,7 @@ import { AuthService } from './core/auth/auth.service';
 import { ClubAsignado, RolClub, RolUsuario, UsuarioApp } from './core/auth/auth.models';
 import { ActividadVista, AsignacionUsuarioForm, AsistenciaVista, ClubVista, CuotaResumenSocio, CuotaVista, DashboardData, EstadoActividad, EstadoAsistencia, EstadoCuentaSocioVista, EstadoSocio, ImportacionDeudaHistoricaVista, ImportacionSociosVista, MedioPago, PagoVista, ReportesData, SocioVista } from './core/models/gestion.models';
 import { ClubService } from './features/clubes/club.service';
+import { ConsultaGlobalService, ClubConsulta, SocioConsulta } from './features/consulta-global/consulta-global.service';
 import { SocioService, ImportacionIntegralResultado, HistorialCuotaImportada } from './features/socios/socio.service';
 import { ActividadService } from './features/actividades/actividad.service';
 import { InscripcionService } from './features/inscripciones/inscripcion.service';
@@ -126,6 +127,33 @@ export class App {
   protected perfilMensaje = signal('');
   protected perfilError = signal('');
   protected currentUser = this.sessionStore.usuario;
+  private readonly consultaGlobalService = inject(ConsultaGlobalService);
+  protected consultaClubes = signal<ClubConsulta[]>([]);
+  protected consultaSocios = signal<SocioConsulta[]>([]);
+  protected consultaBusqueda = signal('');
+  protected consultaClubId = signal<number | null>(null);
+  protected consultaError = signal('');
+  protected consultaCargando = signal(false);
+  protected consultaFiltrados = computed(() => {
+    const q = this.consultaBusqueda().trim().toLowerCase();
+    const club = this.consultaClubId();
+    return this.consultaSocios().filter(s => (club === null || s.clubId === club) &&
+      (!q || `${s.nombre} ${s.apellido} ${s.dni} ${s.numeroSocio ?? ''}`.toLowerCase().includes(q)));
+  });
+  protected consultaClubNombre(id: number): string { return this.consultaClubes().find(c => c.id === id)?.nombre ?? 'Institución'; }
+  protected consultaTotalSocios = computed(() => this.consultaClubes().reduce((n, c) => n + c.sociosTotales, 0));
+  protected consultaTotalActivos = computed(() => this.consultaClubes().reduce((n, c) => n + c.sociosActivos, 0));
+  protected cargarConsultaGlobal(): void {
+    if (this.currentUser()?.rol !== 'CONSULTOR_GLOBAL') return;
+    this.consultaError.set(''); this.consultaCargando.set(true);
+    this.consultaGlobalService.listarClubes().subscribe({
+      next: clubes => { this.consultaClubes.set(clubes); this.consultaGlobalService.listarSocios().subscribe({
+        next: socios => { this.consultaSocios.set(socios); this.consultaCargando.set(false); },
+        error: () => { this.consultaError.set('No se pudieron obtener los socios.'); this.consultaCargando.set(false); }
+      }); },
+      error: () => { this.consultaError.set('No se pudieron obtener las instituciones.'); this.consultaCargando.set(false); }
+    });
+  }
   protected usuarios = signal<UsuarioApp[]>([]);
   protected usuarioAsignacionesEditando = signal<UsuarioApp | null>(null);
   protected actividadesPorClub = signal<Record<number, ActividadVista[]>>({});
@@ -208,7 +236,11 @@ export class App {
   protected configParticipantes: NombreParticipantes = 'SOCIOS';
   protected configuracionClubMensaje = signal('');
   protected moduloActivo(modulo: ModuloClub): boolean { return moduloHabilitado(this.clubActual(), modulo); }
-  protected seccionDisponible(seccion: string): boolean { return seccionHabilitada(this.clubActual(), seccion); }
+  protected seccionDisponible(seccion: string): boolean {
+    if (this.currentUser()?.rol === 'CONSULTOR_GLOBAL') return seccion === 'consulta-global' || seccion === 'configuracion';
+    if (seccion === 'consulta-global') return false;
+    return seccionHabilitada(this.clubActual(), seccion);
+  }
   protected asistenciaDisponible(grupo: ActividadVista): boolean {
     return this.moduloActivo('ASISTENCIAS') && grupo.asistenciaHabilitada !== false;
   }
@@ -264,6 +296,7 @@ export class App {
   protected asignacionesUsuarioForm: AsignacionUsuarioForm[] = [];
 
   protected readonly baseNavItems = [
+    { id: 'consulta-global', label: 'Consulta institucional', icon: 'users' },
     { id: 'dashboard', label: 'Dashboard', icon: 'home' },
     { id: 'socios', label: 'Socios', icon: 'users' },
     { id: 'solicitudes', label: 'Solicitudes', icon: 'add' },
@@ -306,6 +339,7 @@ export class App {
   protected esBomberos = computed(() => this.clubActivo()?.tipoInstitucion === 'BOMBEROS');
 
   protected navItems = computed(() => this.baseNavItems.filter((item) => {
+    if (this.currentUser()?.rol === 'CONSULTOR_GLOBAL') return item.id === 'consulta-global' || item.id === 'configuracion';
     if (item.id === 'solicitudes') return this.esAdministradorClubActual() && this.moduloActivo('PARTICIPANTES');
     if (!this.seccionDisponible(item.id)) return false;
     if (!this.esBomberos() && item.id === 'deudores') return false;
@@ -630,10 +664,11 @@ export class App {
     }).pipe(finalize(() => this.loginLoading.set(false))).subscribe({
       next: (response) => {
         this.cargarFormularioPerfil(response.usuario);
-        void this.router.navigate(['/dashboard']);
+        void this.router.navigate([response.usuario.rol === 'CONSULTOR_GLOBAL' ? '/consulta-global' : '/dashboard']);
         this.passwordActual = credentials.password;
         this.loginForm.reset();
-        this.cargarClubes();
+        if (response.usuario.rol === 'CONSULTOR_GLOBAL') this.cargarConsultaGlobal();
+        else this.cargarClubes();
 
         if (!response.usuario.debeCambiarPassword && this.puedeAdministrarUsuarios()) {
           this.cargarUsuarios();
@@ -659,7 +694,7 @@ export class App {
   }
 
   protected goTo(section: string): void {
-    if (!this.seccionDisponible(section)) section = 'configuracion';
+    if (!this.seccionDisponible(section)) section = this.currentUser()?.rol === 'CONSULTOR_GLOBAL' ? 'consulta-global' : 'configuracion';
     void this.router.navigateByUrl(section === 'nuevo-socio' ? '/socios/nuevo' : `/${section}`);
   }
 
@@ -740,6 +775,8 @@ export class App {
     this.asistencia.set([]);
     this.dashboard.set(null);
     this.reportes.set(null);
+    this.consultaSocios.set([]);
+    this.consultaClubes.set([]);
     this.loginForm.reset();
   }
 
@@ -759,7 +796,8 @@ export class App {
         this.passwordActual = '';
         this.nuevaPassword = '';
         this.confirmarNuevaPassword = '';
-        this.cargarClubes();
+        if (usuario.rol === 'CONSULTOR_GLOBAL') this.cargarConsultaGlobal();
+        else this.cargarClubes();
         if (this.puedeAdministrarUsuarios()) {
           this.cargarUsuarios();
         }
@@ -837,7 +875,7 @@ export class App {
   }
 
   protected rolVisible(rol: RolUsuario): string {
-    return { SUPERUSUARIO: 'Superusuario', ADMINISTRADOR: 'Administrador', OPERADOR: 'Operador', PROFESOR: 'Profesor' }[rol];
+    return { SUPERUSUARIO: 'Superusuario', ADMINISTRADOR: 'Administrador', OPERADOR: 'Operador', PROFESOR: 'Profesor', CONSULTOR_GLOBAL: 'Consultor institucional' }[rol];
   }
 
   protected sincronizarRolNuevoUsuario(rol: RolUsuario): void {
@@ -864,7 +902,7 @@ export class App {
     this.usuarioError.set('');
     const payload = {
       ...this.nuevoUsuario,
-      asignaciones: this.nuevoUsuario.rol === 'SUPERUSUARIO' ? [] : [{
+      asignaciones: ['SUPERUSUARIO', 'CONSULTOR_GLOBAL'].includes(this.nuevoUsuario.rol) ? [] : [{
         clubId: this.nuevoUsuario.clubId,
         rolClub: this.nuevoUsuario.rolClub,
         actividadIds: [],
@@ -1803,11 +1841,12 @@ export class App {
       const permitidaProfesor = ['actividades', 'asistencias', 'configuracion'].includes(rutaActual)
         || rutaActual.startsWith('actividades/');
       const permitidaOperador = !['usuarios', 'clubes', 'solicitudes'].includes(rutaActual);
-      if (rutaActual === 'login' || (usuario.rol === 'PROFESOR' && !permitidaProfesor)
+      if (rutaActual === 'login' || (usuario.rol === 'CONSULTOR_GLOBAL' && !['consulta-global', 'configuracion'].includes(rutaActual)) || (usuario.rol === 'PROFESOR' && !permitidaProfesor)
         || (usuario.rol === 'OPERADOR' && !permitidaOperador)) {
-        void this.router.navigate([usuario.rol === 'PROFESOR' ? '/actividades' : '/dashboard']);
+        void this.router.navigate([usuario.rol === 'CONSULTOR_GLOBAL' ? '/consulta-global' : usuario.rol === 'PROFESOR' ? '/actividades' : '/dashboard']);
       }
-      this.cargarClubes();
+      if (usuario.rol === 'CONSULTOR_GLOBAL') this.cargarConsultaGlobal();
+      else this.cargarClubes();
       if (!usuario.debeCambiarPassword && this.puedeAdministrarUsuarios()) {
         this.cargarUsuarios();
       }
