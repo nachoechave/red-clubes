@@ -349,6 +349,32 @@ export class App {
     });
   });
 
+  // Declaraciones históricas: no tienen importe, vencimiento ni comprobante contable.
+  // Nunca se agregan a deudaTotal ni a los indicadores de recaudación.
+  protected historialCuotasFiltrado = computed(() => {
+    const socioId = this.selectedMember();
+    const busqueda = this.socioBusqueda().trim().toLowerCase();
+    return this.historialIntegral()
+      .filter((registro) => socioId === 'TODOS' || String(registro.socioId) === socioId)
+      .filter((registro) => {
+        const texto = `${registro.socio} ${registro.dni} ${registro.periodo} ${registro.estado}`.toLowerCase();
+        return !busqueda || texto.includes(busqueda);
+      })
+      .sort((a, b) => b.periodo.localeCompare(a.periodo) || a.socio.localeCompare(b.socio));
+  });
+
+  protected resumenHistoricoPorSocio = computed(() => {
+    const mapa = new Map<number, { pagadas: number; pendientes: number; ultimoPeriodo: string | null }>();
+    for (const registro of this.historialIntegral()) {
+      const actual = mapa.get(registro.socioId) ?? { pagadas: 0, pendientes: 0, ultimoPeriodo: null };
+      if (registro.estado === 'PAGADO') actual.pagadas++;
+      if (registro.estado === 'PENDIENTE') actual.pendientes++;
+      if (actual.ultimoPeriodo === null || registro.periodo > actual.ultimoPeriodo) actual.ultimoPeriodo = registro.periodo;
+      mapa.set(registro.socioId, actual);
+    }
+    return mapa;
+  });
+
   protected cuotasFiltradas = computed(() => {
     const socioId = this.selectedMember();
     const busqueda = this.socioBusqueda().trim().toLowerCase();
@@ -1796,6 +1822,8 @@ export class App {
     this.actividades.set([]);
     this.socioActividades.set({});
     this.cuotas.set([]);
+    this.historialIntegral.set([]);
+    this.mostrarHistorialIntegral.set(false);
     this.cuotasCargadas.set(false);
     this.asistencia.set([]);
     this.dashboard.set(null);
@@ -1918,6 +1946,10 @@ export class App {
         this.cuotasCargadas.set(true);
         this.dataError.set('No se pudieron cargar las cuotas.');
       },
+    });
+    this.socioService.listarHistorialIntegral(clubId).subscribe({
+      next: (historial) => this.historialIntegral.set(historial),
+      error: () => this.dataError.set('No se pudo cargar el historial de cuotas importadas.'),
     });
     this.cuotaService.estadoSocios(clubId).subscribe({
       next: (estadoCuenta) => this.estadoCuentaSocios.set(estadoCuenta),
