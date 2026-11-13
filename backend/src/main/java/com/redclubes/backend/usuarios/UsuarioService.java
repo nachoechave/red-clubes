@@ -63,7 +63,11 @@ public class UsuarioService {
             throw new AccesoDenegadoException();
         }
 
-        List<AsignacionUsuarioRequest> asignaciones = normalizarAsignaciones(request.asignaciones(), request.clubId(), request.rolClub());
+        boolean rolGlobal = request.rol() == RolUsuario.SUPERUSUARIO || request.rol() == RolUsuario.CONSULTOR_GLOBAL;
+        // No inferir una asignación a partir del club por defecto para roles globales.
+        List<AsignacionUsuarioRequest> asignaciones = rolGlobal
+                ? (request.asignaciones() == null ? List.of() : request.asignaciones())
+                : normalizarAsignaciones(request.asignaciones(), request.clubId(), request.rolClub());
         if (request.rol() != RolUsuario.SUPERUSUARIO && request.rol() != RolUsuario.CONSULTOR_GLOBAL && asignaciones.isEmpty()) {
             throw new IllegalArgumentException("Los usuarios no superusuarios deben tener club y rol por club");
         }
