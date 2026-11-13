@@ -4,5 +4,6 @@ public enum RolUsuario {
     SUPERUSUARIO,
     ADMINISTRADOR,
     OPERADOR,
-    PROFESOR
+    PROFESOR,
+    CONSULTOR_GLOBAL
 }
