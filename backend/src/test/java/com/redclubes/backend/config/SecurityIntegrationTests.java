@@ -8,12 +8,14 @@ import com.redclubes.backend.usuarios.SessionTokenService;
 import com.redclubes.backend.usuarios.Usuario;
 import com.redclubes.backend.usuarios.UsuarioRepository;
 import com.redclubes.backend.usuarios.PasswordService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.context.ApplicationContext;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -41,6 +43,7 @@ class SecurityIntegrationTests {
     @Autowired private SessionTokenService sessionTokenService;
     @Autowired private PasswordService passwordService;
     @Autowired private ObjectMapper objectMapper;
+    @Autowired private ApplicationContext context;
 
     @BeforeEach
     void limpiarDatos() {
@@ -59,7 +62,14 @@ class SecurityIntegrationTests {
         mockMvc.perform(get("/api/clubes"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401))
-                .andExpect(jsonPath("$.error").value("AUTHENTICATION_REQUIRED"));
+                .andExpect(jsonPath("$.error").value("AUTHENTICATION_REQUIRED"))
+                .andExpect(jsonPath("$.timestamp").isString())
+                .andExpect(jsonPath("$.path").value("/api/clubes"));
+    }
+
+    @Test
+    void bootNoGeneraUsuarioDeSeguridadPorDefecto() {
+        assertTrue(context.getBeansOfType(UserDetailsService.class).isEmpty());
     }
 
     @Test

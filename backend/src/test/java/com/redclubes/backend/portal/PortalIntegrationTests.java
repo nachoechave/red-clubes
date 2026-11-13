@@ -1,13 +1,13 @@
 package com.redclubes.backend.portal;
 
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.databind.*;
 import com.redclubes.backend.clubes.*;
 import com.redclubes.backend.socios.*;
 import com.redclubes.backend.gestion.*;
 import com.redclubes.backend.usuarios.*;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.*;
 import org.springframework.context.annotation.*;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -105,6 +105,8 @@ class PortalIntegrationTests {
         activate(ana);
         String id = request(ana.getDni());
         return mapper.readTree(verify(id, delivered.getLast()).andExpect(status().isOk())
+                .andExpect(jsonPath("$.tokenType").value("Bearer"))
+                .andExpect(jsonPath("$.expiresAt").value(clock.instant().plusSeconds(900).toString()))
                 .andReturn().getResponse().getContentAsString()).get("token").asText();
     }
     @Test void nonexistentAndUnverifiedHaveSameContractAndNoDelivery() throws Exception {
@@ -267,7 +269,8 @@ class PortalIntegrationTests {
     }
     @Test void partialPaymentsAndCancellationsUseTheAdministrativeBalance() throws Exception {
         String token = login();
-        cuota(ana, "2026-04", EstadoCuota.PENDIENTE, LocalDate.now(clock).plusDays(10));
+        LocalDate vencimiento = LocalDate.now(clock).plusDays(10);
+        cuota(ana, "2026-04", EstadoCuota.PENDIENTE, vencimiento);
         Long cuotaId = cuotas.findByClubIdAndSocioIdOrderByVencimientoDesc(bomberos.getId(), ana.getId()).getFirst().getId();
         String paymentPath = "/api/clubes/1/cuotas/" + cuotaId + "/pagos";
         String result = mvc.perform(post(paymentPath).header("Authorization", adminHeader).contentType(APPLICATION_JSON)
@@ -278,6 +281,7 @@ class PortalIntegrationTests {
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].importe").value(1500.75))
                 .andExpect(jsonPath("$[0].pagado").value(500.25))
                 .andExpect(jsonPath("$[0].saldoPendiente").value(1000.50))
+                .andExpect(jsonPath("$[0].vencimiento").value(vencimiento.toString()))
                 .andExpect(jsonPath("$[0].estado").value("PENDIENTE"));
         mvc.perform(post(paymentPath + "/" + pagoId + "/anulacion").header("Authorization", adminHeader)
                 .contentType(APPLICATION_JSON).content("{\"motivo\":\"Ensayo ficticio\"}"))

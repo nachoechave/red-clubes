@@ -1,6 +1,6 @@
 package com.redclubes.backend.netpagos;
 
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.databind.*;
 import java.net.URI;
 import java.net.http.*;
 import java.io.ByteArrayOutputStream;

@@ -1,11 +1,13 @@
 package com.redclubes.backend.netpagos;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redclubes.backend.usuarios.SessionTokenService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import java.time.*;
 import java.util.*;
 
@@ -26,10 +28,10 @@ public class NetWebhookController {
         if (!config.webhookEnabled) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         allowed(request.getRemoteAddr());
         byte[] bytes = request.getInputStream().readNBytes(16385);
-        if (bytes.length > 16384) throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE);
-        com.fasterxml.jackson.databind.JsonNode payload;
+        if (bytes.length > 16384) throw new ResponseStatusException(HttpStatus.CONTENT_TOO_LARGE);
+        JsonNode payload;
         try { payload = json.readTree(bytes); }
-        catch (com.fasterxml.jackson.core.JsonProcessingException e) { throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "JSON invalido"); }
+        catch (JacksonException e) { throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "JSON invalido"); }
         if (payload == null || !payload.isObject()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "JSON invalido");
         service.webhook(payload);
         // Local acknowledgement only. NET must confirm the required success code/retry contract.
