@@ -89,6 +89,7 @@
         <span>Red Clubes Ensenada</span>
         <strong>{{ sectionTitle() }}</strong>
       </div>
+      @if (currentUser()?.rol !== 'CONSULTOR_GLOBAL') {
       <label class="club-switcher">
         @if (logoClubActivo()) {
           <img class="club-switcher-logo" [src]="logoClubActivo()!" alt="" aria-hidden="true" />
@@ -99,6 +100,7 @@
           }
         </select>
       </label>
+      }
       <div class="user-menu">
         <button class="user-button" type="button" aria-label="Abrir menu de usuario" (click)="toggleUserMenu()">
           <div class="avatar">{{ inicialesUsuarioActual() }}</div>
@@ -139,6 +141,7 @@
             >
             <span class="nav-icon" aria-hidden="true">
               @switch (item.id) {
+                @case ('consulta-global') { <svg lucideUsers></svg> }
                 @case ('dashboard') {
                   <svg lucideHouse></svg>
                 }
@@ -203,6 +206,44 @@
           </div>
         }
         @switch (activeSection()) {
+          @case ('consulta-global') {
+            <div class="page-head row">
+              <div><p class="eyebrow">Consulta institucional · Solo lectura</p><h2>Red de clubes y participantes</h2><p>Información disponible de todas las instituciones. Sin permisos de modificación.</p></div>
+              <button class="secondary-action compact" type="button" (click)="cargarConsultaGlobal()">Actualizar información</button>
+            </div>
+            @if (consultaError()) { <p class="form-error panel-error" role="alert">{{ consultaError() }}</p> }
+            @if (consultaCargando()) { <p class="help-text" role="status">Cargando información institucional…</p> }
+            <div class="metric-grid civic-kpis">
+              <article class="metric-card metric-summary"><span class="kpi-label">Instituciones</span><strong>{{ consultaClubes().length }}</strong></article>
+              <article class="metric-card metric-summary"><span class="kpi-label">Participantes registrados</span><strong>{{ consultaTotalSocios() }}</strong></article>
+              <article class="metric-card metric-summary"><span class="kpi-label">Participantes activos</span><strong>{{ consultaTotalActivos() }}</strong></article>
+            </div>
+            <section class="panel">
+              <div class="panel-title"><h3>Directorio de participantes</h3></div>
+              <p class="help-text">El historial de pagos indica estados declarados en planillas, no importes cobrados ni deuda monetaria.</p>
+              <div class="filters">
+                <label><span>Institución</span>
+                  <select [ngModel]="consultaClubId()" (ngModelChange)="consultaClubId.set($event)">
+                    <option [ngValue]="null">Todas las instituciones</option>
+                    @for (club of consultaClubes(); track club.id) { <option [ngValue]="club.id">{{ club.nombre }}</option> }
+                  </select>
+                </label>
+                <label><span>Buscar participante</span><input type="search" placeholder="Nombre, DNI o número" [ngModel]="consultaBusqueda()" (ngModelChange)="consultaBusqueda.set($event)" /></label>
+              </div>
+              <div class="table-card compact-table"><table>
+                <thead><tr><th>Institución</th><th>Socio</th><th>N°</th><th>DNI</th><th>Estado</th><th>Teléfono</th><th>Email</th><th>Dirección</th><th>Pagos históricos</th><th>Pendientes históricos</th></tr></thead>
+                <tbody>
+                  @for (socio of consultaFiltrados(); track socio.id) {
+                    <tr><td>{{ consultaClubNombre(socio.clubId) }}</td><td>{{ socio.nombre }} {{ socio.apellido }}</td>
+                      <td>{{ socio.numeroSocio ?? '—' }}</td><td>{{ socio.dni }}</td><td>{{ socio.estado }}</td>
+                      <td>{{ socio.telefono || '—' }}</td><td>{{ socio.email || '—' }}</td>
+                      <td>{{ socio.direccion || '—' }}</td><td>{{ socio.mesesPagadosHistoricos }}</td>
+                      <td>{{ socio.mesesPendientesHistoricos }}</td></tr>
+                  } @empty { <tr><td colspan="10" class="empty-cell">No hay resultados para estos filtros.</td></tr> }
+                </tbody>
+              </table></div>
+            </section>
+          }
           @case ('solicitudes') {
             @if (esAdministradorClubActual() && moduloActivo('PARTICIPANTES')) {
               <app-solicitudes [clubId]="clubActivoId()" (aprobada)="actualizarTrasSolicitud()" />
@@ -1595,10 +1636,11 @@
                     @if (esSuperusuario()) {
                       <option value="ADMINISTRADOR">Administrador</option>
                       <option value="SUPERUSUARIO">Superusuario</option>
+                      <option value="CONSULTOR_GLOBAL">Consultor global (solo lectura)</option>
                     }
                   </select>
                 </label>
-                @if (nuevoUsuario.rol !== 'SUPERUSUARIO') {
+                @if (nuevoUsuario.rol !== 'SUPERUSUARIO' && nuevoUsuario.rol !== 'CONSULTOR_GLOBAL') {
                   <label>
                     <span>Club</span>
                     <select name="clubUsuario" [(ngModel)]="nuevoUsuario.clubId">
@@ -1636,7 +1678,7 @@
                       <td>{{ usuario.nombre }} {{ usuario.apellido }}</td>
                       <td>{{ rolVisible(usuario.rol) }}</td>
                       <td>
-                        @if (usuario.rol === 'SUPERUSUARIO') {
+                        @if (usuario.rol === 'SUPERUSUARIO' || usuario.rol === 'CONSULTOR_GLOBAL') {
                           Todos los clubes
                         } @else {
                           @for (club of usuario.clubes; track club.clubId) {
@@ -1647,7 +1689,7 @@
                       <td><span class="badge" [class.inactive]="usuario.estado === 'INACTIVO'">{{ usuario.estado }}</span></td>
                       <td>{{ usuario.debeCambiarPassword ? 'Debe cambiar contrasena' : 'Actualizada' }}</td>
                       <td class="actions">
-                        @if (usuario.rol !== 'SUPERUSUARIO') {
+                        @if (usuario.rol !== 'SUPERUSUARIO' && usuario.rol !== 'CONSULTOR_GLOBAL') {
                           <button class="secondary-action compact" type="button" (click)="editarAsignacionesUsuario(usuario)">Asignar</button>
                         }
                         @if (usuario.rol !== 'SUPERUSUARIO' && usuario.estado === 'ACTIVO') {
