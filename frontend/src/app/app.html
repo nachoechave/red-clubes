@@ -1091,9 +1091,19 @@
                     @for (resumen of cuotasResumenSocios(); track resumen.socioId) {
                       <tr>
                         <td><strong>{{ resumen.socioNombre }}</strong><small class="muted-cell">{{ resumen.socioDni }}</small></td>
-                        <td><span class="badge" [class.pending]="resumen.estado !== 'AL_DIA'">{{ resumen.estado === 'AL_DIA' ? 'Al dia' : 'No al dia' }}</span></td>
-                        <td>{{ resumen.ultimoMes }}</td>
-                        <td>{{ resumen.pendientes }}</td>
+                        <td>
+                          @if (resumen.estado !== 'AL_DIA') {
+                            <span class="badge pending">Cuotas financieras pendientes</span>
+                          } @else if ((resumenHistoricoPorSocio().get(resumen.socioId)?.pendientes ?? 0) > 0) {
+                            <span class="badge pending">Pendientes históricos (sin importe)</span>
+                          } @else if ((resumenHistoricoPorSocio().get(resumen.socioId)?.pagadas ?? 0) > 0) {
+                            <span class="badge">Pagos históricos declarados</span>
+                          } @else {
+                            <span class="badge">Sin cuotas registradas</span>
+                          }
+                        </td>
+                        <td>{{ resumenHistoricoPorSocio().get(resumen.socioId)?.ultimoPeriodo ?? resumen.ultimoMes }}</td>
+                        <td>{{ resumen.pendientes }} financieras / {{ resumenHistoricoPorSocio().get(resumen.socioId)?.pendientes ?? 0 }} históricas</td>
                         <td><button type="button" class="mini-action" (click)="verDetalleCuotasSocio(resumen.socioId)">Ver meses</button></td>
                       </tr>
                     } @empty {
@@ -1165,6 +1175,35 @@
                 </table>
               }
             </div>
+            <section class="panel" aria-label="Historial mensual de cuotas importadas">
+              <div class="panel-title">
+                <div>
+                  <span class="panel-kicker">Historial importado</span>
+                  <h3>Cuotas mensuales declaradas</h3>
+                </div>
+              </div>
+              <p class="help-text">Estos estados fueron informados en un CSV. No son recibos, no acreditan importes y no suman a la recaudación ni a la deuda monetaria. Los meses sin información no se muestran.</p>
+              <div class="table-card compact-table">
+                <table>
+                  <thead>
+                    <tr><th>Participante</th><th>Período</th><th>Estado informado</th><th>Importe</th><th>Origen</th></tr>
+                  </thead>
+                  <tbody>
+                    @for (registro of historialCuotasFiltrado(); track registro.socioId + '-' + registro.periodo) {
+                      <tr>
+                        <td><strong>{{ registro.socio }}</strong><small class="muted-cell">{{ registro.dni }}</small></td>
+                        <td>{{ registro.periodo }}</td>
+                        <td><span class="badge" [class.pending]="registro.estado === 'PENDIENTE'">{{ registro.estado === 'PAGADO' ? 'Pagó (histórico)' : 'Pendiente (histórico)' }}</span></td>
+                        <td>No informado</td>
+                        <td>CSV importado</td>
+                      </tr>
+                    } @empty {
+                      <tr><td colspan="5" class="empty-cell">No hay mensualidades históricas registradas para este participante o búsqueda.</td></tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </section>
           }
 
           @case ('asistencias') {
