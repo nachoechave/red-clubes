@@ -1,0 +1,41 @@
+# Solo ensayo local, credenciales deliberadamente ficticias. No usar en produccion.
+# docker compose -p portal-phase1 -f ops/compose.portal-test.yml up --build -d
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: fictional-local-root-only
+      MYSQL_DATABASE: portal_phase1
+      MYSQL_USER: portal_app
+      MYSQL_PASSWORD: fictional-local-app-only
+    ports: ["127.0.0.1:13316:3306"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pfictional-local-root-only"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  mail:
+    image: axllent/mailpit:v1.30.0
+    ports: ["127.0.0.1:18025:8025"]
+  backend:
+    build: ../backend
+    ports: ["127.0.0.1:18080:8080"]
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:mysql://mysql:3306/portal_phase1?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Argentina/Buenos_Aires
+      DB_USERNAME: portal_app
+      DB_PASSWORD: fictional-local-app-only
+      PORTAL_ENABLED: "true"
+      PORTAL_CLUB_ID: "1"
+      PORTAL_SECRET: fictional-local-portal-secret-replace-in-production
+      PORTAL_ALLOWED_ORIGINS: http://localhost:4300
+      SMTP_HOST: mail
+      SMTP_PORT: "1025"
+      BOOTSTRAP_SUPERUSER_ENABLED: "true"
+      BOOTSTRAP_SUPERUSER_DNI: "99887766"
+      BOOTSTRAP_SUPERUSER_PASSWORD: fictional-local-admin-only
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mail:
+        condition: service_started

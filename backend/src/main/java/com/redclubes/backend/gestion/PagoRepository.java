@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PagoRepository extends JpaRepository<Pago, Long> {
+    Optional<Pago> findByReferenciaExterna(String referencia);
     boolean existsByClubIdAndCuotaIdAndEstado(Long clubId, Long cuotaId, EstadoPago estado);
     List<Pago> findByClubIdAndCuotaIdOrderByIdDesc(Long clubId, Long cuotaId);
     List<Pago> findByClubIdAndCuotaIdAndEstado(Long clubId, Long cuotaId, EstadoPago estado);

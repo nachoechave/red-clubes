@@ -57,10 +57,10 @@ public class GestionController {
         Usuario usuario = authService.obtenerUsuarioAutenticado(authorizationHeader);
         authService.exigirAccesoAClub(authorizationHeader, clubId);
         if (authService.puedeOperarClub(usuario, clubId)) {
-            return gestionService.listarActividades(clubId);
+            return soloActividades(gestionService.listarActividades(clubId));
         }
 
-        return gestionService.listarActividades(clubId, authService.actividadesPermitidas(usuario, clubId));
+        return soloActividades(gestionService.listarActividades(clubId, authService.actividadesPermitidas(usuario, clubId)));
     }
 
     @PostMapping("/actividades")
@@ -93,7 +93,7 @@ public class GestionController {
             @PathVariable Long socioId
     ) {
         authService.exigirOperadorDeClub(authorizationHeader, clubId);
-        return gestionService.listarActividadesDeSocio(clubId, socioId);
+        return soloActividades(gestionService.listarActividadesDeSocio(clubId, socioId));
     }
 
     @PutMapping("/socios/{socioId}/actividades")
@@ -105,7 +105,7 @@ public class GestionController {
     ) {
         Usuario usuario = authService.obtenerUsuarioAutenticado(authorizationHeader);
         authService.exigirOperadorDeClub(authorizationHeader, clubId);
-        return gestionService.actualizarActividadesDeSocio(clubId, socioId, request, usuario);
+        return gestionService.actualizarActividadesHistoricasDeSocio(clubId, socioId, request, usuario);
     }
 
     @GetMapping("/actividades/{actividadId}/asistencias/{fecha}")
@@ -168,5 +168,9 @@ public class GestionController {
             throw new IllegalArgumentException("Estado de socio invalido");
         }
         return reporteService.reportes(clubId, anioSeleccionado, fechaDesde, fechaHasta, actividadId, estadoSocio);
+    }
+
+    private List<ActividadResponse> soloActividades(List<ActividadResponse> grupos) {
+        return grupos.stream().filter(grupo -> grupo.tipo() == TipoGrupo.ACTIVIDAD).toList();
     }
 }

@@ -1,4 +1,6 @@
 # Sistema operativo
+.tools/
+.worktrees/
 .DS_Store
 Thumbs.db
 
@@ -21,6 +23,8 @@ build/
 .env
 .env.*
 !.env.example
+!.env.production.example
+.deploy-records/
 application-local.properties
 
 # Logs

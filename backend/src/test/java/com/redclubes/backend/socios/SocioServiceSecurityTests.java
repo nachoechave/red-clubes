@@ -43,7 +43,7 @@ class SocioServiceSecurityTests {
         Club club = new Club();
         club.setId(1L);
 
-        when(clubRepository.findById(1L)).thenReturn(Optional.of(club));
+        when(clubRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(club));
         when(socioRepository.findByClubIdOrderByIdAsc(1L)).thenReturn(List.of());
         when(socioRepository.save(any(Socio.class))).thenAnswer(invocation -> {
             Socio socio = invocation.getArgument(0);
@@ -77,7 +77,7 @@ class SocioServiceSecurityTests {
         existente.setDni("99999999");
         existente.setNumeroSocio(3);
 
-        when(clubRepository.findById(1L)).thenReturn(Optional.of(club));
+        when(clubRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(club));
         when(socioRepository.findByClubIdOrderByIdAsc(1L)).thenReturn(List.of(existente));
 
         String csv = "nombre;apellido;dni\n"

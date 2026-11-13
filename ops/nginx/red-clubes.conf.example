@@ -1,0 +1,45 @@
+# HOST: copiar despues de emitir certificado. Sustituir dominio y 8080 por APP_PORT.
+# Nginx NO interpola ${APP_PORT} desde .env. Incluir en contexto http{}.
+log_format redclubes_host '$time_iso8601 client=$remote_addr method=$request_method '
+                          'uri=$uri status=$status';
+server {
+    listen 80;
+    # listen [::]:80;
+    server_name redclubes.example.com;
+    server_tokens off;
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/letsencrypt;
+        default_type text/plain;
+        try_files $uri =404;
+    }
+    location / { return 308 https://redclubes.example.com$request_uri; }
+}
+server {
+    listen 443 ssl;
+    # listen [::]:443 ssl;
+    server_name redclubes.example.com;
+    server_tokens off;
+    ssl_certificate /etc/letsencrypt/live/redclubes.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/redclubes.example.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305;
+    ssl_session_cache shared:RedClubesTLS:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+    client_max_body_size 2m;
+    access_log /var/log/nginx/red-clubes-access.log redclubes_host;
+    error_log /var/log/nginx/red-clubes-error.log warn;
+    # CSP/HSTS y otros headers de la app provienen de Nginx Docker.
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Forwarded "";
+        proxy_set_header Connection "";
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 30s;
+    }
+}

@@ -16,6 +16,22 @@ import jakarta.validation.constraints.NotNull;
 @Entity
 public class Actividad {
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    private TipoGrupo tipo = TipoGrupo.ACTIVIDAD;
+    private String disciplina;
+    private String anioCategoria;
+    private boolean asistenciaHabilitada = true;
+
+    public TipoGrupo getTipo() { return tipo; }
+    public void setTipo(TipoGrupo tipo) { this.tipo = tipo; }
+    public String getDisciplina() { return disciplina; }
+    public void setDisciplina(String disciplina) { this.disciplina = disciplina; }
+    public String getAnioCategoria() { return anioCategoria; }
+    public void setAnioCategoria(String anioCategoria) { this.anioCategoria = anioCategoria; }
+    public boolean isAsistenciaHabilitada() { return asistenciaHabilitada; }
+    public void setAsistenciaHabilitada(boolean habilitada) { this.asistenciaHabilitada = habilitada; }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -23,23 +39,19 @@ public class Actividad {
     @NotBlank
     private String nombre;
 
-    @NotBlank
     private String profesor;
 
     @ManyToOne
     private Usuario profesorUsuario;
 
-    @NotBlank
     private String dias;
 
-    @NotBlank
     private String categoria;
 
-    @NotBlank
     private String icono;
 
     @Min(1)
-    private int cupo;
+    private Integer cupo;
 
     @Min(0)
     private int inscriptos;
@@ -81,7 +93,7 @@ public class Actividad {
         return icono;
     }
 
-    public int getCupo() {
+    public Integer getCupo() {
         return cupo;
     }
 
@@ -128,7 +140,7 @@ public class Actividad {
         this.icono = icono;
     }
 
-    public void setCupo(int cupo) {
+    public void setCupo(Integer cupo) {
         this.cupo = cupo;
     }
 

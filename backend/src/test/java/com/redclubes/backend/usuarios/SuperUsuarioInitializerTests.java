@@ -22,13 +22,13 @@ class SuperUsuarioInitializerTests {
 
     @Test
     void creaSuperusuarioSoloConCredencialesConfiguradas() throws Exception {
-        when(usuarioRepository.existsByDni("41131131")).thenReturn(false);
+        when(usuarioRepository.existsByDni("41131132")).thenReturn(false);
         when(passwordService.generarHash("password-inicial-seguro")).thenReturn("hash-seguro");
 
         SuperUsuarioInitializer initializer = new SuperUsuarioInitializer(
                 usuarioRepository,
                 passwordService,
-                "41131131",
+                "41131132",
                 "password-inicial-seguro",
                 "Administrador",
                 "Inicial"
@@ -38,7 +38,7 @@ class SuperUsuarioInitializerTests {
         ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
         verify(usuarioRepository).save(captor.capture());
         Usuario usuario = captor.getValue();
-        assertEquals("41131131", usuario.getDni());
+        assertEquals("41131132", usuario.getDni());
         assertEquals("hash-seguro", usuario.getPasswordHash());
         assertEquals(RolUsuario.SUPERUSUARIO, usuario.getRol());
         assertEquals(EstadoUsuario.ACTIVO, usuario.getEstado());

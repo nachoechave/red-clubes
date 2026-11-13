@@ -7,8 +7,13 @@ export type TipoInstitucion = 'CLUB' | 'CENTRO_JUBILADOS' | 'BOMBEROS';
 export type EstadoActividad = 'ACTIVA' | 'INACTIVA';
 export type EstadoAsistencia = 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADO';
 export type MedioPago = 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA' | 'OTRO';
+export type TipoGrupo = 'ACTIVIDAD' | 'TALLER' | 'CATEGORIA_DEPORTIVA';
+export type ModuloClub = 'PARTICIPANTES' | 'CATEGORIAS' | 'ACTIVIDADES' | 'TALLERES' | 'PROFESORES' | 'ASISTENCIAS' | 'CUOTAS';
+export type NombreParticipantes = 'SOCIOS' | 'JUGADORES' | 'ALUMNOS' | 'PARTICIPANTES';
 
 export interface ClubVista {
+  modulos?: ModuloClub[];
+  nombreParticipantes?: NombreParticipantes;
   id: number;
   nombre: string;
   direccion: string;
@@ -56,6 +61,10 @@ export interface SocioVista {
 }
 
 export interface ActividadVista {
+  tipo?: TipoGrupo;
+  disciplina?: string | null;
+  anioCategoria?: string | null;
+  asistenciaHabilitada?: boolean;
   id: number;
   clubId: number;
   clubNombre: string;
@@ -65,7 +74,7 @@ export interface ActividadVista {
   dias: string;
   categoria: string;
   icono: string;
-  cupo: number;
+  cupo: number | null;
   inscriptos: number;
   estado: EstadoActividad;
 }
@@ -90,7 +99,7 @@ export interface PagoVista {
   cuotaId: number;
   importe: number;
   fechaPago?: string | null;
-  medioPago: MedioPago | 'MIGRACION';
+  medioPago: MedioPago | 'MIGRACION' | 'NET_PAGOS';
   usuarioResponsableId?: number | null;
   observaciones?: string | null;
   estado: 'ACTIVO' | 'ANULADO';

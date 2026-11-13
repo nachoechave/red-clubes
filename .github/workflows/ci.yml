@@ -8,6 +8,19 @@ permissions:
   contents: read
 
 jobs:
+  pilot-ops:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: frontend/.nvmrc
+      - name: Test conservative pilot operations
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y age
+          node --test ops/tests/pilot.test.cjs
+
   secrets:
     runs-on: ubuntu-latest
     steps:
@@ -85,7 +98,7 @@ jobs:
 
   containers:
     runs-on: ubuntu-latest
-    needs: [secrets, backend, frontend, backend-dependencies]
+    needs: [secrets, backend, frontend, backend-dependencies, pilot-ops]
     env:
       MYSQL_PASSWORD: ci-app-password
       MYSQL_ROOT_PASSWORD: ci-root-password
@@ -97,6 +110,17 @@ jobs:
         run: docker compose config --quiet
       - name: Build images
         run: docker compose build
+      - name: Validate host Nginx HTTP and TLS examples
+        run: |
+          test_dir=$(mktemp -d)
+          trap 'rm -f "$test_dir/privkey.pem" "$test_dir/fullchain.pem"; rmdir "$test_dir"' EXIT
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj /CN=redclubes.example.com -keyout "$test_dir/privkey.pem" -out "$test_dir/fullchain.pem" 2>/dev/null
+          for sample in red-clubes-http.conf.example red-clubes.conf.example; do
+            docker run --rm --network none --user 0 --entrypoint nginx \
+              -v "$PWD/ops/nginx/$sample:/etc/nginx/conf.d/default.conf:ro" \
+              -v "$test_dir:/etc/letsencrypt/live/redclubes.example.com:ro" \
+              "red-clubes-frontend:$IMAGE_TAG" -t
+          done
       - name: Scan backend image with Trivy
         uses: aquasecurity/trivy-action@v0.36.0
         with:
@@ -119,6 +143,17 @@ jobs:
         run: |
           docker compose up -d --wait
           BASE_URL=http://127.0.0.1:18080 sh ops/smoke-test.sh
+      - name: Verify temporary fictitious bootstrap and authenticated smoke
+        run: |
+          export BOOTSTRAP_SUPERUSER_ENABLED=true BOOTSTRAP_SUPERUSER_DNI=9900000000
+          export BOOTSTRAP_SUPERUSER_PASSWORD="$(openssl rand -hex 32)"
+          echo "::add-mask::$BOOTSTRAP_SUPERUSER_PASSWORD"
+          docker compose up -d --no-deps --force-recreate --wait backend
+          BASE_URL=http://127.0.0.1:18080 SMOKE_DNI="$BOOTSTRAP_SUPERUSER_DNI" SMOKE_PASSWORD="$BOOTSTRAP_SUPERUSER_PASSWORD" sh ops/smoke-test.sh
+          unset BOOTSTRAP_SUPERUSER_DNI BOOTSTRAP_SUPERUSER_PASSWORD
+          export BOOTSTRAP_SUPERUSER_ENABLED=false
+          docker compose up -d --no-deps --force-recreate --wait backend
+          docker compose exec -T backend sh -c 'test "$BOOTSTRAP_SUPERUSER_ENABLED" = false && test -z "$BOOTSTRAP_SUPERUSER_PASSWORD" && test -z "$BOOTSTRAP_SUPERUSER_DNI"'
       - name: Verify backup and isolated restore
         run: |
           export BACKUP_DIR="$RUNNER_TEMP/red-clubes-backups"

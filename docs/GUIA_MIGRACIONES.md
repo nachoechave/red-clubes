@@ -17,6 +17,8 @@ El hardening de producción no necesitó una migración nueva: el costo PBKDF2 v
 
 ## Adopción de una base preexistente
 
+Procedimiento completo: [MIGRACION_BASE_HISTORICA.md](MIGRACION_BASE_HISTORICA.md). El restore-test exige historial Flyway; para una base pre-Flyway usar el ensayo manual aislado allí descrito. Compose fuerza baseline=false; una excepción de ensayo necesita override temporal, no basta .env.
+
 No apuntar primero a producción. `baseline` solo registra una versión: no ajusta columnas, no resuelve duplicados y no instala retrospectivamente constraints de V1.
 
 1. Crear dump consistente, checksum y copia externa; probarlo con `ops/restore-test.sh` o un MySQL aislado equivalente.

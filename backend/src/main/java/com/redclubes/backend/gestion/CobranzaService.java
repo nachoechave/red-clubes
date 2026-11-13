@@ -309,9 +309,32 @@ public class CobranzaService {
 
     @Transactional
     public PagoResponse registrarPago(Long clubId, Long cuotaId, RegistrarPagoRequest request, Usuario responsable) {
+        if (request.medioPago() == MedioPago.NET_PAGOS)
+            throw new IllegalArgumentException("NET_PAGOS requiere conciliacion de una intencion verificada");
+        return registrarPagoInterno(clubId, cuotaId, request, responsable, null);
+    }
+
+    @Transactional
+    public PagoResponse registrarPagoNetPagos(Long clubId, Long cuotaId, BigDecimal importe, Usuario actor, String referencia) {
+        if (referencia == null || !referencia.matches("netpagos:[a-f0-9-]{36}:[0-9]+"))
+            throw new IllegalArgumentException("Referencia externa invalida");
+        var anterior = pagoRepository.findByReferenciaExterna(referencia);
+        if (anterior.isPresent()) {
+            Pago pago = anterior.get();
+            if (!pago.getClub().getId().equals(clubId) || !pago.getCuota().getId().equals(cuotaId)
+                    || pago.getImporte().compareTo(importe) != 0) throw new IllegalArgumentException("Referencia externa en conflicto");
+            return PagoResponse.desde(pago);
+        }
+        return registrarPagoInterno(clubId, cuotaId, new RegistrarPagoRequest(importe, MedioPago.NET_PAGOS,
+                "Confirmado por consulta NET Pagos; " + referencia), actor, referencia);
+    }
+
+    private PagoResponse registrarPagoInterno(Long clubId, Long cuotaId, RegistrarPagoRequest request, Usuario responsable, String referencia) {
         Cuota cuota = cuotaRepository.findLockedByIdAndClubId(cuotaId, clubId)
                 .orElseThrow(() -> new IllegalArgumentException("Cuota no encontrada"));
         validarCuotaDelClub(cuota, clubId);
+        if (referencia == null && cuotaRepository.contarReservasNetPagos(cuotaId) > 0)
+            throw new IllegalArgumentException("La cuota tiene una intencion NET Pagos en curso o pendiente de revision");
         if (cuota.getEstado() == EstadoCuota.ANULADA) {
             throw new IllegalArgumentException("No se puede pagar una cuota anulada");
         }
@@ -332,6 +355,7 @@ public class CobranzaService {
         pago.setMedioPago(request.medioPago());
         pago.setUsuarioResponsable(responsable);
         pago.setObservaciones(request.observaciones());
+        pago.setReferenciaExterna(referencia);
         pago.setEstado(EstadoPago.ACTIVO);
         pagoRepository.save(pago);
 
@@ -413,9 +437,17 @@ public class CobranzaService {
         return YearMonth.parse(periodo).atDay(1);
     }
 
-    private CuotaResponse cuotaResponseConSaldo(Cuota cuota) {
+    public record SaldoCuota(BigDecimal pagado, BigDecimal pendiente) {}
+
+    /** Shared calculation for administrative and portal reads of an already scoped cuota. */
+    @Transactional(readOnly = true)
+    public SaldoCuota consultarSaldo(Cuota cuota) {
         BigDecimal saldo = saldoPendiente(cuota);
-        BigDecimal pagado = cuota.getImporte().subtract(saldo);
+        return new SaldoCuota(cuota.getImporte().subtract(saldo), saldo);
+    }
+
+    private CuotaResponse cuotaResponseConSaldo(Cuota cuota) {
+        SaldoCuota saldo = consultarSaldo(cuota);
         return new CuotaResponse(
                 cuota.getId(),
                 cuota.getClub().getId(),
@@ -425,8 +457,8 @@ public class CobranzaService {
                 cuota.getPeriodo(),
                 cuota.getPeriodo(),
                 cuota.getImporte(),
-                pagado,
-                saldo,
+                saldo.pagado(),
+                saldo.pendiente(),
                 cuota.getEstado(),
                 cuota.getFechaEmision(),
                 cuota.getVencimiento()

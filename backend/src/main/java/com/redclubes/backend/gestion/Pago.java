@@ -38,6 +38,12 @@ public class Pago {
 
     private String observaciones;
 
+    @Column(length = 100, unique = true)
+    private String referenciaExterna;
+
+    public String getReferenciaExterna() { return referenciaExterna; }
+    public void setReferenciaExterna(String value) { this.referenciaExterna = value; }
+
     @Enumerated(EnumType.STRING)
     private EstadoPago estado;
 

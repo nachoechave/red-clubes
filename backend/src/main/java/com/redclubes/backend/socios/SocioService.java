@@ -40,7 +40,7 @@ public class SocioService {
 
     @Transactional
     public SocioResponse crearSocioEnClub(Long clubId, CrearSocioRequest request, Usuario actor) {
-        Club club = clubRepository.findById(clubId)
+        Club club = clubRepository.findByIdForUpdate(clubId)
                 .orElseThrow(() -> new ClubNoEncontradoException(clubId));
         Socio socio = new Socio();
         socio.setClub(club);
@@ -57,7 +57,7 @@ public class SocioService {
 
     @Transactional
     public ImportacionSociosResponse importarSocios(Long clubId, String contenidoCsv, Usuario actor) {
-        Club club = clubRepository.findById(clubId)
+        Club club = clubRepository.findByIdForUpdate(clubId)
                 .orElseThrow(() -> new ClubNoEncontradoException(clubId));
 
         if (contenidoCsv == null || contenidoCsv.isBlank()) {

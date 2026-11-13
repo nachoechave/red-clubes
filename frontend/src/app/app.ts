@@ -19,11 +19,13 @@ import { DashboardService } from './features/dashboard/dashboard.service';
 import { ReporteService } from './features/reportes/reporte.service';
 import { UsuarioService } from './features/usuarios/usuario.service';
 import { ApiErrorStore } from './core/errors/api-error.store';
+import { SolicitudesComponent } from './features/solicitudes/solicitudes';
+import { ModuloClub, NombreParticipantes, TipoGrupo } from './core/models/gestion.models';
+import { etiquetaParticipantes, moduloHabilitado, seccionHabilitada, TIPOS_GRUPO, MODULOS_LEGACY } from './core/models/club-config';
 import {
-  LucideBadgeDollarSign,
   LucideBuilding2,
+  LucideTriangleAlert,
   LucideCalendarDays,
-  LucideCircleAlert,
   LucideChartNoAxesColumnIncreasing,
   LucideCirclePercent,
   LucideClipboardCheck,
@@ -44,10 +46,9 @@ import {
 } from '@lucide/angular';
 
 const lucideIcons = [
-  LucideBadgeDollarSign,
   LucideBuilding2,
+  LucideTriangleAlert,
   LucideCalendarDays,
-  LucideCircleAlert,
   LucideChartNoAxesColumnIncreasing,
   LucideCirclePercent,
   LucideClipboardCheck,
@@ -74,6 +75,7 @@ const lucideIcons = [
     FormsModule,
     ReactiveFormsModule,
     RouterOutlet,
+    SolicitudesComponent,
     ...lucideIcons,
   ],
   templateUrl: './app.html',
@@ -183,24 +185,65 @@ export class App {
   protected importacionDeudaHistorica = signal<ImportacionDeudaHistoricaVista | null>(null);
   protected importacionDeudaCargando = signal(false);
   protected dataError = signal('');
+  protected clubActual = computed(() => this.clubes().find(club => club.id === this.clubActivoId()));
+  protected participantesLabel = computed(() => etiquetaParticipantes(this.clubActual()));
+  protected tiposGrupo = computed(() => TIPOS_GRUPO.filter(tipo => this.moduloActivo(tipo.modulo)));
+  protected grupoTipoFiltro = signal<TipoGrupo | 'TODOS'>('TODOS');
+  protected gruposVisibles = computed(() => this.actividades().filter(grupo =>
+    this.tiposGrupo().some(tipo => tipo.tipo === (grupo.tipo ?? 'ACTIVIDAD')) &&
+    (this.grupoTipoFiltro() === 'TODOS' || grupo.tipo === this.grupoTipoFiltro())));
+  protected readonly opcionesModulos: { id: ModuloClub; nombre: string }[] = [
+    { id: 'PARTICIPANTES', nombre: 'Participantes' }, { id: 'CATEGORIAS', nombre: 'Categorías' },
+    { id: 'ACTIVIDADES', nombre: 'Actividades' }, { id: 'TALLERES', nombre: 'Talleres' },
+    { id: 'PROFESORES', nombre: 'Profesores / responsables' }, { id: 'ASISTENCIAS', nombre: 'Asistencias' },
+    { id: 'CUOTAS', nombre: 'Cuotas y pagos' },
+  ];
+  protected configModulos: ModuloClub[] = [...MODULOS_LEGACY];
+  protected configParticipantes: NombreParticipantes = 'SOCIOS';
+  protected configuracionClubMensaje = signal('');
+  protected moduloActivo(modulo: ModuloClub): boolean { return moduloHabilitado(this.clubActual(), modulo); }
+  protected seccionDisponible(seccion: string): boolean { return seccionHabilitada(this.clubActual(), seccion); }
+  protected asistenciaDisponible(grupo: ActividadVista): boolean {
+    return this.moduloActivo('ASISTENCIAS') && grupo.asistenciaHabilitada !== false;
+  }
+  protected alternarModulo(modulo: ModuloClub, habilitado: boolean): void {
+    this.configModulos = habilitado ? [...new Set([...this.configModulos, modulo])] : this.configModulos.filter(item => item !== modulo);
+  }
+  protected guardarConfiguracionClub(): void {
+    const clubId = this.clubActivoId();
+    if (!clubId || !this.esAdministradorClubActual()) return;
+    this.configuracionClubMensaje.set('');
+    this.clubService.configurar(clubId, { modulos: this.configModulos, nombreParticipantes: this.configParticipantes }).subscribe({
+      next: club => {
+        this.clubes.update(clubes => clubes.map(item => item.id === club.id ? club : item));
+        this.cargarDatosClub();
+        this.configuracionClubMensaje.set('Configuración del club guardada.');
+      },
+      error: error => this.configuracionClubMensaje.set(error.error?.message ?? 'No se pudo guardar la configuración.'),
+    });
+  }
   protected nuevaActividad = {
+    tipo: 'ACTIVIDAD' as TipoGrupo,
+    disciplina: '', anioCategoria: '', asistenciaHabilitada: true,
     nombre: '',
     profesor: '',
     profesorUsuarioId: null as number | null,
     dias: '',
     categoria: 'Bienestar',
     icono: 'check',
-    cupo: 20,
+    cupo: 20 as number | null,
   };
   protected actividadEditando = signal<ActividadVista | null>(null);
   protected actividadForm = {
+    tipo: 'ACTIVIDAD' as TipoGrupo,
+    disciplina: '', anioCategoria: '', asistenciaHabilitada: true,
     nombre: '',
     profesor: '',
     profesorUsuarioId: null as number | null,
     dias: '',
     categoria: 'Bienestar',
     icono: 'check',
-    cupo: 20,
+    cupo: 20 as number | null,
     estado: 'ACTIVA' as EstadoActividad,
   };
   protected nuevoUsuario = {
@@ -217,6 +260,7 @@ export class App {
   protected readonly baseNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'home' },
     { id: 'socios', label: 'Socios', icon: 'users' },
+    { id: 'solicitudes', label: 'Solicitudes', icon: 'add' },
     { id: 'clubes', label: 'Clubes', icon: 'home' },
     { id: 'actividades', label: 'Actividades', icon: 'music' },
     { id: 'inscripciones', label: 'Inscripciones', icon: 'add' },
@@ -256,12 +300,9 @@ export class App {
   protected esBomberos = computed(() => this.clubActivo()?.tipoInstitucion === 'BOMBEROS');
 
   protected navItems = computed(() => this.baseNavItems.filter((item) => {
-    if (this.esBomberos() && ['actividades', 'inscripciones', 'asistencias'].includes(item.id)) {
-      return false;
-    }
-    if (!this.esBomberos() && item.id === 'deudores') {
-      return false;
-    }
+    if (item.id === 'solicitudes') return this.esAdministradorClubActual() && this.moduloActivo('PARTICIPANTES');
+    if (!this.seccionDisponible(item.id)) return false;
+    if (!this.esBomberos() && item.id === 'deudores') return false;
     if (item.id === 'usuarios') {
       return this.puedeAdministrarUsuarios();
     }
@@ -275,9 +316,15 @@ export class App {
     }
 
     return true;
-  }));
+  }).map(item => ({ ...item, label: item.id === 'clubes' ? this.institucionesLabel() : item.id === 'socios' ? this.participantesLabel()
+    : item.id === 'actividades' ? (this.tiposGrupo().length === 1 ? ({ ACTIVIDAD: 'Actividades', TALLER: 'Talleres', CATEGORIA_DEPORTIVA: 'Categorías' }[this.tiposGrupo()[0].tipo]) : 'Grupos') : item.label })));
 
   protected sectionTitle = computed(() => this.navItems().find((item) => item.id === this.activeSection())?.label ?? 'Inicio');
+  protected institucionesLabel = computed(() => this.esSuperusuario() ? 'Clubes' : this.clubes().length > 1 ? 'Mis instituciones' : 'Mi institución');
+  protected actualizarTrasSolicitud(): void {
+    this.cargarSocios(); this.cargarDashboard();
+    if (this.moduloActivo('CUOTAS')) this.cargarCuotas();
+  }
 
   protected sociosFiltrados = computed(() => {
     const busqueda = this.socioBusqueda().trim().toLowerCase();
@@ -370,13 +417,13 @@ export class App {
       ];
     }
     return [
-      { label: 'Clubes activos', value: String(this.clubes().filter((club) => club.estado === 'ACTIVO').length), change: `${this.clubes().length} disponibles para tu rol`, tone: 'info' },
-      { label: 'Socios activos', value: String(this.socios().filter((socio) => socio.estado === 'ACTIVO').length || dashboard?.sociosActivos || 0), change: `${this.socios().length || dashboard?.sociosTotales || 0} socios totales`, tone: 'success' },
-      { label: 'Actividades', value: String(this.actividades().filter((actividad) => actividad.estado === 'ACTIVA').length || dashboard?.actividadesActivas || 0), change: `${this.actividades().length} actividades registradas`, tone: 'violet' },
-      { label: 'Inscripciones', value: String(this.inscriptosTotalActividades()), change: 'Asignaciones activas a talleres', tone: 'info' },
-      { label: 'Asistencias', value: String(dashboard?.asistenciaMes ?? 0), change: 'Registros del periodo actual', tone: 'warning' },
-      { label: 'Recaudacion', value: this.formatearImporte(dashboard?.totalCobrado ?? 0), change: 'Total cobrado en el periodo', tone: 'success' },
-    ];
+      ...(this.esSuperusuario() ? [{ label: 'Clubes activos', value: String(this.clubes().filter((club) => club.estado === 'ACTIVO').length), change: `${this.clubes().length} instituciones en total`, tone: 'info' }] : []),
+      { section: 'socios', label: `${this.participantesLabel()} activos`, value: String(this.socios().filter((socio) => socio.estado === 'ACTIVO').length || dashboard?.sociosActivos || 0), change: `${this.socios().length || dashboard?.sociosTotales || 0} en total`, tone: 'success' },
+      { section: 'actividades', label: 'Grupos', value: String(this.actividades().filter((actividad) => actividad.estado === 'ACTIVA').length || dashboard?.actividadesActivas || 0), change: `${this.actividades().length} grupos registrados`, tone: 'violet' },
+      { section: 'inscripciones', label: 'Inscripciones', value: String(this.inscriptosTotalActividades()), change: 'Asignaciones a grupos', tone: 'info' },
+      { section: 'asistencias', label: 'Asistencias', value: String(dashboard?.asistenciaMes ?? 0), change: 'Del período actual', tone: 'warning' },
+      { section: 'cuotas', label: 'Recaudación', value: this.formatearImporte(dashboard?.totalCobrado ?? 0), change: 'Cobrado en el período', tone: 'success' },
+    ].filter(metric => !metric.section || this.seccionDisponible(metric.section));
   });
 
   protected actividadesProximasDelClub = computed(() => this.dashboard()?.proximasActividades ?? []);
@@ -387,7 +434,7 @@ export class App {
   protected totalDeudaClub = computed(() => this.cuotas().filter((cuota) => cuota.estado !== 'PAGADA' && cuota.estado !== 'ANULADA').reduce((total, cuota) => total + cuota.saldoPendiente, 0));
   protected cantidadCuotasDeuda = computed(() => this.cuotas().filter((cuota) => cuota.estado !== 'PAGADA' && cuota.estado !== 'ANULADA').length);
   protected actividadesActivasClub = computed(() => this.actividades().filter((actividad) => actividad.estado === 'ACTIVA').length);
-  protected cupoTotalActividades = computed(() => this.actividades().reduce((total, actividad) => total + actividad.cupo, 0));
+  protected cupoTotalActividades = computed(() => this.actividades().reduce((total, actividad) => total + (actividad.cupo ?? 0), 0));
   protected inscriptosTotalActividades = computed(() => this.actividades().reduce((total, actividad) => total + actividad.inscriptos, 0));
   protected profesoresDelClubActual = computed(() => {
     const clubId = this.clubActivoId();
@@ -401,6 +448,8 @@ export class App {
       .filter((usuario) => usuario.clubes.some((club) => club.clubId === clubId && club.rol === 'PROFESOR'))
       .sort((a, b) => `${a.apellido} ${a.nombre}`.localeCompare(`${b.apellido} ${b.nombre}`));
   });
+  protected responsablesDelClubActual = computed(() => this.usuarios()
+    .filter(usuario => usuario.estado === 'ACTIVO' && usuario.clubes.some(club => club.clubId === this.clubActivoId())));
   protected deudaPorEstado = computed(() => ({
     pendiente: this.cuotas().filter((cuota) => cuota.estado === 'PENDIENTE').reduce((total, cuota) => total + cuota.saldoPendiente, 0),
     vencida: this.cuotas().filter((cuota) => cuota.estado === 'VENCIDA').reduce((total, cuota) => total + cuota.saldoPendiente, 0),
@@ -418,7 +467,7 @@ export class App {
   protected alertasGestion = computed(() => {
     const alertas: { titulo: string; detalle: string; tono: 'danger' | 'warning' | 'info' }[] = [];
     const vencidas = this.cuotas().filter((cuota) => cuota.estado === 'VENCIDA');
-    const completas = this.actividades().filter((actividad) => actividad.cupo > 0 && actividad.inscriptos >= actividad.cupo);
+    const completas = this.actividades().filter((actividad) => (actividad.cupo ?? 0) > 0 && actividad.inscriptos >= (actividad.cupo ?? 0));
     if (vencidas.length > 0) {
       alertas.push({ titulo: `${vencidas.length} cuotas vencidas`, detalle: `${this.formatearImporte(this.deudaPorEstado().vencida)} requieren seguimiento`, tono: 'danger' });
     }
@@ -449,7 +498,7 @@ export class App {
     Object.values(this.socioActividades()).forEach((actividades) => actividades.forEach((actividad) => nombres.add(actividad.nombre)));
     return Array.from(nombres).length > 0 ? Array.from(nombres) : this.actividades().map((actividad) => actividad.nombre);
   });
-  protected actividadesParaAsistencia = computed(() => this.actividades().filter((actividad) => this.esFechaDeClase(actividad.dias, this.selectedAttendanceDate())));
+  protected actividadesParaAsistencia = computed(() => this.actividades().filter((actividad) => this.asistenciaDisponible(actividad) && this.esFechaDeClase(actividad.dias, this.selectedAttendanceDate())));
   protected actividadSeleccionada = computed(() => this.actividades().find((actividad) => actividad.id === this.selectedActivityId()) ?? null);
   protected actividadDetalleRuta = computed(() => this.actividadRutaId
     ? this.actividades().find((actividad) => actividad.id === this.actividadRutaId) ?? null
@@ -473,7 +522,7 @@ export class App {
   });
   protected esFechaDeClaseSeleccionada = computed(() => {
     const actividad = this.actividadSeleccionada();
-    return actividad ? this.esFechaDeClase(actividad.dias, this.selectedAttendanceDate()) : false;
+    return actividad && this.asistenciaDisponible(actividad) ? this.esFechaDeClase(actividad.dias, this.selectedAttendanceDate()) : false;
   });
   protected puedeEditarAsistencia = computed(() => {
     if (!this.esFechaDeClaseSeleccionada()) {
@@ -530,7 +579,7 @@ export class App {
         }
       },
       error: (error) => {
-        this.loginError.set(error.status === 0 ? 'El backend no esta levantado. Inicia el backend y volve a intentar.' : 'DNI o contrasena incorrectos.');
+        this.loginError.set(error.status === 0 ? 'No se pudo conectar. Volvé a intentar en unos momentos.' : 'DNI o contrasena incorrectos.');
       },
     });
   }
@@ -549,6 +598,7 @@ export class App {
   }
 
   protected goTo(section: string): void {
+    if (!this.seccionDisponible(section)) section = 'configuracion';
     void this.router.navigateByUrl(section === 'nuevo-socio' ? '/socios/nuevo' : `/${section}`);
   }
 
@@ -569,6 +619,7 @@ export class App {
       && section !== 'nuevo-socio' && section !== 'no-encontrado') {
       return;
     }
+    if (this.clubActual() && !this.seccionDisponible(section)) { this.goTo('configuracion'); return; }
     this.activeSection.set(section);
     this.userMenuOpen.set(false);
     const socioDeRuta = this.socios().find((socio) => socio.id === this.socioRutaId);
@@ -652,7 +703,7 @@ export class App {
           this.cargarUsuarios();
         }
       },
-      error: (error) => this.passwordError.set(error.status === 0 ? 'El backend no esta disponible.' : 'No se pudo cambiar la contrasena. Usa al menos 8 caracteres y revisa la actual.'),
+      error: (error) => this.passwordError.set(error.status === 0 ? 'No se pudo conectar. Volvé a intentar en unos momentos.' : 'No se pudo cambiar la contrasena. Usa al menos 8 caracteres y revisa la actual.'),
     });
   }
 
@@ -671,7 +722,7 @@ export class App {
         this.configConfirmarNuevaPassword = '';
         this.configMensaje.set('Contrasena actualizada correctamente.');
       },
-      error: (error) => this.configError.set(error.status === 0 ? 'El backend no esta disponible.' : 'No se pudo cambiar la contrasena. Revisa la actual y usa al menos 8 caracteres.'),
+      error: (error) => this.configError.set(error.status === 0 ? 'No se pudo conectar. Volvé a intentar en unos momentos.' : 'No se pudo cambiar la contrasena. Revisa la actual y usa al menos 8 caracteres.'),
     });
   }
 
@@ -684,7 +735,7 @@ export class App {
         this.cargarFormularioPerfil(usuario);
         this.perfilMensaje.set('Datos actualizados correctamente.');
       },
-      error: (error) => this.perfilError.set(error.status === 0 ? 'El backend no esta disponible.' : 'No se pudieron actualizar los datos.'),
+      error: (error) => this.perfilError.set(error.status === 0 ? 'No se pudo conectar. Volvé a intentar en unos momentos.' : 'No se pudieron actualizar los datos.'),
     });
   }
 
@@ -744,7 +795,7 @@ export class App {
         this.usuarios.set(usuarios);
         usuarios.flatMap((usuario) => usuario.clubes).forEach((club) => this.cargarActividadesParaAsignacion(club.clubId));
       },
-      error: () => this.usuarioError.set('No se pudieron cargar los usuarios. Revisa que el backend este levantado.'),
+      error: () => this.usuarioError.set('No se pudieron cargar los usuarios. Volvé a intentar en unos momentos.'),
     });
   }
 
@@ -1298,7 +1349,7 @@ export class App {
       return;
     }
 
-    this.inscripcionService.actualizar(clubId, socio.id, this.socioActividadesSeleccionadas()).subscribe({
+    this.inscripcionService.actualizarGrupos(clubId, socio.id, this.socioActividadesSeleccionadas()).subscribe({
       next: (actividades) => {
         this.socioActividades.update((actual) => ({ ...actual, [socio.id]: actividades }));
         this.cargarActividades();
@@ -1317,21 +1368,20 @@ export class App {
   protected crearActividad(): void {
     const clubId = this.clubActivoId();
     this.dataError.set('');
-    if (!clubId || !this.nuevaActividad.nombre.trim() || !this.nuevaActividad.profesorUsuarioId || !this.nuevaActividadHora) {
-      if (clubId && this.profesoresDelClubActual().length === 0) {
-        this.dataError.set('Primero crea o asigna un profesor activo a este club.');
-      }
-      return;
-    }
+    if (!clubId || !this.nuevaActividad.nombre.trim()) return;
 
     const payload = {
       ...this.nuevaActividad,
-      dias: this.formatearDiaHorario(this.nuevaActividadDia, this.nuevaActividadHora),
+      dias: this.nuevaActividad.tipo === 'CATEGORIA_DEPORTIVA' ? '' : this.formatearDiaHorario(this.nuevaActividadDia, this.nuevaActividadHora),
+      cupo: this.nuevaActividad.tipo === 'CATEGORIA_DEPORTIVA' ? null : this.nuevaActividad.cupo,
+      asistenciaHabilitada: this.moduloActivo('ASISTENCIAS') && this.nuevaActividad.asistenciaHabilitada,
     };
 
-    this.actividadService.crear(clubId, payload).subscribe({
+    this.actividadService.crearGrupo(clubId, payload).subscribe({
       next: (actividad) => {
         this.nuevaActividad = {
+          tipo: this.tiposGrupo()[0]?.tipo ?? 'ACTIVIDAD',
+          disciplina: '', anioCategoria: '', asistenciaHabilitada: this.moduloActivo('ASISTENCIAS'),
           nombre: '',
           profesor: '',
           profesorUsuarioId: null,
@@ -1357,6 +1407,9 @@ export class App {
     const horario = this.extraerDiaHorario(actividad.dias);
     this.actividadEditando.set(actividad);
     this.actividadForm = {
+      tipo: actividad.tipo ?? 'ACTIVIDAD',
+      disciplina: actividad.disciplina ?? '', anioCategoria: actividad.anioCategoria ?? '',
+      asistenciaHabilitada: actividad.asistenciaHabilitada !== false,
       nombre: actividad.nombre,
       profesor: actividad.profesor,
       profesorUsuarioId: actividad.profesorUsuarioId
@@ -1377,20 +1430,17 @@ export class App {
     const actividad = this.actividadEditando();
     this.dataError.set('');
 
-    if (!clubId || !actividad || !this.esAdministradorClubActual() || !this.actividadForm.profesorUsuarioId || !this.actividadFormHora) {
-      if (clubId && this.profesoresDelClubActual().length === 0) {
-        this.dataError.set('Primero crea o asigna un profesor activo a este club.');
-      }
-      return;
-    }
+    if (!clubId || !actividad || !this.esAdministradorClubActual()) return;
 
     const payload = {
       ...this.actividadForm,
-      dias: this.formatearDiaHorario(this.actividadFormDia, this.actividadFormHora),
+      dias: this.actividadForm.tipo === 'CATEGORIA_DEPORTIVA' ? '' : this.formatearDiaHorario(this.actividadFormDia, this.actividadFormHora),
+      cupo: this.actividadForm.tipo === 'CATEGORIA_DEPORTIVA' ? null : this.actividadForm.cupo,
+      asistenciaHabilitada: this.moduloActivo('ASISTENCIAS') && this.actividadForm.asistenciaHabilitada,
     };
 
     this.actividadService
-      .actualizar(clubId, actividad.id, payload)
+      .actualizarGrupo(clubId, actividad.id, payload)
       .subscribe({
         next: () => {
           this.actividadEditando.set(null);
@@ -1407,6 +1457,7 @@ export class App {
   }
 
   protected seleccionarActividadAsistencia(actividad: ActividadVista): void {
+    if (!this.asistenciaDisponible(actividad)) return;
     const horario = this.extraerDiaHorario(actividad.dias);
     if (this.puedeOperarClubActual() && !this.esFechaDeClase(actividad.dias, this.selectedAttendanceDate())) {
       this.selectedAttendanceDate.set(this.proximaFechaParaDia(horario.dia));
@@ -1637,7 +1688,7 @@ export class App {
       const rutaActual = this.router.url.split('?')[0].replace(/^\//, '');
       const permitidaProfesor = ['actividades', 'asistencias', 'configuracion'].includes(rutaActual)
         || rutaActual.startsWith('actividades/');
-      const permitidaOperador = !['usuarios', 'clubes'].includes(rutaActual);
+      const permitidaOperador = !['usuarios', 'clubes', 'solicitudes'].includes(rutaActual);
       if (rutaActual === 'login' || (usuario.rol === 'PROFESOR' && !permitidaProfesor)
         || (usuario.rol === 'OPERADOR' && !permitidaOperador)) {
         void this.router.navigate([usuario.rol === 'PROFESOR' ? '/actividades' : '/dashboard']);
@@ -1690,14 +1741,20 @@ export class App {
     this.asistencia.set([]);
     this.dashboard.set(null);
     this.socioSeleccionado.set(null);
-    if (!this.esBomberos()) {
-      this.cargarActividades();
-    }
+    this.configModulos = [...(this.clubActual()?.modulos ?? MODULOS_LEGACY)];
+    this.configParticipantes = this.clubActual()?.nombreParticipantes ?? 'SOCIOS';
+    this.nuevaActividad.tipo = this.tiposGrupo()[0]?.tipo ?? 'ACTIVIDAD';
+    this.nuevaActividad.asistenciaHabilitada = this.moduloActivo('ASISTENCIAS') && this.nuevaActividad.tipo !== 'CATEGORIA_DEPORTIVA';
+    this.actividadEditando.set(null);
+    this.selectedActivityId.set(null);
+    this.grupoTipoFiltro.set('TODOS');
+    if (!this.seccionDisponible(this.activeSection())) this.goTo('configuracion');
+    if (this.tiposGrupo().length > 0) this.cargarActividades();
     if (this.currentUser()?.rol === 'PROFESOR') {
       return;
     }
-    this.cargarSocios(socioSeleccionadoId);
-    this.cargarCuotas();
+    if (this.moduloActivo('PARTICIPANTES')) this.cargarSocios(socioSeleccionadoId);
+    if (this.moduloActivo('CUOTAS')) this.cargarCuotas();
     this.cargarDashboard();
     if (this.activeSection() === 'reportes') {
       this.cargarReportes();
@@ -1743,7 +1800,7 @@ export class App {
       return;
     }
 
-    this.actividadService.listarDeSocio(clubId, socio.id).subscribe({
+    this.actividadService.gruposDeSocio(clubId, socio.id).subscribe({
       next: (actividades) => {
         this.socioActividades.update((actual) => ({ ...actual, [socio.id]: actividades }));
         if (this.socioSeleccionado()?.id === socio.id) {
@@ -1758,12 +1815,12 @@ export class App {
     if (!clubId) {
       return;
     }
-    this.actividadService.listar(clubId).subscribe({
+    this.actividadService.listarGrupos(clubId).subscribe({
       next: (actividades) => {
         this.actividades.set(actividades);
         const actividadRuta = actividades.find((actividad) => actividad.id === this.actividadRutaId);
         if (actividadRuta || !this.selectedActivityId() && actividades.length > 0) {
-          this.selectedActivityId.set(actividadRuta?.id ?? actividades[0].id);
+          this.selectedActivityId.set(actividadRuta?.id ?? actividades.find(grupo => this.asistenciaDisponible(grupo))?.id ?? null);
         }
         if (this.activeSection() === 'asistencias') {
           this.cargarAsistencia();
@@ -1777,7 +1834,7 @@ export class App {
     if (this.actividadesPorClub()[clubId]) {
       return;
     }
-    this.actividadService.listar(clubId).subscribe({
+    this.actividadService.listarGrupos(clubId).subscribe({
       next: (actividades) => this.actividadesPorClub.update((actual) => ({ ...actual, [clubId]: actividades })),
       error: () => this.usuarioError.set('No se pudieron cargar los talleres del club.'),
     });
@@ -1886,6 +1943,9 @@ export class App {
       return false;
     }
 
+    if (rango === 'MENORES') return edad < 18;
+    if (rango === '18_59') return edad >= 18 && edad < 60;
+
     if (rango === '60_69') {
       return edad >= 60 && edad <= 69;
     }
@@ -1914,6 +1974,7 @@ export class App {
   private esFechaDeClase(dias: string, fechaIso: string): boolean {
     const fecha = new Date(`${fechaIso}T12:00:00`);
     const dia = fecha.getDay();
+    if (!dias?.trim()) return true;
     const texto = dias.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     const nombres = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
     return texto.includes(nombres[dia]);
@@ -1937,6 +1998,7 @@ export class App {
   }
 
   private extraerDiaHorario(texto: string): { dia: string; hora: string } {
+    texto = texto ?? '';
     const normalizado = texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     const dia = this.diasSemana.find((item) => normalizado.includes(item.toLowerCase())) ?? 'Martes';
     const hora = texto.match(/(\d{1,2}:\d{2})/)?.[1] ?? '10:00';
