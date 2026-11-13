@@ -37,7 +37,7 @@ public class UsuarioController {
             @Valid @RequestBody CrearUsuarioRequest request
     ) {
         Usuario usuarioAutenticado = authService.exigirAdministrador(authorizationHeader);
-        if (request.rol() == RolUsuario.SUPERUSUARIO && usuarioAutenticado.getRol() != RolUsuario.SUPERUSUARIO) {
+        if ((request.rol() == RolUsuario.SUPERUSUARIO || request.rol() == RolUsuario.CONSULTOR_GLOBAL) && usuarioAutenticado.getRol() != RolUsuario.SUPERUSUARIO) {
             throw new AccesoDenegadoException();
         }
 
