@@ -624,7 +624,7 @@
                             <tbody>
                               @for (registro of historialIntegral(); track registro.socioId + '-' + registro.periodo) {
                                 <tr><td>{{ registro.socio }}</td><td>{{ registro.periodo }}</td>
-                                  <td>{{ registro.estado === 'PAGADO' ? 'Pagó (histórico)' : 'Pendiente (histórico)' }}</td></tr>
+                                  <td>{{ estadoMensualDeclarado(registro) }}</td></tr>
                               }
                             </tbody>
                           </table>
@@ -632,7 +632,7 @@
                       }
                       @if (resultadoIntegral(); as resumen) {
                         <p class="help-text">Nuevos: {{ resumen.sociosNuevos }} · Existentes: {{ resumen.sociosExistentes }} ·
-                          Pagados: {{ resumen.mesesPagados }} · Pendientes: {{ resumen.mesesPendientes }} ·
+                          Pagados: {{ resumen.mesesPagados }} · Sin pago informado: {{ resumen.mesesPendientes }} ·
                           Sin información: {{ resumen.mesesVacios }} · Ya cargados: {{ resumen.mesesOmitidos }}</p>
                         @if (resumen.valida && !resumen.ejecutada) {
                           <button class="primary-action compact" type="button"
@@ -1127,7 +1127,7 @@
             <div class="table-card compact-table">
               @if (selectedMember() === 'TODOS') {
                 <table>
-                  <thead><tr><th>Participante</th><th>Estado</th><th>Mes reciente</th><th>Pendientes</th><th>Acciones</th></tr></thead>
+                  <thead><tr><th>Participante</th><th>Estado</th><th>Mes reciente</th><th>Estado de cuotas</th><th>Acciones</th></tr></thead>
                   <tbody>
                     @for (resumen of cuotasResumenSocios(); track resumen.socioId) {
                       <tr>
@@ -1136,7 +1136,7 @@
                           @if (resumen.estado !== 'AL_DIA') {
                             <span class="badge pending">Cuotas financieras pendientes</span>
                           } @else if ((resumenHistoricoPorSocio().get(resumen.socioId)?.pendientes ?? 0) > 0) {
-                            <span class="badge pending">Pendientes históricos (sin importe)</span>
+                            <span class="badge pending">Sin pago informado en planilla</span>
                           } @else if ((resumenHistoricoPorSocio().get(resumen.socioId)?.pagadas ?? 0) > 0) {
                             <span class="badge">Pagos históricos declarados</span>
                           } @else {
@@ -1144,7 +1144,7 @@
                           }
                         </td>
                         <td>{{ resumenHistoricoPorSocio().get(resumen.socioId)?.ultimoPeriodo ?? resumen.ultimoMes }}</td>
-                        <td>{{ resumen.pendientes }} financieras / {{ resumenHistoricoPorSocio().get(resumen.socioId)?.pendientes ?? 0 }} históricas</td>
+                        <td>{{ resumen.pendientes }} financieras / {{ periodosHistoricosSinPago(resumen.socioId).anteriores }} meses anteriores sin pago / {{ periodosHistoricosSinPago(resumen.socioId).actual }} en curso / {{ periodosHistoricosSinPago(resumen.socioId).futuros }} futuros</td>
                         <td><button type="button" class="mini-action" (click)="verDetalleCuotasSocio(resumen.socioId)">Ver meses</button></td>
                       </tr>
                     } @empty {
@@ -1223,7 +1223,7 @@
                   <h3>Cuotas mensuales declaradas</h3>
                 </div>
               </div>
-              <p class="help-text">Estos estados fueron informados en un CSV. No son recibos, no acreditan importes y no suman a la recaudación ni a la deuda monetaria. Los meses sin información no se muestran.</p>
+              <p class="help-text">Los estados provienen del control CSV y no contienen fechas de vencimiento. «No pagó» significa «sin pago informado», no deuda vencida: los meses en curso y futuros se identifican por separado. Estos registros no generan ingresos ni deuda monetaria.</p>
               <div class="table-card compact-table">
                 <table>
                   <thead>
@@ -1234,7 +1234,7 @@
                       <tr>
                         <td><strong>{{ registro.socio }}</strong><small class="muted-cell">{{ registro.dni }}</small></td>
                         <td>{{ registro.periodo }}</td>
-                        <td><span class="badge" [class.pending]="registro.estado === 'PENDIENTE'">{{ registro.estado === 'PAGADO' ? 'Pagó (histórico)' : 'Pendiente (histórico)' }}</span></td>
+                        <td><span class="badge" [class.pending]="registro.estado === 'PENDIENTE' && registro.periodo < periodoActualHistorico()">{{ estadoMensualDeclarado(registro) }}</span></td>
                         <td>No informado</td>
                         <td>CSV importado</td>
                       </tr>

@@ -397,6 +397,35 @@ export class App {
       .sort((a, b) => b.periodo.localeCompare(a.periodo) || a.socio.localeCompare(b.socio));
   });
 
+  // Los CSV históricos no incluyen vencimiento. "No pagó" no equivale a deuda vencida.
+  protected periodoActualHistorico(): string {
+    const fecha = new Date();
+    const partes = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Argentina/Buenos_Aires', year: 'numeric', month: '2-digit',
+    }).formatToParts(fecha);
+    const anio = partes.find(p => p.type === 'year')?.value ?? String(fecha.getFullYear());
+    const mes = partes.find(p => p.type === 'month')?.value ?? String(fecha.getMonth() + 1).padStart(2, '0');
+    return `${anio}-${mes}`;
+  }
+
+  protected estadoMensualDeclarado(registro: HistorialCuotaImportada): string {
+    if (registro.estado === 'PAGADO') return 'Pago informado (CSV)';
+    const actual = this.periodoActualHistorico();
+    if (registro.periodo > actual) return 'Mes futuro · sin pago informado';
+    if (registro.periodo === actual) return 'Mes en curso · sin pago informado';
+    return 'Sin pago informado (vencimiento desconocido)';
+  }
+
+  protected periodosHistoricosSinPago(socioId: number): { anteriores: number; actual: number; futuros: number } {
+    const periodo = this.periodoActualHistorico();
+    const registros = this.historialIntegral().filter(item => item.socioId === socioId && item.estado === 'PENDIENTE');
+    return {
+      anteriores: registros.filter(item => item.periodo < periodo).length,
+      actual: registros.filter(item => item.periodo === periodo).length,
+      futuros: registros.filter(item => item.periodo > periodo).length,
+    };
+  }
+
   protected resumenHistoricoPorSocio = computed(() => {
     const mapa = new Map<number, { pagadas: number; pendientes: number; ultimoPeriodo: string | null }>();
     for (const registro of this.historialIntegral()) {
