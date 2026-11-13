@@ -3,6 +3,7 @@ import { authGuard, guestGuard } from './core/auth/auth.guard';
 const emptyRoute = () => import('./core/routing/empty-route.component').then((module) => module.EmptyRouteComponent);
 
 const protectedSections = [
+  'consulta-global',
   'dashboard',
   'socios',
   'solicitudes',
