@@ -362,6 +362,62 @@
 
                 @if (puedeOperarClubActual()) {
                   <article class="panel">
+                    <section class="panel" aria-label="Importación integral de socios y cuotas">
+                      <div class="panel-title">
+                        <span class="panel-kicker">Migración histórica</span>
+                        <h3>Socios y meses de cuotas (CSV)</h3>
+                        <button class="secondary-action compact" type="button" (click)="descargarPlantillaIntegral()">Descargar plantilla integral</button>
+                      </div>
+                      <p class="help-text">Acepta la plantilla completa (nombre, apellido, DNI y meses enero-diciembre) o un control mensual con nombre y apellido. Los nombres ambiguos se informan para revisión. Los meses pagados se registran como declaraciones históricas, no como cobros contables.</p>
+                      <div class="filters">
+                        <label><span>Año del control</span>
+                          <input type="number" min="2000" max="2026" [ngModel]="anioIntegral()" (ngModelChange)="anioIntegral.set(+$event); resultadoIntegral.set(null)" />
+                        </label>
+                        <label><span>Archivo CSV</span>
+                          <input type="file" accept=".csv,text/csv" (change)="seleccionarArchivoIntegral($event)" />
+                        </label>
+                        <button class="secondary-action compact" type="button"
+                          [disabled]="!archivoIntegral() || importacionIntegralCargando()"
+                          (click)="ejecutarIntegral()">Vista previa</button>
+                      </div>
+                      <button class="secondary-action compact" type="button" (click)="consultarHistorialIntegral()">Ver historial mensual importado</button>
+                      @if (mostrarHistorialIntegral()) {
+                        <div class="table-card compact-table">
+                          <table>
+                            <thead><tr><th>Socio</th><th>Período</th><th>Declaración histórica</th></tr></thead>
+                            <tbody>
+                              @for (registro of historialIntegral(); track registro.socioId + '-' + registro.periodo) {
+                                <tr><td>{{ registro.socio }}</td><td>{{ registro.periodo }}</td>
+                                  <td>{{ registro.estado === 'PAGADO' ? 'Pagó (histórico)' : 'Pendiente (histórico)' }}</td></tr>
+                              }
+                            </tbody>
+                          </table>
+                        </div>
+                      }
+                      @if (resultadoIntegral(); as resumen) {
+                        <p class="help-text">Nuevos: {{ resumen.sociosNuevos }} · Existentes: {{ resumen.sociosExistentes }} ·
+                          Pagados: {{ resumen.mesesPagados }} · Pendientes: {{ resumen.mesesPendientes }} ·
+                          Sin información: {{ resumen.mesesVacios }} · Ya cargados: {{ resumen.mesesOmitidos }}</p>
+                        @if (resumen.valida && !resumen.ejecutada) {
+                          <button class="primary-action compact" type="button"
+                            [disabled]="importacionIntegralCargando()" (click)="ejecutarIntegral(true)">
+                            Confirmar importación de socios e historial
+                          </button>
+                        } @else if (resumen.ejecutada) {
+                          <p class="success-message" role="status">Importación histórica completada. Consultá el historial mensual para ver los estados guardados.</p>
+                        } @else {
+                          <div class="form-error panel-error" role="alert">Corregí los errores antes de confirmar. No se guardó ningún registro.</div>
+                          <div class="table-card compact-table"><table>
+                            <thead><tr><th>Fila</th><th>Error</th></tr></thead>
+                            <tbody>
+                              @for (error of resumen.errores; track $index) {
+                                <tr><td>{{ error.fila }}</td><td>{{ error.mensaje }}</td></tr>
+                              }
+                            </tbody>
+                          </table></div>
+                        }
+                      }
+                    </section>
                     <div class="panel-title row-title">
                       <div>
                         <span class="panel-kicker">Carga inicial</span>

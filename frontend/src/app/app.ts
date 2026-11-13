@@ -9,7 +9,7 @@ import { AuthService } from './core/auth/auth.service';
 import { ClubAsignado, RolClub, RolUsuario, UsuarioApp } from './core/auth/auth.models';
 import { ActividadVista, AsignacionUsuarioForm, AsistenciaVista, ClubVista, CuotaResumenSocio, CuotaVista, DashboardData, EstadoActividad, EstadoAsistencia, EstadoCuentaSocioVista, EstadoSocio, ImportacionDeudaHistoricaVista, ImportacionSociosVista, MedioPago, PagoVista, ReportesData, SocioVista } from './core/models/gestion.models';
 import { ClubService } from './features/clubes/club.service';
-import { SocioService } from './features/socios/socio.service';
+import { SocioService, ImportacionIntegralResultado, HistorialCuotaImportada } from './features/socios/socio.service';
 import { ActividadService } from './features/actividades/actividad.service';
 import { InscripcionService } from './features/inscripciones/inscripcion.service';
 import { CuotaService } from './features/cuotas/cuota.service';
@@ -155,6 +155,12 @@ export class App {
   protected socioEditando = signal<SocioVista | null>(null);
   protected socioForm: SocioVista = this.crearSocioVacio();
   protected nuevoSocioForm: SocioVista = this.crearSocioVacio();
+  protected historialIntegral = signal<HistorialCuotaImportada[]>([]);
+  protected mostrarHistorialIntegral = signal(false);
+  protected archivoIntegral = signal<File | null>(null);
+  protected anioIntegral = signal(2026);
+  protected resultadoIntegral = signal<ImportacionIntegralResultado | null>(null);
+  protected importacionIntegralCargando = signal(false);
   protected archivoSociosImportacion = signal<File | null>(null);
   protected importacionSocios = signal<ImportacionSociosVista | null>(null);
   protected importacionSociosCargando = signal(false);
@@ -1092,6 +1098,46 @@ export class App {
     });
   }
 
+  protected consultarHistorialIntegral(): void {
+    const clubId = this.clubActivoId();
+    if (!clubId) return;
+    this.socioService.listarHistorialIntegral(clubId).subscribe({
+      next: (valores) => {
+        this.historialIntegral.set(valores);
+        this.mostrarHistorialIntegral.set(true);
+      },
+      error: () => this.dataError.set('No se pudo consultar el historial de cuotas.')
+    });
+  }
+
+  protected seleccionarArchivoIntegral(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
+    this.resultadoIntegral.set(null);
+    this.archivoIntegral.set(file && file.name.toLowerCase().endsWith('.csv') && file.size <= 1_000_000 ? file : null);
+    if (file && !this.archivoIntegral()) this.dataError.set('Selecciona un CSV de hasta 1 MB.');
+  }
+
+  protected ejecutarIntegral(confirmar = false): void {
+    const clubId = this.clubActivoId();
+    const archivo = this.archivoIntegral();
+    if (!clubId || !archivo || this.importacionIntegralCargando()) return;
+    if (confirmar && !this.resultadoIntegral()?.valida) return;
+    this.dataError.set('');
+    this.importacionIntegralCargando.set(true);
+    this.socioService.importarIntegral(clubId, archivo, this.anioIntegral(), confirmar)
+      .pipe(finalize(() => this.importacionIntegralCargando.set(false)))
+      .subscribe({
+        next: (resultado) => {
+          this.resultadoIntegral.set(resultado);
+          if (resultado.ejecutada) {
+            this.archivoIntegral.set(null);
+            this.cargarDatosClub();
+          }
+        },
+        error: (error) => this.dataError.set(error.error?.message ?? 'No se pudo procesar la importación integral.'),
+      });
+  }
+
   protected seleccionarArchivoSocios(event: Event): void {
     const input = event.target as HTMLInputElement;
     const archivo = input.files?.[0] ?? null;
@@ -1138,6 +1184,19 @@ export class App {
         },
         error: (error) => this.dataError.set(error.error?.message ?? 'No se pudieron importar los socios.'),
       });
+  }
+
+  protected descargarPlantillaIntegral(): void {
+    const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    const columnas = ['nombre','apellido','dni','numero_socio','telefono','email','fecha_nacimiento','fecha_alta','direccion','estado',...meses];
+    const ejemplo = ['Ana','Perez','12345678','25','','','','','','ACTIVO','Pagó','No pagó',...Array(10).fill('')];
+    const contenido = '\uFEFF' + columnas.join(';') + '\r\n' + ejemplo.join(';') + '\r\n';
+    const url = URL.createObjectURL(new Blob([contenido], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'plantilla-socios-cuotas-historicas.csv';
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   protected descargarPlantillaSocios(): void {
