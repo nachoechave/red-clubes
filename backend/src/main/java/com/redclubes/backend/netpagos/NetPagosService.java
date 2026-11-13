@@ -1,6 +1,6 @@
 package com.redclubes.backend.netpagos;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.redclubes.backend.auditoria.AuditoriaService;
 import com.redclubes.backend.clubes.EstadoClub;
 import com.redclubes.backend.gestion.*;

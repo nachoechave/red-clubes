@@ -1,6 +1,6 @@
 package com.redclubes.backend.netpagos;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.*;
 
 @Configuration

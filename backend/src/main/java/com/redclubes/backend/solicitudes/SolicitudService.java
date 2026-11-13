@@ -1,7 +1,7 @@
 package com.redclubes.backend.solicitudes;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.redclubes.backend.auditoria.AuditoriaService;
 import com.redclubes.backend.clubes.*;
 import com.redclubes.backend.socios.*;
@@ -50,7 +50,7 @@ public class SolicitudService {
         }
         String huella;
         try { huella = tokens.hash(json.writeValueAsString(request.datos())); }
-        catch (JsonProcessingException exception) { throw new IllegalStateException(exception); }
+        catch (JacksonException exception) { throw new IllegalStateException(exception); }
         var anterior = solicitudes.findByClubIdAndClaveEnvio(clubPublico, request.claveEnvio());
         if (anterior.isPresent()) {
             if (!anterior.get().huella.equals(huella)) throw new IllegalArgumentException("Usá una nueva referencia para cambiar los datos");
