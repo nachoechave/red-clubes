@@ -1620,15 +1620,16 @@
 
               @if (moduloActivo('CUOTAS')) {
 <article class="panel report-wide">
-                <h3><span class="panel-title-icon bar-chart" aria-hidden="true"><svg lucideChartNoAxesColumnIncreasing></svg></span>Entrada de dinero por mes</h3>
-                <div class="bar-chart">
+                <h3><span class="panel-title-icon" aria-hidden="true"><svg lucideChartNoAxesColumnIncreasing></svg></span>Entrada de dinero por mes</h3>
+                <div class="monthly-revenue-chart" role="group" aria-label="Ingresos cobrados por mes">
                   @for (mes of reportes()?.pagosPorMes ?? []; track mes.mes) {
-                    <span [style.height.%]="alturaPagos(mes.valor)" [title]="formatearImporte(mes.valor)"></span>
-                  }
-                </div>
-                <div class="chart-labels">
-                  @for (mes of reportes()?.pagosPorMes ?? []; track mes.mes) {
-                    <span>{{ mes.mes }}<small>{{ formatearImporte(mes.valor) }}</small></span>
+                    <div class="revenue-month">
+                      <div class="revenue-bar-track">
+                        <span class="revenue-bar" [class.has-revenue]="mes.valor > 0" [style.height.%]="alturaPagos(mes.valor)" [title]="mes.mes + ': ' + formatearImporte(mes.valor)"></span>
+                      </div>
+                      <span class="revenue-month-label">{{ mes.mes }}</span>
+                      <small class="revenue-month-total">{{ formatearImporte(mes.valor) }}</small>
+                    </div>
                   }
                 </div>
               </article>
