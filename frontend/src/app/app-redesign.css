@@ -1586,3 +1586,185 @@ tbody tr:hover {
   width: 24px;
   height: 24px;
 }
+
+
+/* Visual consistency: summary cards, attendance and reports (Nov 2026). */
+.civic-kpis,
+.socios-metrics {
+  align-items: stretch;
+}
+
+.civic-kpis .metric-card.metric-summary,
+.socios-metrics .metric-card.metric-summary {
+  grid-template-columns: minmax(0, 1fr) 48px;
+  grid-template-rows: auto auto auto;
+  align-content: space-between;
+  row-gap: 14px;
+  min-height: 168px;
+}
+
+.civic-kpis .metric-summary .metric-icon,
+.socios-metrics .metric-summary .metric-icon {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  align-self: start;
+}
+
+.civic-kpis .metric-summary .kpi-label,
+.socios-metrics .metric-summary .kpi-label {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+}
+
+.civic-kpis .metric-summary > strong,
+.socios-metrics .metric-summary > strong {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  align-self: end;
+}
+
+.civic-kpis .metric-summary > small,
+.socios-metrics .metric-summary > small {
+  grid-column: 1 / -1;
+  grid-row: 3;
+}
+
+.attendance-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.attendance-metrics > .metric-card {
+  min-width: 0;
+  min-height: 160px;
+  grid-template-columns: 36px minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  align-content: center;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 20px;
+}
+
+.attendance-metrics > .metric-card > .material-metric-icon {
+  grid-column: 1;
+  grid-row: 1 / 4;
+  width: 32px;
+  height: 32px;
+  align-self: center;
+}
+
+.attendance-metrics > .metric-card > span:not(.material-metric-icon),
+.attendance-metrics > .metric-card > strong,
+.attendance-metrics > .metric-card > small {
+  grid-column: 2;
+  min-width: 0;
+  margin: 0;
+  text-align: left;
+}
+
+.attendance-metrics > .metric-card > span:not(.material-metric-icon) {
+  grid-row: 1;
+  font-size: 13px;
+}
+
+.attendance-metrics > .metric-card > strong {
+  grid-row: 2;
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.attendance-metrics > .metric-card > small {
+  grid-row: 3;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.monthly-revenue-chart {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+  margin-top: 18px;
+}
+
+.revenue-month {
+  display: grid;
+  grid-template-rows: 176px auto auto;
+  align-items: end;
+  justify-items: center;
+  min-width: 0;
+  gap: 7px;
+}
+
+.revenue-bar-track {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  height: 176px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.revenue-bar {
+  display: block;
+  width: min(100%, 56px);
+  min-height: 0;
+  border-radius: 5px 5px 0 0;
+  background: linear-gradient(180deg, #22a55d, #0f7a36);
+}
+
+.revenue-bar:not(.has-revenue) {
+  background: transparent;
+}
+
+.revenue-month-label {
+  color: var(--color-text-muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.revenue-month-total {
+  color: var(--color-text);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1200px) {
+  .attendance-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .monthly-revenue-chart {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    row-gap: 24px;
+  }
+}
+
+@media (max-width: 760px) {
+  .civic-kpis .metric-card.metric-summary,
+  .socios-metrics .metric-card.metric-summary {
+    min-height: 144px;
+  }
+
+  .attendance-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .attendance-metrics > .metric-card {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .attendance-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .monthly-revenue-chart {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
