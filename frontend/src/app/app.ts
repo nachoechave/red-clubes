@@ -1789,7 +1789,7 @@ export class App {
   protected alturaPagos(valor: number): number {
     const pagos = this.reportes()?.pagosPorMes.map((item) => item.valor) ?? [];
     const max = Math.max(1, ...pagos);
-    return valor === 0 ? 4 : Math.max(8, Math.round((valor / max) * 100));
+    return valor <= 0 ? 0 : Math.max(8, Math.round((valor / max) * 100));
   }
 
   protected totalCobradoReporte = computed(() =>
